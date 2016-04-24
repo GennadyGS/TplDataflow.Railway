@@ -18,10 +18,8 @@
         {
             var items = new[] { 1, 2, 3 };
 
-            var previous = new TransformBlock<int, int>(i => i);
-            var next = new BufferBlock<int>();
-
-            var combined = previous.Combine(next);
+            var combined = new TransformBlock<int, int>(i => i)
+                .Combine(new BufferBlock<int>());
 
             items.ToObservable()
                 .Subscribe(combined.AsObserver());
@@ -40,11 +38,10 @@
             var input = new[] { 1, 2, 3, 4, 5 };
             Predicate<int> predicate = i => i % 2 == 0;
 
-            var previous = new TransformBlock<int, int>(i => i);
             var next1 = new BufferBlock<int>();
             var next2 = new BufferBlock<int>();
 
-            var combined = previous
+            var combined = new TransformBlock<int, int>(i => i)
                 .LinkWhen(predicate, next1)
                 .LinkOtherwise(next2);
 
