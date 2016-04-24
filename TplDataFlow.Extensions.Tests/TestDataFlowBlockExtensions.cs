@@ -14,7 +14,7 @@
     public class TestDataFlowBlockExtensions
     {
         [Fact]
-        public async Task TestCombine()
+        public void TestCombine()
         {
             var items = new[] { 1, 2, 3 };
 
@@ -33,7 +33,7 @@
         }
 
         [Fact]
-        public async Task TestSwitch()
+        public void TestSwitch()
         {
             var input = new[] { 1, 2, 3, 4, 5 };
             Predicate<int> predicate = i => i % 2 == 0;
