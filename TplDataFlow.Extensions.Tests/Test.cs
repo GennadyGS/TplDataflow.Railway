@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reactive.Linq;
     using System.Threading.Tasks;
     using System.Threading.Tasks.Dataflow;
 
@@ -16,22 +17,19 @@
         {
             var items = new[] { 1, 2, 3 };
 
-            var previous = new BufferBlock<int>();
+            var previous = new TransformBlock<int, int>(i => i);
             var next = new BufferBlock<int>();
 
             var combined = previous.Combine(next);
 
-            previous.LinkTo(next, new DataflowLinkOptions { PropagateCompletion = true });
+            items.ToObservable()
+                .Subscribe(combined.AsObserver());
 
-            items.ToList().ForEach(item => combined.Post(item));
-            combined.Complete();
+            IList<int> outputItems = combined
+                .AsObservable()
+                .ToEnumerable()
+                .ToList();
 
-            IList<int> outputItems = new List<int>();
-
-            while (await combined.OutputAvailableAsync())
-            {
-                outputItems.Add(combined.Receive());
-            }
             outputItems.Should().BeEquivalentTo(items);
         }
     }
