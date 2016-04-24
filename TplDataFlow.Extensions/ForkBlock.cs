@@ -21,6 +21,13 @@ namespace TplDataFlow.Extensions
             _input.PropagateCompletion(_leftOutput, _rightOutput);
         }
 
+        public ITargetBlock<TInput> ForkTo(ITargetBlock<TOutputLeft> targetLeft, ITargetBlock<TOutputRight> targetRight)
+        {
+            LeftOutput.LinkWith(targetLeft);
+            RightOutput.LinkWith(targetRight);
+            return this;
+        }
+
         public ISourceBlock<TOutputLeft> LeftOutput
         {
             get
