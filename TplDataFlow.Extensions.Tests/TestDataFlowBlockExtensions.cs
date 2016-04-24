@@ -38,22 +38,21 @@
             var input = new[] { 1, 2, 3, 4, 5 };
             Predicate<int> predicate = i => i % 2 == 0;
 
-            var next1 = new BufferBlock<int>();
-            var next2 = new BufferBlock<int>();
+            var target1 = new BufferBlock<int>();
+            var target2 = new BufferBlock<int>();
 
             var combined = new TransformBlock<int, int>(i => i)
-                .LinkWhen(predicate, next1)
-                .LinkOtherwise(next2);
+                .LinkWhen(predicate, target1)
+                .LinkOtherwise(target2);
 
             input.ToObservable()
                 .Subscribe(combined.AsObserver());
 
-            IList<int> output1 = next1
+            IList<int> output1 = target1
                 .AsObservable()
                 .ToEnumerable()
                 .ToList();
-
-            IList<int> output2 = next2
+            IList<int> output2 = target2
                 .AsObservable()
                 .ToEnumerable()
                 .ToList();
@@ -62,6 +61,40 @@
                 .BeEquivalentTo(input.Where(i => predicate(i)));
             output2.Should()
                 .BeEquivalentTo(input.Where(i => !predicate(i)));
+        }
+
+        [Fact]
+        public void TestFork()
+        {
+            var input = new[] { 1, 2, 3, 4, 5 };
+
+            var target1 = new BufferBlock<int>();
+            var target2 = new BufferBlock<string>();
+
+            var combined =
+                new TransformBlock<int, int>(i => i)
+                    .LinkWith(new ForkBlock<int, int, string>(async i => new Tuple<int, string>(i, i.ToString()))
+                        .ForkTo(
+                            target1, 
+                            target2)
+                    );
+
+            input.ToObservable()
+                .Subscribe(combined.AsObserver());
+
+            IList<int> output1 = target1
+                .AsObservable()
+                .ToEnumerable()
+                .ToList();
+            IList<string> output2 = target2
+                .AsObservable()
+                .ToEnumerable()
+                .ToList();
+
+            output1.Should()
+                .BeEquivalentTo(input);
+            output2.Should()
+                .BeEquivalentTo(input.Select(i => i.ToString()));
         }
     }
 }
