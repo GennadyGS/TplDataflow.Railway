@@ -6,7 +6,6 @@ namespace TplDataFlow.Extensions
 {
     public class ForkBlock<TInput, TOutputLeft, TOutputRight> : ITargetBlock<TInput>
     {
-        private readonly Func<TInput, Task<Tuple<TOutputLeft, TOutputRight>>> _transform;
         private readonly ITargetBlock<TInput> _input;
 
         private readonly IPropagatorBlock<TOutputLeft, TOutputLeft> _leftOutput = new BufferBlock<TOutputLeft>();
@@ -14,11 +13,16 @@ namespace TplDataFlow.Extensions
 
         public ForkBlock(Func<TInput, Task<Tuple<TOutputLeft, TOutputRight>>> transform)
         {
-            _transform = transform;
+            _input = new ActionBlock<TInput>(CreateTransformActionAsync(transform));
 
-            _input = new ActionBlock<TInput>(TransformAction);
+            PropagateCompletion();
+        }
 
-            _input.PropagateCompletion(_leftOutput, _rightOutput);
+        public ForkBlock(Func<TInput, Tuple<TOutputLeft, TOutputRight>> transform)
+        {
+            _input = new ActionBlock<TInput>(CreateTransformActionSync(transform));
+
+            PropagateCompletion();
         }
 
         public ITargetBlock<TInput> ForkTo(ITargetBlock<TOutputLeft> targetLeft, ITargetBlock<TOutputRight> targetRight)
@@ -67,11 +71,31 @@ namespace TplDataFlow.Extensions
             }
         }
 
-        private async Task TransformAction(TInput value)
+        private Action<TInput> CreateTransformActionSync(Func<TInput, Tuple<TOutputLeft, TOutputRight>> transformFunc)
         {
-            var result = await _transform(value);
+            return value =>
+            {
+                PropagateResult(transformFunc(value));
+            };
+        }
+
+        private Func<TInput, Task> CreateTransformActionAsync(Func<TInput, Task<Tuple<TOutputLeft, TOutputRight>>> transformFunc)
+        {
+            return async value =>
+                {
+                    PropagateResult(await transformFunc(value));
+                };
+        }
+
+        private void PropagateResult(Tuple<TOutputLeft, TOutputRight> result)
+        {
             _leftOutput.Post(result.Item1);
             _rightOutput.Post(result.Item2);
+        }
+
+        private void PropagateCompletion()
+        {
+            _input.PropagateCompletion(_leftOutput, _rightOutput);
         }
     }
 }

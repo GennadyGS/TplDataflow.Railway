@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Reactive.Linq;
-    using System.Threading.Tasks;
     using System.Threading.Tasks.Dataflow;
 
     using FluentAssertions;
@@ -73,7 +72,7 @@
 
             var combined =
                 new TransformBlock<int, int>(i => i)
-                    .LinkWith(new ForkBlock<int, int, string>(async i => new Tuple<int, string>(i, i.ToString()))
+                    .LinkWith(new ForkBlock<int, int, string>(i => new Tuple<int, string>(i, i.ToString()))
                         .ForkTo(
                             target1, 
                             target2)
