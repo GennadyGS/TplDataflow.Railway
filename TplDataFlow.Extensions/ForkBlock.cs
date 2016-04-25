@@ -73,12 +73,18 @@ namespace TplDataFlow.Extensions
 
         private Action<TInput> CreateTransformActionSync(Func<TInput, Tuple<TOutputLeft, TOutputRight>> transformFunc)
         {
-            return value => PropagateResultAsync(transformFunc(value)).Wait();
+            return value => PropagateResult(transformFunc(value));
         }
 
         private Func<TInput, Task> CreateTransformActionAsync(Func<TInput, Task<Tuple<TOutputLeft, TOutputRight>>> transformFunc)
         {
             return async value => await PropagateResultAsync(await transformFunc(value));
+        }
+
+        private void PropagateResult(Tuple<TOutputLeft, TOutputRight> result)
+        {
+            _leftOutput.Post(result.Item1);
+            _rightOutput.Post(result.Item2);
         }
 
         private async Task PropagateResultAsync(Tuple<TOutputLeft, TOutputRight> result)
