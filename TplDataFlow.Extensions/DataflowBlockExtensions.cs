@@ -44,7 +44,7 @@ namespace TplDataFlow.Extensions
             return sourceBlock;
         }
 
-        public static IPropagatorBlock<TInput, TMedium> LinkWhen<TInput, TMedium>(this IPropagatorBlock<TInput, TMedium> sourceBlock, 
+        public static IPropagatorBlock<TInput, TMedium> LinkWhen<TInput, TMedium>(this IPropagatorBlock<TInput, TMedium> sourceBlock,
             Predicate<TMedium> predicate,
             ITargetBlock<TMedium> targetBlock)
         {

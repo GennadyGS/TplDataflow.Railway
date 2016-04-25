@@ -36,7 +36,10 @@ namespace TplDataFlow.Extensions
 
         Task IDataflowBlock.Completion
         {
-            get { return _next.Completion; }
+            get
+            {
+                return _next.Completion;
+            }
         }
 
         IDisposable ISourceBlock<TOutput>.LinkTo(ITargetBlock<TOutput> target, DataflowLinkOptions linkOptions)

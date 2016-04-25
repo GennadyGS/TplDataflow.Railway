@@ -25,13 +25,6 @@ namespace TplDataFlow.Extensions
             PropagateCompletion();
         }
 
-        public ITargetBlock<TInput> ForkTo(ITargetBlock<TOutputLeft> targetLeft, ITargetBlock<TOutputRight> targetRight)
-        {
-            LeftOutput.LinkWith(targetLeft);
-            RightOutput.LinkWith(targetRight);
-            return this;
-        }
-
         public ISourceBlock<TOutputLeft> LeftOutput
         {
             get
@@ -71,20 +64,21 @@ namespace TplDataFlow.Extensions
             }
         }
 
+        public ITargetBlock<TInput> ForkTo(ITargetBlock<TOutputLeft> targetLeft, ITargetBlock<TOutputRight> targetRight)
+        {
+            LeftOutput.LinkWith(targetLeft);
+            RightOutput.LinkWith(targetRight);
+            return this;
+        }
+
         private Action<TInput> CreateTransformActionSync(Func<TInput, Tuple<TOutputLeft, TOutputRight>> transformFunc)
         {
-            return value =>
-            {
-                PropagateResult(transformFunc(value));
-            };
+            return value => PropagateResult(transformFunc(value));
         }
 
         private Func<TInput, Task> CreateTransformActionAsync(Func<TInput, Task<Tuple<TOutputLeft, TOutputRight>>> transformFunc)
         {
-            return async value =>
-                {
-                    PropagateResult(await transformFunc(value));
-                };
+            return async value => PropagateResult(await transformFunc(value));
         }
 
         private void PropagateResult(Tuple<TOutputLeft, TOutputRight> result)

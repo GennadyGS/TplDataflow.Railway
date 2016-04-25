@@ -22,16 +22,11 @@ namespace TplDataFlow.Extensions
             _transformActionBlock.PropagateCompletion(_outputBufferBlock, _exceptionBufferBlock);
         }
 
-        private async Task TransformAction(TInput input)
+        public ISourceBlock<Tuple<Exception, TInput>> Exception
         {
-            try
+            get
             {
-                _outputBufferBlock.Post(await _transform(input));
-            }
-            catch (Exception e)
-            {
-                _exceptionBufferBlock.Post(new Tuple<Exception, TInput>(e, input));
-                throw;
+                return _exceptionBufferBlock;
             }
         }
 
@@ -88,11 +83,16 @@ namespace TplDataFlow.Extensions
             return _outputBufferBlock.TryReceiveAll(out items);
         }
 
-        public ISourceBlock<Tuple<Exception, TInput>> Exception
+        private async Task TransformAction(TInput input)
         {
-            get
+            try
             {
-                return _exceptionBufferBlock;
+                _outputBufferBlock.Post(await _transform(input));
+            }
+            catch (Exception e)
+            {
+                _exceptionBufferBlock.Post(new Tuple<Exception, TInput>(e, input));
+                throw;
             }
         }
     }
