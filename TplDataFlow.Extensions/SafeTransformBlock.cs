@@ -7,19 +7,23 @@ namespace TplDataFlow.Extensions
 {
     internal class SafeTransformBlock<TInput, TOutput> : IPropagatorBlock<TInput, TOutput>, IReceivableSourceBlock<TOutput>
     {
-        private readonly Func<TInput, Task<TOutput>> _transform;
-
         private readonly ITargetBlock<TInput> _transformActionBlock;
+
         private readonly BufferBlock<TOutput> _outputBufferBlock = new BufferBlock<TOutput>();
         private readonly BufferBlock<Tuple<Exception, TInput>> _exceptionBufferBlock = new BufferBlock<Tuple<Exception, TInput>>();
 
         public SafeTransformBlock(Func<TInput, Task<TOutput>> transform)
         {
-            _transform = transform;
+            _transformActionBlock = new ActionBlock<TInput>(CreateTransformActionAsync(transform));
 
-            _transformActionBlock = new ActionBlock<TInput>(TransformAction);
+            PropagateCompletion();
+        }
 
-            _transformActionBlock.PropagateCompletion(_outputBufferBlock, _exceptionBufferBlock);
+        public SafeTransformBlock(Func<TInput, TOutput> transform)
+        {
+            _transformActionBlock = new ActionBlock<TInput>(CreateTransformActionSync(transform));
+
+            PropagateCompletion();
         }
 
         public ISourceBlock<Tuple<Exception, TInput>> Exception
@@ -83,17 +87,41 @@ namespace TplDataFlow.Extensions
             return _outputBufferBlock.TryReceiveAll(out items);
         }
 
-        private async Task TransformAction(TInput input)
+        private Action<TInput> CreateTransformActionSync(Func<TInput, TOutput> transform)
         {
-            try
+            return input =>
             {
-                _outputBufferBlock.Post(await _transform(input));
-            }
-            catch (Exception e)
+                try
+                {
+                    _outputBufferBlock.Post(transform(input));
+                }
+                catch (Exception e)
+                {
+                    _exceptionBufferBlock.Post(new Tuple<Exception, TInput>(e, input));
+                    throw;
+                }
+            };
+        }
+
+        private Func<TInput, Task> CreateTransformActionAsync(Func<TInput, Task<TOutput>> transform)
+        {
+            return async input =>
             {
-                _exceptionBufferBlock.Post(new Tuple<Exception, TInput>(e, input));
-                throw;
-            }
+                try
+                {
+                    await _outputBufferBlock.SendAsync(await transform(input));
+                }
+                catch (Exception e)
+                {
+                    await _exceptionBufferBlock.SendAsync(new Tuple<Exception, TInput>(e, input));
+                    throw;
+                }
+            };
+        }
+
+        private void PropagateCompletion()
+        {
+            _transformActionBlock.PropagateCompletion(_outputBufferBlock, _exceptionBufferBlock);
         }
     }
 }
