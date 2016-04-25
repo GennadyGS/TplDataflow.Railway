@@ -34,6 +34,12 @@ namespace TplDataFlow.Extensions
             }
         }
 
+        public SafeTransformBlock<TInput, TOutput> LinkOnException(ITargetBlock<Tuple<Exception, TInput>> exceptionHandler)
+        {
+            Exception.LinkWith(exceptionHandler);
+            return this;
+        }
+
         DataflowMessageStatus ITargetBlock<TInput>.OfferMessage(DataflowMessageHeader messageHeader, TInput messageValue, ISourceBlock<TInput> source, bool consumeToAccept)
         {
             return _transformActionBlock.OfferMessage(messageHeader, messageValue, source, consumeToAccept);
