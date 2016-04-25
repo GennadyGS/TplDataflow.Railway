@@ -5,7 +5,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace TplDataFlow.Extensions
 {
-    internal class SafeTransformBlock<TInput, TOutput> : IPropagatorBlock<TInput, TOutput>, IReceivableSourceBlock<TOutput>
+    public class SafeTransformBlock<TInput, TOutput> : IPropagatorBlock<TInput, TOutput>, IReceivableSourceBlock<TOutput>
     {
         private readonly ITargetBlock<TInput> _transformActionBlock;
 
@@ -34,7 +34,7 @@ namespace TplDataFlow.Extensions
             }
         }
 
-        public SafeTransformBlock<TInput, TOutput> LinkOnException(ITargetBlock<Tuple<Exception, TInput>> exceptionHandler)
+        public SafeTransformBlock<TInput, TOutput> HandleExceptionWith(ITargetBlock<Tuple<Exception, TInput>> exceptionHandler)
         {
             Exception.LinkWith(exceptionHandler);
             return this;
@@ -104,7 +104,6 @@ namespace TplDataFlow.Extensions
                 catch (Exception e)
                 {
                     _exceptionBufferBlock.Post(new Tuple<Exception, TInput>(e, input));
-                    throw;
                 }
             };
         }
@@ -120,7 +119,6 @@ namespace TplDataFlow.Extensions
                 catch (Exception e)
                 {
                     await _exceptionBufferBlock.SendAsync(new Tuple<Exception, TInput>(e, input));
-                    throw;
                 }
             };
         }
