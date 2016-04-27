@@ -51,6 +51,7 @@
     <Compile Include="SafeTransformBlock.cs">
       <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
+    <Compile Include="SafeTransformManyBlock.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

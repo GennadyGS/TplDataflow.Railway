@@ -22,14 +22,14 @@ namespace TplDataFlow.Extensions
         public static IDisposable LinkWith<T>(this ISourceBlock<T> sourceBlock,
             ITargetBlock<T> targetBlock)
         {
-            return sourceBlock.LinkTo(targetBlock, 
+            return sourceBlock.LinkTo(targetBlock,
                 new DataflowLinkOptions { PropagateCompletion = true });
         }
 
         public static ITargetBlock<TInput> LinkWith<TInput, TMedium>(this IPropagatorBlock<TInput, TMedium> sourceBlock,
             ITargetBlock<TMedium> targetBlock)
         {
-            sourceBlock.LinkTo(targetBlock, 
+            sourceBlock.LinkTo(targetBlock,
                 new DataflowLinkOptions { PropagateCompletion = true });
             return sourceBlock;
         }
@@ -69,7 +69,7 @@ namespace TplDataFlow.Extensions
             return sourceBlock;
         }
 
-        public static IPropagatorBlock<TInput, TOutput> Combine<TInput, TMedium, TOutput>(this IPropagatorBlock<TInput, TMedium> previous,
+        public static IPropagatorBlock<TInput, TOutput> CombineWith<TInput, TMedium, TOutput>(this IPropagatorBlock<TInput, TMedium> previous,
             IPropagatorBlock<TMedium, TOutput> next)
         {
             return new CombinedPropagatorBlock<TInput, TMedium, TOutput>(previous, next);

@@ -1,25 +1,26 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace TplDataFlow.Extensions
 {
-    public class SafeTransformBlock<TInput, TOutput> : IPropagatorBlock<TInput, TOutput>, IReceivableSourceBlock<TOutput>
+    public class SafeTransformManyBlock<TInput, TOutput> : IPropagatorBlock<TInput, TOutput>, IReceivableSourceBlock<TOutput>
     {
         private readonly ITargetBlock<TInput> _transformActionBlock;
 
         private readonly BufferBlock<TOutput> _outputBufferBlock = new BufferBlock<TOutput>();
         private readonly BufferBlock<Tuple<Exception, TInput>> _exceptionBufferBlock = new BufferBlock<Tuple<Exception, TInput>>();
 
-        public SafeTransformBlock(Func<TInput, Task<TOutput>> transform)
+        public SafeTransformManyBlock(Func<TInput, Task<IEnumerable<TOutput>>> transform)
         {
             _transformActionBlock = new ActionBlock<TInput>(CreateTransformActionAsync(transform));
 
             PropagateCompletion();
         }
 
-        public SafeTransformBlock(Func<TInput, TOutput> transform)
+        public SafeTransformManyBlock(Func<TInput, IEnumerable<TOutput>> transform)
         {
             _transformActionBlock = new ActionBlock<TInput>(CreateTransformActionSync(transform));
 
@@ -34,7 +35,7 @@ namespace TplDataFlow.Extensions
             }
         }
 
-        public SafeTransformBlock<TInput, TOutput> HandleExceptionWith(ITargetBlock<Tuple<Exception, TInput>> exceptionHandler)
+        public SafeTransformManyBlock<TInput, TOutput> HandleExceptionWith(ITargetBlock<Tuple<Exception, TInput>> exceptionHandler)
         {
             Exception.LinkWith(exceptionHandler);
             return this;
@@ -93,38 +94,48 @@ namespace TplDataFlow.Extensions
             return _outputBufferBlock.TryReceiveAll(out items);
         }
 
-        private Action<TInput> CreateTransformActionSync(Func<TInput, TOutput> transform)
+        private Action<TInput> CreateTransformActionSync(Func<TInput, IEnumerable<TOutput>> transform)
         {
             return input =>
             {
-                Exception exception = null;
-                TOutput output = default(TOutput);
                 try
                 {
-                    output = transform(input);
+                    Exception exception = null;
+                    IEnumerable<TOutput> output = Enumerable.Empty<TOutput>();
+                    try
+                    {
+                        output = transform(input);
+                    }
+                    catch (Exception e)
+                    {
+                        exception = e;
+                    }
+
+                    if (exception == null)
+                    {
+                        foreach(var item in output)
+                        {
+                            _outputBufferBlock.Post(item);
+                        }
+                    }
+                    else
+                    {
+                        _exceptionBufferBlock.Post(new Tuple<Exception, TInput>(exception, input));
+                    }
                 }
                 catch (Exception e)
                 {
-                    exception = e;
-                }
-
-                if (exception == null)
-                {
-                    _outputBufferBlock.Post(output);
-                }
-                else
-                {
-                    _exceptionBufferBlock.Post(new Tuple<Exception, TInput>(exception, input));
+                    _exceptionBufferBlock.Post(new Tuple<Exception, TInput>(e, input));
                 }
             };
         }
 
-        private Func<TInput, Task> CreateTransformActionAsync(Func<TInput, Task<TOutput>> transform)
+        private Func<TInput, Task> CreateTransformActionAsync(Func<TInput, Task<IEnumerable<TOutput>>> transform)
         {
             return async input =>
             {
                 Exception exception = null;
-                TOutput output = default(TOutput);
+                IEnumerable<TOutput> output = Enumerable.Empty<TOutput>();
                 try
                 {
                     output = await transform(input);
@@ -136,7 +147,10 @@ namespace TplDataFlow.Extensions
 
                 if (exception == null)
                 {
-                    await _outputBufferBlock.SendAsync(output);
+                    foreach (var item in output)
+                    {
+                        await _outputBufferBlock.SendAsync(item);
+                    }
                 }
                 else
                 {
