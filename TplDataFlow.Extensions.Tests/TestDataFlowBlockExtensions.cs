@@ -16,7 +16,7 @@ namespace TplDataFlow.Extensions.UnitTests
             var items = new[] { 1, 2, 3 };
 
             var sut = new TransformBlock<int, int>(i => i)
-                .Combine(new BufferBlock<int>());
+                .CombineWith(new BufferBlock<int>());
 
             items.ToObservable()
                 .Subscribe(sut.AsObserver());
@@ -141,6 +141,78 @@ namespace TplDataFlow.Extensions.UnitTests
                                 }
                                 return i;
                             })
+                        .HandleExceptionWith(targetException)
+                        .LinkWith(target);
+
+            input.ToObservable()
+                .Subscribe(sut.AsObserver());
+
+            IList<int> output = target
+                .AsObservable()
+                .ToEnumerable()
+                .ToList();
+
+            IList<Tuple<Exception, int>> outputExceptions = targetException
+                .AsObservable()
+                .ToEnumerable()
+                .ToList();
+
+            output.Should()
+                .BeEquivalentTo(input.Where(i => i >= 0));
+
+            outputExceptions
+                .Select(item => item.Item2)
+                .Should()
+                .BeEquivalentTo(input.Where(i => i < 0));
+        }
+
+        [Fact]
+        public void TestSafeTransformManySuccess()
+        {
+            var input = new[] { 1, 2, 3, 4, 5 };
+
+            var target = new BufferBlock<int>();
+            var targetOnException = new BufferBlock<Tuple<Exception, int>>();
+
+            var sut = new SafeTransformManyBlock<int, int>(i => new[] { i })
+                        .HandleExceptionWith(targetOnException)
+                        .LinkWith(target);
+
+            input.ToObservable()
+                .Subscribe(sut.AsObserver());
+
+            IList<int> output = target
+                .AsObservable()
+                .ToEnumerable()
+                .ToList();
+
+            IList<Tuple<Exception, int>> outputExceptions = targetOnException
+                .AsObservable()
+                .ToEnumerable()
+                .ToList();
+
+            output.Should()
+                .BeEquivalentTo(input);
+            outputExceptions.Should()
+                .BeEmpty();
+        }
+
+        [Fact]
+        public void TestSafeTransformManyWithErrors()
+        {
+            var input = new[] { -2, -1, 0, 1, 2 };
+
+            var target = new BufferBlock<int>();
+            var targetException = new BufferBlock<Tuple<Exception, int>>();
+
+            var sut = new SafeTransformManyBlock<int, int>(i =>
+            {
+                if (i < 0)
+                {
+                    throw new ArgumentException();
+                }
+                return new[] { i };
+            })
                         .HandleExceptionWith(targetException)
                         .LinkWith(target);
 
