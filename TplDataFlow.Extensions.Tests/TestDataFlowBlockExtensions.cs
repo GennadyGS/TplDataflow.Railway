@@ -237,5 +237,30 @@ namespace TplDataFlow.Extensions.UnitTests
                 .Should()
                 .BeEquivalentTo(input.Where(i => i < 0));
         }
+
+        [Fact]
+        public void TestLinqSelect()
+        {
+            var items = new[] { 1, 2, 3 };
+
+            var source = new BufferBlock<int>();
+
+            Func<int, int> transformFunc = i => i + 1;
+
+            IPropagatorBlock<int, int> sut =
+                from i in source
+                select transformFunc(i);
+
+            items.ToObservable()
+                .Subscribe(sut.AsObserver());
+
+            IList<int> output = sut
+                .AsObservable()
+                .ToEnumerable()
+                .ToList();
+
+            output.Should().BeEquivalentTo(items.Select(i => transformFunc(i)));
+
+        }
     }
 }

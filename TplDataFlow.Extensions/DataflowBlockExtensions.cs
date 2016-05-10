@@ -74,5 +74,11 @@ namespace TplDataFlow.Extensions
         {
             return new CombinedPropagatorBlock<TInput, TMedium, TOutput>(previous, next);
         }
+
+        public static IPropagatorBlock<TInput, TOutput> Select<TInput, TMedium, TOutput>(
+            this IPropagatorBlock<TInput, TMedium> self, Func<TMedium, TOutput> select)
+        {
+            return self.CombineWith(new TransformBlock<TMedium, TOutput>(select));
+        }
     }
 }
