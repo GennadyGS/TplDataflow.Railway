@@ -85,8 +85,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestDataFlowBlockExtensions.cs" />
-    <Compile Include="ResultTest.cs" />
+    <Compile Include="DataFlowBlockExtensionsTests.cs" />
+    <Compile Include="ResultTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace TplDataFlow.Extensions.UnitTests
 {
-    public class TestDataFlowBlockExtensions
+    public class DataFlowBlockExtensionsTests
     {
         [Fact]
         public void TestCombine()

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace TplDataFlow.Extensions.UnitTests
 {
-    public class ResultTest
+    public class ResultTests
     {
         [Fact]
         public void Result_ShouldBeSuccess()
