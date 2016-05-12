@@ -46,7 +46,6 @@
   <ItemGroup>
     <Compile Include="CombinedPropagatorBlock.cs" />
     <Compile Include="DataflowBlockExtensions.cs" />
-    <Compile Include="Either.cs" />
     <Compile Include="ForkBlock.cs" />
     <Compile Include="ForkManyBlock.cs" />
     <Compile Include="JointPointBlock.cs" />
