@@ -43,7 +43,7 @@ namespace TplDataflow.Extensions.Example.Implementation
         private readonly IEventSetConfiguration _configuration;
         private readonly Func<DateTime> _currentTimeProvider;
 
-        private readonly ITargetBlock<EventDetails> _inputEventsBlock;
+        private readonly IObserver<EventDetails> _inputEventsBlock;
         private readonly JointPointBlock<EventSetWithEvents> _eventSetCreatedBlock = new JointPointBlock<EventSetWithEvents>();
         private readonly JointPointBlock<EventSetWithEvents> _eventSetUpdatedBlock = new JointPointBlock<EventSetWithEvents>();
         private readonly JointPointBlock<EventDetails> _eventSkippedBlock = new JointPointBlock<EventDetails>();
@@ -73,7 +73,7 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             get
             {
-                return _inputEventsBlock.AsObserver();
+                return _inputEventsBlock;
             }
         }
 
@@ -121,9 +121,9 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
         }
 
-        private ITargetBlock<EventDetails> CreateDataflow()
+        private IObserver<EventDetails> CreateDataflow()
         {
-            return DataflowBlockFactory.CreateSideEffectBlock<EventDetails>(@event => 
+            return DataflowBlockFactory.CreateSideEffectBlock<EventDetails>(@event =>
                     _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Id))
                 .CombineWith(DataflowBlockFactory.CreateTimedBatchBlock<EventDetails>(EventBatchSize, TimeSpan.Parse(EventBatchTimeout)))
                 .CombineWith(new SafeTransformManyBlock<EventDetails[], EventGroup>(events => SplitEventsIntoGroups(events))
@@ -140,7 +140,8 @@ namespace TplDataflow.Extensions.Example.Implementation
                                 new TransformManyBlock<Tuple<Exception, EventGroup[]>, EventDetails>(item => HandleEventGroupsBatchException(item))
                                     .LinkWith(_eventFailedBlock.AddInput())))
                         .LinkWith(new ForkManyBlock<EventSetProcessingResult, EventSetWithEvents, EventSetWithEvents>(result => SplitProcessingResult(result))
-                            .ForkTo(_eventSetCreatedBlock.AddInput(), _eventSetUpdatedBlock.AddInput())));
+                            .ForkTo(_eventSetCreatedBlock.AddInput(), _eventSetUpdatedBlock.AddInput())))
+                .AsObserver();
         }
 
         private async Task<IEnumerable<EventGroup>> SplitEventsIntoGroups(EventDetails[] events)
