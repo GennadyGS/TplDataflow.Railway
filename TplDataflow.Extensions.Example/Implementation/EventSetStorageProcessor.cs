@@ -12,11 +12,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using log4net;
-using log4net.Core;
 using TplDataflow.Extensions.Example.BusinessObjects;
 using TplDataflow.Extensions.Example.Exceptions;
 using TplDataflow.Extensions.Example.Interfaces;
@@ -29,7 +27,7 @@ namespace TplDataflow.Extensions.Example.Implementation
     /// Implements <see cref="IEventSetStorageProcessor" /> interface
     /// </summary>
     /// <seealso cref="IEventSetStorageProcessor" />
-    internal class EventSetStorageProcessor : IEventSetStorageProcessor
+    public class EventSetStorageProcessor : IEventSetStorageProcessor
     {
         // TODO: Introduce configuration parameters
         private const int EventBatchSize = 1000;
