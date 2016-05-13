@@ -4,29 +4,34 @@ namespace TplDataFlow.Extensions
 {
     public static class ResultExtensions
     {
-        public static T Match<TSuccess, TFailure, T>(this Result<TSuccess, TFailure> self, Func<TSuccess, T> onSuccess, Func<TFailure, T> onFailure)
+        public static T Match<TSuccess, TFailure, T>(this Result<TSuccess, TFailure> source, Func<TSuccess, T> onSuccess, Func<TFailure, T> onFailure)
         {
-            return self.IsSuccess
-                ? onSuccess(self.Success)
-                : onFailure(self.Failure);
+            return source.IsSuccess
+                ? onSuccess(source.Success)
+                : onFailure(source.Failure);
         }
 
-        public static Result<TOutput, TFailure> Select<TInput, TOutput, TFailure>(this Result<TInput, TFailure> self, Func<TInput, TOutput> selector)
+        public static Result<TOutput, TFailure> Select<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source, Func<TInput, TOutput> selector)
         {
-            if (!self.IsSuccess)
+            if (!source.IsSuccess)
             {
-                return Result.Failure<TOutput, TFailure>(self.Failure);
+                return Result.Failure<TOutput, TFailure>(source.Failure);
             }
-            return Result.Success<TOutput, TFailure>(selector(self.Success));
+            return Result.Success<TOutput, TFailure>(selector(source.Success));
         }
 
-        public static Result<TOutput, TFailure> Select<TInput, TOutput, TFailure>(this Result<TInput, TFailure> self, Func<TInput, Result<TOutput, TFailure>> selector)
+        public static Result<TOutput, TFailure> Select<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source, Func<TInput, Result<TOutput, TFailure>> selector)
         {
-            if (!self.IsSuccess)
+            if (!source.IsSuccess)
             {
-                return Result.Failure<TOutput, TFailure>(self.Failure);
+                return Result.Failure<TOutput, TFailure>(source.Failure);
             }
-            return selector(self.Success);
+            return selector(source.Success);
+        }
+
+        public static Result<TSuccess, TFailure> ToResult<TSuccess, TFailure>(this TSuccess source)
+        {
+            return Result.Success<TSuccess, TFailure>(source);
         }
     }
 }
