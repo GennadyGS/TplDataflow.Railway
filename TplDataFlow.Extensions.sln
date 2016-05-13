@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataFlow.Extensions", "TplDataFlow.Extensions\TplDataFlow.Extensions.csproj", "{6C3DF27A-610C-48B9-A815-CF1496CB5663}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataFlow.Extensions.Tests", "TplDataFlow.Extensions.Tests\TplDataFlow.Extensions.Tests.csproj", "{FF4C7BA8-A386-45D7-8970-6EE894F78AD6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataflow.Extensions.Example", "TplDataflow.Extensions.Example\TplDataflow.Extensions.Example.csproj", "{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{FF4C7BA8-A386-45D7-8970-6EE894F78AD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF4C7BA8-A386-45D7-8970-6EE894F78AD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF4C7BA8-A386-45D7-8970-6EE894F78AD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,7 +7,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace TplDataFlow.Extensions
 {
-    internal class JointPointBlock<T> : ISourceBlock<T>, IReceivableSourceBlock<T>, IDataflowBlock
+    public class JointPointBlock<T> : ISourceBlock<T>, IReceivableSourceBlock<T>, IDataflowBlock
     {
         private readonly BlockingCollection<Exception> _completionExceptions = new BlockingCollection<Exception>();
         private readonly IPropagatorBlock<T, T> _output = new BufferBlock<T>();
