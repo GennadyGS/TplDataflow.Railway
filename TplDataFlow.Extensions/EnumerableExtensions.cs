@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TplDataFlow.Extensions
 {
@@ -11,14 +12,15 @@ namespace TplDataFlow.Extensions
             throw new NotImplementedException();
         }
 
-        public static Result<IEnumerable<TSuccess>, TFailure> ToResult<TSuccess, TFailure>(this IEnumerable<TSuccess> source)
+        public static IEnumerable<Result<TSuccess, TFailure>> ToResult<TSuccess, TFailure>(this IEnumerable<TSuccess> source)
         {
-            return Result.Success<IEnumerable<TSuccess>, TFailure>(source);
+            return source.Select(Result.Success<TSuccess, TFailure>);
         }
 
-        public static Result<IEnumerable<TResult>, TFailure> SelectMany<TSource, TResult, TFailure>(this Result<IEnumerable<TSource>, TFailure> source,
-            Func<TSource, Result<IEnumerable<TResult>, TFailure>> selector)
+        public static IEnumerable<Result<TOutput, TFailure>> SelectMany<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
+            Func<TInput, Result<IEnumerable<TOutput>, TFailure>> selector)
         {
+            //return System.Linq.Enumerable.SelectMany(source, i => i.SelectMany(selector));
             // return ResultExtensions.Select<IEnumerable<TSource>, TResult, TFailure>(source, selector);
             throw new NotImplementedException();
         }

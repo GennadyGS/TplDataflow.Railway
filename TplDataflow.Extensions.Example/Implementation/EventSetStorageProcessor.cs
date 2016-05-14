@@ -150,7 +150,7 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             var res2 = new Subject<EventDetails>().ToEnumerable()
                 .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
-                .ToResult<IList<EventDetails>, InSuccessResult>()
+                .ToResult<IList<EventDetails>, UnsuccessResult>()
                 .SelectMany(SplitEventsIntoGroupsSafe);
             return new Subject<EventDetails>();
             return DataflowBlockFactory.CreateSideEffectBlock<EventDetails>(@event =>
@@ -212,9 +212,9 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .SelectMany(SplitEventGroupByThreshold);
         }
 
-        private Result<IEnumerable<EventGroup>, InSuccessResult> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
+        private Result<IEnumerable<EventGroup>, UnsuccessResult> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
         {
-            return Result.Success<IEnumerable<EventGroup>, InSuccessResult>(SplitEventsIntoGroups(events));
+            return Result.Success<IEnumerable<EventGroup>, UnsuccessResult>(SplitEventsIntoGroups(events));
         }
 
         private bool NeedSkipEventGroup(EventGroup eventGroup)
@@ -553,13 +553,13 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
         }
 
-        private class InSuccessResult
+        private class UnsuccessResult
         {
             private readonly IEnumerable<EventDetails> _events;
             private readonly InSuccessReason _reason;
             private readonly string _message;
 
-            public InSuccessResult(IEnumerable<EventDetails> events, InSuccessReason reason, string message = null)
+            public UnsuccessResult(IEnumerable<EventDetails> events, InSuccessReason reason, string message = null)
             {
                 _events = events;
                 _reason = reason;
