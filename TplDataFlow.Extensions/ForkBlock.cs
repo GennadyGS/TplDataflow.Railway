@@ -41,7 +41,8 @@ namespace TplDataFlow.Extensions
             }
         }
 
-        DataflowMessageStatus ITargetBlock<TInput>.OfferMessage(DataflowMessageHeader messageHeader, TInput messageValue, ISourceBlock<TInput> source, bool consumeToAccept)
+        DataflowMessageStatus ITargetBlock<TInput>.OfferMessage(DataflowMessageHeader messageHeader, TInput messageValue,
+            ISourceBlock<TInput> source, bool consumeToAccept)
         {
             return _input.OfferMessage(messageHeader, messageValue, source, consumeToAccept);
         }
@@ -76,7 +77,8 @@ namespace TplDataFlow.Extensions
             return value => PropagateResult(transformFunc(value));
         }
 
-        private Func<TInput, Task> CreateTransformActionAsync(Func<TInput, Task<Tuple<TOutput1, TOutput2>>> transformFunc)
+        private Func<TInput, Task> CreateTransformActionAsync(
+            Func<TInput, Task<Tuple<TOutput1, TOutput2>>> transformFunc)
         {
             return async value => await PropagateResultAsync(await transformFunc(value));
         }
