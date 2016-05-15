@@ -17,12 +17,12 @@ namespace TplDataFlow.Extensions
 
         bool IReceivableSourceBlock<T>.TryReceive(Predicate<T> filter, out T item)
         {
-            return ((IReceivableSourceBlock<T>)_output).TryReceive(filter, out item);
+            return ((IReceivableSourceBlock<T>) _output).TryReceive(filter, out item);
         }
 
         bool IReceivableSourceBlock<T>.TryReceiveAll(out IList<T> items)
         {
-            return ((IReceivableSourceBlock<T>)_output).TryReceiveAll(out items);
+            return ((IReceivableSourceBlock<T>) _output).TryReceiveAll(out items);
         }
 
         public Task Completion
@@ -48,7 +48,8 @@ namespace TplDataFlow.Extensions
             return _output.LinkTo(target, linkOptions);
         }
 
-        T ISourceBlock<T>.ConsumeMessage(DataflowMessageHeader messageHeader, ITargetBlock<T> target, out bool messageConsumed)
+        T ISourceBlock<T>.ConsumeMessage(DataflowMessageHeader messageHeader, ITargetBlock<T> target,
+            out bool messageConsumed)
         {
             return _output.ConsumeMessage(messageHeader, target, out messageConsumed);
         }
