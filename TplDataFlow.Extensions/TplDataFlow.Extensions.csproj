@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="CombinedPropagatorBlock.cs" />
     <Compile Include="DataflowBlockExtensions.cs" />
+    <Compile Include="DataflowBlockFactory.cs" />
     <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="JointPointBlock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

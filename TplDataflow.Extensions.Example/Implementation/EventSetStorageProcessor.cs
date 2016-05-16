@@ -19,7 +19,6 @@ using log4net;
 using TplDataflow.Extensions.Example.BusinessObjects;
 using TplDataflow.Extensions.Example.Exceptions;
 using TplDataflow.Extensions.Example.Interfaces;
-using TplDataflow.Extensions.Example.Utils;
 using TplDataFlow.Extensions;
 
 namespace TplDataflow.Extensions.Example.Implementation

@@ -4,7 +4,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
-namespace TplDataflow.Extensions.Example.Utils
+namespace TplDataFlow.Extensions
 {
     public static class DataflowBlockFactory
     {
