@@ -54,10 +54,10 @@ namespace TplDataFlow.Extensions
             return sourceBlock;
         }
 
-        public static IDisposable LinkOtherwise<T>(this ISourceBlock<T> sourceBlock,
+        public static void LinkOtherwise<T>(this ISourceBlock<T> sourceBlock,
             ITargetBlock<T> targetBlock)
         {
-            return sourceBlock.LinkTo(targetBlock,
+            sourceBlock.LinkTo(targetBlock,
                 new DataflowLinkOptions { PropagateCompletion = true, Append = true });
         }
 
@@ -67,6 +67,22 @@ namespace TplDataFlow.Extensions
             sourceBlock.LinkTo(targetBlock,
                 new DataflowLinkOptions { PropagateCompletion = true, Append = true });
             return sourceBlock;
+        }
+
+        public static void Split<T>(this ISourceBlock<T> source,
+            Predicate<T> predicate, ITargetBlock<T> targetOnTrue, ITargetBlock<T> targetOnFalse)
+        {
+            source
+                .LinkWhen(predicate, targetOnTrue)
+                .LinkOtherwise(targetOnFalse);
+        }
+
+        public static ITargetBlock<TInput> Split<TInput, TOutput>(this IPropagatorBlock<TInput, TOutput> source,
+            Predicate<TOutput> predicate, ITargetBlock<TOutput> targetOnTrue, ITargetBlock<TOutput> targetOnFalse)
+        {
+            return source
+                .LinkWhen(predicate, targetOnTrue)
+                .LinkOtherwise(targetOnFalse);
         }
 
         public static IPropagatorBlock<TInput, TOutput> CombineWith<TInput, TMedium, TOutput>(this IPropagatorBlock<TInput, TMedium> previous,

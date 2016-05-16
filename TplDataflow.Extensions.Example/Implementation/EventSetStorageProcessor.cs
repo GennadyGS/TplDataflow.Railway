@@ -155,10 +155,9 @@ namespace TplDataflow.Extensions.Example.Implementation
                                 new TransformManyBlock<Tuple<Exception, EventGroup[]>, EventDetails>(
                                     item => HandleEventGroupsBatchException(item))
                                     .LinkWith(_eventFailedBlock.AddInput())))
-                        .LinkWhen(result => result.Code == SuccessResult.ResultCode.EventSetCreated,
+                        .Split(result => result.Code == SuccessResult.ResultCode.EventSetCreated,
                             new TransformBlock<SuccessResult, EventSetWithEvents>(result => result.EventSetWithEvents)
-                                .LinkWith(_eventSetCreatedBlock.AddInput()))
-                        .LinkOtherwise(
+                                .LinkWith(_eventSetCreatedBlock.AddInput()),
                             new TransformBlock<SuccessResult, EventSetWithEvents>(result => result.EventSetWithEvents)
                                 .LinkWith(_eventSetUpdatedBlock.AddInput())));
         }
