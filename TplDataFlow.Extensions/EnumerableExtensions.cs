@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 
 namespace TplDataFlow.Extensions
 {
@@ -57,6 +58,12 @@ namespace TplDataFlow.Extensions
             Action<IEnumerable<T>> onTrue, Action<IEnumerable<T>> onFalse)
         {
             throw new NotImplementedException();
+        }
+
+
+        public static void LinkTo<T>(this IEnumerable<T> source, IObserver<T> target)
+        {
+            source.ToObservable().Subscribe(target);
         }
 
         // TODO: Refactoring

@@ -175,18 +175,14 @@ namespace TplDataflow.Extensions.Example.Implementation
                     success =>
                         success.Split(result => result.Code == SuccessResult.ResultCode.EventSetCreated,
                             resultCreated => resultCreated.Select(result => result.EventSetWithEvents)
-                                .ToObservable()
-                                .Subscribe(_eventSetCreatedBlock.AddInput().AsObserver()),
+                                .LinkTo(_eventSetCreatedBlock.AddInput().AsObserver()),
                             resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents)
-                                .ToObservable()
-                                .Subscribe(_eventSetUpdatedBlock.AddInput().AsObserver())),
+                                .LinkTo(_eventSetUpdatedBlock.AddInput().AsObserver())),
                     failure => failure.Split(result => result.Code == UnsuccessResult.ResultCode.Skipped,
                         skipped => skipped.SelectMany(result => result.Events)
-                            .ToObservable()
-                            .Subscribe(_eventFailedBlock.AddInput().AsObserver()),
+                            .LinkTo(_eventFailedBlock.AddInput().AsObserver()),
                         failed => failed.SelectMany(result => result.Events)
-                            .ToObservable()
-                            .Subscribe(_eventFailedBlock.AddInput().AsObserver())));
+                            .LinkTo(_eventFailedBlock.AddInput().AsObserver())));
         }
 
         private IEnumerable<EventGroup> SplitEventsIntoGroups(IList<EventDetails> events)
