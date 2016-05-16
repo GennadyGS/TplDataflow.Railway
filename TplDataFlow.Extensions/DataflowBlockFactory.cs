@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -8,15 +9,15 @@ namespace TplDataFlow.Extensions
 {
     public static class DataflowBlockFactory
     {
-        public static IPropagatorBlock<T, T[]> CreateTimedBatchBlock<T>(int batchMaxSize, TimeSpan batchTimeout)
+        public static IPropagatorBlock<Result<TSuccess, TFailure>, Result<IList<TSuccess>, TFailure>> CreateTimedBatchBlockSafe<TSuccess, TFailure>(
+            TimeSpan batchTimeout, int batchMaxSize)
         {
-            var target = new BufferBlock<T>();
-            var source = new BufferBlock<T[]>();
+            var target = new BufferBlock<Result<TSuccess, TFailure>>();
+            var source = new BufferBlock<Result<IList<TSuccess>, TFailure>>();
 
             target.AsObservable()
-                .Buffer(batchTimeout, batchMaxSize)
-                .Where(buffer => buffer.Count > 0)
-                .Select(list => list.ToArray())
+                .BufferSafe(batchTimeout, batchMaxSize)
+                .Where(buffer => !buffer.IsSuccess || buffer.Success.Count > 0)
                 .Subscribe(source.AsObserver());
 
             return DataflowBlock.Encapsulate(target, source);

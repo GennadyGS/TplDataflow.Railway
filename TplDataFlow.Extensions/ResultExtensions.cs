@@ -9,8 +9,8 @@ namespace TplDataFlow.Extensions
             return Result.Success<TSuccess, TFailure>(source);
         }
 
-        public static void Match<T, TFailure>(this Result<T, TFailure> source,
-            Action<T> onSuccess, Action<TFailure> onFailure)
+        public static void Match<TSuccess, TFailure>(this Result<TSuccess, TFailure> source,
+            Action<TSuccess> onSuccess, Action<TFailure> onFailure)
         {
             if (source.IsSuccess)
             {

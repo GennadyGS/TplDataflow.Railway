@@ -44,10 +44,10 @@ namespace TplDataflow.Extensions.Example.Implementation
         private readonly Func<DateTime> _currentTimeProvider;
 
         private readonly BufferBlock<EventDetails> _inputEventsBlock = new BufferBlock<EventDetails>();
-        private readonly JointPointBlock<EventSetWithEvents> _eventSetCreatedBlock = new JointPointBlock<EventSetWithEvents>();
-        private readonly JointPointBlock<EventSetWithEvents> _eventSetUpdatedBlock = new JointPointBlock<EventSetWithEvents>();
-        private readonly JointPointBlock<EventDetails> _eventSkippedBlock = new JointPointBlock<EventDetails>();
-        private readonly JointPointBlock<EventDetails> _eventFailedBlock = new JointPointBlock<EventDetails>();
+        private readonly BufferBlock<EventSetWithEvents> _eventSetCreatedBlock = new BufferBlock<EventSetWithEvents>();
+        private readonly BufferBlock<EventSetWithEvents> _eventSetUpdatedBlock = new BufferBlock<EventSetWithEvents>();
+        private readonly BufferBlock<EventDetails> _eventSkippedBlock = new BufferBlock<EventDetails>();
+        private readonly BufferBlock<EventDetails> _eventFailedBlock = new BufferBlock<EventDetails>();
         private readonly ILog _logger = LogManager.GetLogger(typeof(EventSetStorageProcessor));
 
         /// <summary>
@@ -132,56 +132,49 @@ namespace TplDataflow.Extensions.Example.Implementation
         private void CreateDataflowAsync()
         {
             _inputEventsBlock
-                .CombineWith(DataflowBlockFactory.CreateSideEffectBlock<EventDetails>(@event =>
-                    _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Id)))
-                .CombineWith(DataflowBlockFactory.CreateTimedBatchBlock<EventDetails>(EventBatchSize,
-                    TimeSpan.Parse(EventBatchTimeout)))
-                .CombineWith(new SafeTransformManyBlock<EventDetails[], EventGroup>(
-                    events => SplitEventsIntoGroups(events))
-                    .HandleExceptionWith(
-                        new TransformManyBlock<Tuple<Exception, EventDetails[]>, EventDetails>(
-                            item => HandleSplitEventsIntoGroupsException(item))
-                            .LinkWith(_eventFailedBlock.AddInput())))
-                .LinkWhen(NeedSkipEventGroup,
-                    new TransformManyBlock<EventGroup, EventDetails>(eventGroup => eventGroup.Events)
-                        .LinkWith(_eventSkippedBlock.AddInput()))
-                .LinkOtherwise(
-                    DataflowBlockFactory.CreateTimedBatchBlock<EventGroup>(EventGroupBatchSize,
-                        TimeSpan.Parse(EventGroupBatchTimeout))
-                        .CombineWith(new SafeTransformManyBlock<EventGroup[], SuccessResult>(
-                            eventGroupBatch => ProcessEventGroupsBatchAsync(eventGroupBatch))
-                            .HandleExceptionWith(
-                                new TransformManyBlock<Tuple<Exception, EventGroup[]>, EventDetails>(
-                                    item => HandleEventGroupsBatchException(item))
-                                    .LinkWith(_eventFailedBlock.AddInput())))
-                        .Split(result => result.IsCreated,
-                            new TransformBlock<SuccessResult, EventSetWithEvents>(result => result.EventSetWithEvents)
-                                .LinkWith(_eventSetCreatedBlock.AddInput()),
-                            new TransformBlock<SuccessResult, EventSetWithEvents>(result => result.EventSetWithEvents)
-                                .LinkWith(_eventSetUpdatedBlock.AddInput())));
+                .ToResult<EventDetails, UnsuccessResult>()
+                .SideEffect(@event => _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Success.Id))
+                .BufferSafe(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
+                .SelectManySafe(SplitEventsIntoGroupsSafe)
+                .SelectSafe(CheckNeedSkipEventGroup)
+                .BufferSafe(TimeSpan.Parse(EventGroupBatchTimeout), EventGroupBatchSize)
+                .SelectManySafe(ProcessEventGroupsBatchSafe)
+                .Match(
+                    success =>
+                        success.Split(result => result.IsCreated,
+                            resultCreated => resultCreated.Select(result => result.EventSetWithEvents)
+                                .LinkWith(_eventSetCreatedBlock),
+                            resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents)
+                                .LinkWith(_eventSetUpdatedBlock)),
+                    failure => failure.Split(result => result.IsSkipped,
+                        resultSkipped => resultSkipped.SelectMany(result => result.Events)
+                            .LinkWith(_eventSkippedBlock),
+                        resultFailed => resultFailed.SelectMany(result => result.Events)
+                            .LinkWith(_eventFailedBlock)));
         }
 
         private void CreateDataflowSync()
         {
             _inputEventsBlock.AsObservable().ToEnumerable()
                 .ToResult<EventDetails, UnsuccessResult>()
-                .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
+                .SideEffect(@event => _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Success.Id))
+                .BufferSafe(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
                 .SelectManySafe(SplitEventsIntoGroupsSafe)
-                .SelectSafe(CheckSkipGroup)
-                .Buffer(TimeSpan.Parse(EventGroupBatchTimeout), EventGroupBatchSize)
+                .SelectSafe(CheckNeedSkipEventGroup)
+                .BufferSafe(TimeSpan.Parse(EventGroupBatchTimeout), EventGroupBatchSize)
                 .SelectManySafe(ProcessEventGroupsBatchSafe)
                 .Match(
                     success =>
                         success.Split(result => result.IsCreated,
                             resultCreated => resultCreated.Select(result => result.EventSetWithEvents)
-                                .LinkTo(_eventSetCreatedBlock.AddInput().AsObserver()),
+                                .LinkTo(_eventSetCreatedBlock.AsObserver()),
                             resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents)
-                                .LinkTo(_eventSetUpdatedBlock.AddInput().AsObserver())),
+                                .LinkTo(_eventSetUpdatedBlock.AsObserver())),
                     failure => failure.Split(result => result.IsSkipped,
                         resultSkipped => resultSkipped.SelectMany(result => result.Events)
-                            .LinkTo(_eventFailedBlock.AddInput().AsObserver()),
+                            .LinkTo(_eventSkippedBlock.AsObserver()),
                         resultFailed => resultFailed.SelectMany(result => result.Events)
-                            .LinkTo(_eventFailedBlock.AddInput().AsObserver())));
+                            .LinkTo(_eventFailedBlock.AsObserver())));
         }
 
         private IEnumerable<EventGroup> SplitEventsIntoGroups(IList<EventDetails> events)
@@ -243,7 +236,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             return Result.Success<IEnumerable<EventGroup>, UnsuccessResult>(successResult);
         }
 
-        private Result<EventGroup, UnsuccessResult> CheckSkipGroup(EventGroup eventGroup)
+        private Result<EventGroup, UnsuccessResult> CheckNeedSkipEventGroup(EventGroup eventGroup)
         {
             if (NeedSkipEventGroup(eventGroup))
             {
