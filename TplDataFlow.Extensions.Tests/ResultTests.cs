@@ -28,9 +28,8 @@ namespace TplDataFlow.Extensions.UnitTests
             const int input = 1;
             const string failure = "failure";
 
-            var result = 
-                from i in Result.Success<int, string>(input)
-                select Result.Failure<int, string>(failure);
+            var result = Result.Success<int, string>(input)
+                .SelectSafe(i => Result.Failure<int, string>(failure));
 
             result.IsSuccess
                 .Should().BeFalse();
