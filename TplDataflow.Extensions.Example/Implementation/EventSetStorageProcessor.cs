@@ -155,7 +155,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                                 new TransformManyBlock<Tuple<Exception, EventGroup[]>, EventDetails>(
                                     item => HandleEventGroupsBatchException(item))
                                     .LinkWith(_eventFailedBlock.AddInput())))
-                        .Split(result => result.Code == SuccessResult.ResultCode.EventSetCreated,
+                        .Split(result => result.IsCreated,
                             new TransformBlock<SuccessResult, EventSetWithEvents>(result => result.EventSetWithEvents)
                                 .LinkWith(_eventSetCreatedBlock.AddInput()),
                             new TransformBlock<SuccessResult, EventSetWithEvents>(result => result.EventSetWithEvents)
@@ -173,15 +173,15 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .SelectManySafe(ProcessEventGroupsBatchSafe)
                 .Match(
                     success =>
-                        success.Split(result => result.Code == SuccessResult.ResultCode.EventSetCreated,
+                        success.Split(result => result.IsCreated,
                             resultCreated => resultCreated.Select(result => result.EventSetWithEvents)
                                 .LinkTo(_eventSetCreatedBlock.AddInput().AsObserver()),
                             resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents)
                                 .LinkTo(_eventSetUpdatedBlock.AddInput().AsObserver())),
-                    failure => failure.Split(result => result.Code == UnsuccessResult.ResultCode.Skipped,
-                        skipped => skipped.SelectMany(result => result.Events)
+                    failure => failure.Split(result => result.IsSkipped,
+                        resultSkipped => resultSkipped.SelectMany(result => result.Events)
                             .LinkTo(_eventFailedBlock.AddInput().AsObserver()),
-                        failed => failed.SelectMany(result => result.Events)
+                        resultFailed => resultFailed.SelectMany(result => result.Events)
                             .LinkTo(_eventFailedBlock.AddInput().AsObserver())));
         }
 
@@ -239,7 +239,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             if (exception != null)
             {
                 return Result.Failure<IEnumerable<EventGroup>, UnsuccessResult>(
-                    new UnsuccessResult(UnsuccessResult.ResultCode.Failed, events, exception.Message));
+                    new UnsuccessResult(isSkipped: false, events: events, message: exception.Message));
             }
             return Result.Success<IEnumerable<EventGroup>, UnsuccessResult>(successResult);
         }
@@ -248,7 +248,8 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             if (NeedSkipEventGroup(eventGroup))
             {
-                return Result.Failure<EventGroup, UnsuccessResult>(new UnsuccessResult(UnsuccessResult.ResultCode.Skipped, eventGroup.Events));
+                return Result.Failure<EventGroup, UnsuccessResult>(
+                    new UnsuccessResult(isSkipped: true, events: eventGroup.Events));
             }
             return Result.Success<EventGroup, UnsuccessResult>(eventGroup);
         }
@@ -299,7 +300,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             if (exception != null)
             {
                 return Result.Failure<IEnumerable<SuccessResult>, UnsuccessResult>(
-                    new UnsuccessResult(UnsuccessResult.ResultCode.Failed, eventGroupsBatch.SelectMany(group => group.Events), exception.Message));
+                    new UnsuccessResult(isSkipped: false, events: eventGroupsBatch.SelectMany(group => group.Events), message: exception.Message));
             }
             return Result.Success<IEnumerable<SuccessResult>, UnsuccessResult>(successResult);
         }
@@ -309,11 +310,11 @@ namespace TplDataflow.Extensions.Example.Implementation
             return Task.Run(() =>
                 repository.ApplyChanges(
                     results
-                        .Where(result => result.Code == SuccessResult.ResultCode.EventSetCreated)
+                        .Where(result => result.IsCreated)
                         .Select(result => result.EventSetWithEvents.EventSet)
                         .ToList(),
                     results
-                        .Where(result => result.Code != SuccessResult.ResultCode.EventSetCreated)
+                        .Where(result => !result.IsCreated)
                         .Select(result => result.EventSetWithEvents.EventSet)
                         .ToList()));
         }
@@ -413,10 +414,11 @@ namespace TplDataflow.Extensions.Example.Implementation
                 EventsCount = eventGroup.Events.Count,
                 TypeCode = eventGroup.EventSetType.GetCode()
             };
+
             _logger.DebugFormat("EventSet entity created [Id = {0}, EventTypeId = {1}, ResourceId = {2}, EventsCount = {3}, EventIds = {4}].",
                 eventSet.Id, eventSet.EventTypeId, eventSet.ResourceId, eventGroup.Events.Count, string.Join(",", eventGroup.Events.Select(details => details.Id)));
-            var eventSetProcessingResult = new SuccessResult(SuccessResult.ResultCode.EventSetCreated, eventSet, eventGroup.Events);
-            return eventSetProcessingResult;
+
+            return new SuccessResult(isCreated: true, eventSet: eventSet, events: eventGroup.Events);
         }
 
         private IList<SuccessResult> UpdateEventSets(IList<EventGroup> eventGroups, IList<EventSet> lastEventSets)
@@ -445,7 +447,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             _logger.DebugFormat("EventSet entity updated [Id = {0}, EventTypeId = {1}, ResourceId = {2}, EventsCountDelta = {3}, EventsCount = {4}, EventIds = {5}].",
                 lastEventSet.Id, lastEventSet.EventTypeId, lastEventSet.ResourceId, events.Count, lastEventSet.EventsCount, string.Join(",", events.Select(@event => @event.Id)));
 
-            return new SuccessResult(SuccessResult.ResultCode.EventSetUpdated, lastEventSet, eventGroup.Events);
+            return new SuccessResult(isCreated: false, eventSet: lastEventSet, events: eventGroup.Events);
         }
 
         private IEnumerable<EventGroup> SplitEventGroupByThreshold(EventGroup eventGroup)
@@ -530,13 +532,21 @@ namespace TplDataflow.Extensions.Example.Implementation
 
         private class SuccessResult
         {
+            private readonly bool _isCreated;
             private readonly EventSetWithEvents _eventSetWithEvents;
-            private readonly ResultCode _code;
 
-            public SuccessResult(ResultCode code, EventSet eventSet, IList<EventDetails> events)
+            public SuccessResult(bool isCreated, EventSet eventSet, IList<EventDetails> events)
             {
-                _code = code;
+                _isCreated = isCreated;
                 _eventSetWithEvents = new EventSetWithEvents { EventSet = eventSet, Events = events };
+            }
+
+            public bool IsCreated
+            {
+                get
+                {
+                    return _isCreated;
+                }
             }
 
             public EventSetWithEvents EventSetWithEvents
@@ -546,33 +556,27 @@ namespace TplDataflow.Extensions.Example.Implementation
                     return _eventSetWithEvents;
                 }
             }
-
-            public ResultCode Code
-            {
-                get
-                {
-                    return _code;
-                }
-            }
-
-            public enum ResultCode
-            {
-                EventSetCreated,
-                EventSetUpdated
-            }
         }
 
         private class UnsuccessResult
         {
+            private readonly bool _isSkipped;
             private readonly IEnumerable<EventDetails> _events;
-            private readonly ResultCode _code;
             private readonly string _message;
 
-            public UnsuccessResult(ResultCode code, IEnumerable<EventDetails> events, string message = null)
+            public UnsuccessResult(bool isSkipped, IEnumerable<EventDetails> events, string message = null)
             {
+                _isSkipped = isSkipped;
                 _events = events;
-                _code = code;
                 _message = message;
+            }
+
+            public bool IsSkipped
+            {
+                get
+                {
+                    return _isSkipped;
+                }
             }
 
             public IEnumerable<EventDetails> Events
@@ -583,26 +587,12 @@ namespace TplDataflow.Extensions.Example.Implementation
                 }
             }
 
-            public ResultCode Code
-            {
-                get
-                {
-                    return _code;
-                }
-            }
-
             public string Message
             {
                 get
                 {
                     return _message;
                 }
-            }
-
-            public enum ResultCode
-            {
-                Skipped,
-                Failed
             }
         }
     }
