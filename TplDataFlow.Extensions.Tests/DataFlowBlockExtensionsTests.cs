@@ -61,40 +61,6 @@ namespace TplDataFlow.Extensions.UnitTests
         }
 
         [Fact]
-        public void TestFork()
-        {
-            var input = new[] { 1, 2, 3, 4, 5 };
-
-            var target1 = new BufferBlock<int>();
-            var target2 = new BufferBlock<string>();
-
-            var sut =
-                new TransformBlock<int, int>(i => i)
-                    .LinkWith(new ForkBlock<int, int, string>(i => new Tuple<int, string>(i, i.ToString()))
-                        .ForkTo(
-                            target1,
-                            target2)
-                    );
-
-            input.ToObservable()
-                .Subscribe(sut.AsObserver());
-
-            IList<int> output1 = target1
-                .AsObservable()
-                .ToEnumerable()
-                .ToList();
-            IList<string> output2 = target2
-                .AsObservable()
-                .ToEnumerable()
-                .ToList();
-
-            output1.Should()
-                .BeEquivalentTo(input);
-            output2.Should()
-                .BeEquivalentTo(input.Select(i => i.ToString()));
-        }
-
-        [Fact]
         public void TestSafeTransformSuccess()
         {
             var input = new[] { 1, 2, 3, 4, 5 };

@@ -47,8 +47,6 @@
     <Compile Include="CombinedPropagatorBlock.cs" />
     <Compile Include="DataflowBlockExtensions.cs" />
     <Compile Include="EnumerableExtensions.cs" />
-    <Compile Include="ForkBlock.cs" />
-    <Compile Include="ForkManyBlock.cs" />
     <Compile Include="JointPointBlock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Result.cs" />
