@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Runtime.Remoting.MetadataServices;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using log4net;
@@ -216,7 +215,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .SelectMany(SplitEventGroupByThreshold);
         }
 
-        private Result<IEnumerable<EventGroup>, UnsuccessResult> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
+        private IEnumerable<Result<EventGroup, UnsuccessResult>> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
         {
             // TODO: Handle exceptions more specifically inside SplitEventsIntoGroups
             Exception exception = null;
@@ -231,9 +230,9 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
             if (exception != null)
             {
-                return Result.Failure<IEnumerable<EventGroup>, UnsuccessResult>(UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.UnhandledException.Code, exception.Message));
+                return Enumerable.Repeat(Result.Failure<EventGroup, UnsuccessResult>(UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.UnhandledException.Code, exception.Message)), 1);
             }
-            return Result.Success<IEnumerable<EventGroup>, UnsuccessResult>(successResult);
+            return successResult.ToResult<EventGroup, UnsuccessResult>();
         }
 
         private Result<EventGroup, UnsuccessResult> CheckNeedSkipEventGroup(EventGroup eventGroup)
@@ -275,7 +274,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             return ProcessEventGroupsBatchAsync(eventGroupsBatch).Result;
         }
 
-        private Result<IEnumerable<SuccessResult>, UnsuccessResult> ProcessEventGroupsBatchSafe(IList<EventGroup> eventGroupsBatch)
+        private IEnumerable<Result<SuccessResult, UnsuccessResult>> ProcessEventGroupsBatchSafe(IList<EventGroup> eventGroupsBatch)
         {
             // TODO: Handle exceptions more specifically inside ProcessEventGroupsBatch
             Exception exception = null;
@@ -290,10 +289,10 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
             if (exception != null)
             {
-                return Result.Failure<IEnumerable<SuccessResult>, UnsuccessResult>(
-                    UnsuccessResult.CreateError(eventGroupsBatch.SelectMany(group => group.Events), Metadata.ExceptionHandling.UnhandledException.Code, exception.Message));
+                return Enumerable.Repeat(Result.Failure<SuccessResult, UnsuccessResult>(
+                    UnsuccessResult.CreateError(eventGroupsBatch.SelectMany(group => group.Events), Metadata.ExceptionHandling.UnhandledException.Code, exception.Message)), 1);
             }
-            return Result.Success<IEnumerable<SuccessResult>, UnsuccessResult>(successResult);
+            return successResult.ToResult<SuccessResult, UnsuccessResult>();
         }
 
         private static Task ApplyChangesAsync(IEventSetRepository repository, IList<SuccessResult> results)

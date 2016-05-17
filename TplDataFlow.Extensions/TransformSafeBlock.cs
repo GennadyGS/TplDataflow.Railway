@@ -18,20 +18,29 @@ namespace TplDataFlow.Extensions
 
         private readonly IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>> _transformSuccessBlock;
 
-        public TransformSafeBlock(Func<TInput, TOutput> transform)
+        public TransformSafeBlock(Func<TInput, TOutput> transform) :
+            this(new TransformBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>(
+                    input => transform(input.Success)))
         {
-            _transformSuccessBlock =
-                new TransformBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>(
-                    input => transform(input.Success));
-            CreateDataFlow();
         }
 
         public TransformSafeBlock(Func<TInput, Result<TOutput, TFailure>> transform)
+            : this(new TransformBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>(
+                    input => transform(input.Success)))
         {
-            _transformSuccessBlock =
-                new TransformBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>(
-                    input => transform(input.Success));
-            CreateDataFlow();
+        }
+
+        public TransformSafeBlock(Func<TInput, IEnumerable<Result<TOutput, TFailure>>> transform)
+            : this(new TransformManyBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>(
+                input => transform(input.Success)))
+        {
+        }
+
+        private TransformSafeBlock(IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>> transformBlock)
+        {
+            _transformSuccessBlock = transformBlock;
+            _transformSuccessBlock.LinkWith(_outputBufferBlock.AddInput());
+            _transformFailureBlock.LinkWith(_outputBufferBlock.AddInput());
         }
 
         DataflowMessageStatus ITargetBlock<Result<TInput, TFailure>>.OfferMessage(DataflowMessageHeader messageHeader,
@@ -68,44 +77,38 @@ namespace TplDataFlow.Extensions
         IDisposable ISourceBlock<Result<TOutput, TFailure>>.LinkTo(ITargetBlock<Result<TOutput, TFailure>> target,
             DataflowLinkOptions linkOptions)
         {
-            return ((ISourceBlock<Result<TOutput, TFailure>>) _outputBufferBlock).LinkTo(target, linkOptions);
+            return ((ISourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).LinkTo(target, linkOptions);
         }
 
         Result<TOutput, TFailure> ISourceBlock<Result<TOutput, TFailure>>.ConsumeMessage(
             DataflowMessageHeader messageHeader, ITargetBlock<Result<TOutput, TFailure>> target,
             out bool messageConsumed)
         {
-            return ((ISourceBlock<Result<TOutput, TFailure>>) _outputBufferBlock).ConsumeMessage(messageHeader, target,
+            return ((ISourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).ConsumeMessage(messageHeader, target,
                 out messageConsumed);
         }
 
         bool ISourceBlock<Result<TOutput, TFailure>>.ReserveMessage(DataflowMessageHeader messageHeader,
             ITargetBlock<Result<TOutput, TFailure>> target)
         {
-            return ((ISourceBlock<Result<TOutput, TFailure>>) _outputBufferBlock).ReserveMessage(messageHeader, target);
+            return ((ISourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).ReserveMessage(messageHeader, target);
         }
 
         void ISourceBlock<Result<TOutput, TFailure>>.ReleaseReservation(DataflowMessageHeader messageHeader,
             ITargetBlock<Result<TOutput, TFailure>> target)
         {
-            ((ISourceBlock<Result<TOutput, TFailure>>) _outputBufferBlock).ReleaseReservation(messageHeader, target);
+            ((ISourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).ReleaseReservation(messageHeader, target);
         }
 
         bool IReceivableSourceBlock<Result<TOutput, TFailure>>.TryReceive(Predicate<Result<TOutput, TFailure>> filter,
             out Result<TOutput, TFailure> item)
         {
-            return ((IReceivableSourceBlock<Result<TOutput, TFailure>>) _outputBufferBlock).TryReceive(filter, out item);
+            return ((IReceivableSourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).TryReceive(filter, out item);
         }
 
         bool IReceivableSourceBlock<Result<TOutput, TFailure>>.TryReceiveAll(out IList<Result<TOutput, TFailure>> items)
         {
-            return ((IReceivableSourceBlock<Result<TOutput, TFailure>>) _outputBufferBlock).TryReceiveAll(out items);
-        }
-
-        private void CreateDataFlow()
-        {
-            _transformSuccessBlock.LinkWith(_outputBufferBlock.AddInput());
-            _transformFailureBlock.LinkWith(_outputBufferBlock.AddInput());
+            return ((IReceivableSourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).TryReceiveAll(out items);
         }
     }
 }

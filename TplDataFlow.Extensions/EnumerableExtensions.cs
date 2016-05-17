@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reactive.Linq;
 
@@ -51,10 +52,14 @@ namespace TplDataFlow.Extensions
             return source.Select(item => item.SelectSafe(selector));
         }
 
-        public static IEnumerable<Result<TOutput, TFailure>> SelectManySafe<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
-            Func<TInput, Result<IEnumerable<TOutput>, TFailure>> selector)
+        public static IEnumerable<Result<TOutput, TFailure>> SelectManySafe<TInput, TOutput, TFailure>(
+            this IEnumerable<Result<TInput, TFailure>> source,
+            Func<TInput, IEnumerable<Result<TOutput, TFailure>>> selector)
         {
-            return source.SelectMany(item => item.SelectManySafeFromResult(selector));
+            return source.SelectMany(item => 
+                item.Match(
+                    success => selector(success),
+                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1)));
         }
 
         public static IEnumerable<TOutput> Match<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
@@ -148,20 +153,6 @@ namespace TplDataFlow.Extensions
             }
             return selector(source.Success)
                 .Select(item => item.ToResult<TOutput, TFailure>());
-        }
-
-        // TODO: Refactoring
-        private static IEnumerable<Result<TOutput, TFailure>> SelectManySafeFromResult<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source,
-            Func<TInput, Result<IEnumerable<TOutput>, TFailure>> selector)
-        {
-            if (!source.IsSuccess)
-            {
-                return Enumerable.Repeat(Result.Failure<TOutput, TFailure>(source.Failure), 1);
-            }
-            return selector(source.Success)
-                .Match(
-                    success => success.ToResult<TOutput, TFailure>(),
-                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
         }
     }
 }

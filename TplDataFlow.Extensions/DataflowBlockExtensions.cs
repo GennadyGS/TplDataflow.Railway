@@ -103,13 +103,10 @@ namespace TplDataFlow.Extensions
             return source.LinkWith(new TransformSafeBlock<TInput, TOutput, TFailure>(selector));
         }
 
-        // TODO: Refactoring
         public static ISourceBlock<Result<TOutput, TFailure>> SelectManySafe<TInput, TOutput, TFailure>(
-            this ISourceBlock<Result<TInput, TFailure>> source, Func<TInput, Result<IEnumerable<TOutput>, TFailure>> selector)
+            this ISourceBlock<Result<TInput, TFailure>> source, Func<TInput, IEnumerable<Result<TOutput, TFailure>>> selector)
         {
-            return source.LinkWith(
-                new TransformManyBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>(
-                    item => item.SelectManySafeFromResult(selector)));
+            return source.LinkWith(new TransformSafeBlock<TInput, TOutput, TFailure>(selector));
         }
 
         public static void Match<TSuccess, TFailure>(this ISourceBlock<Result<TSuccess, TFailure>> source,
@@ -176,19 +173,5 @@ namespace TplDataFlow.Extensions
             return source.LinkWith(
                 DataflowBlockFactory.CreateTimedBatchBlockSafe<TSuccess, TFailure>(batchTimeout, batchMaxSize));
         }
-
-        // TODO: Get rid of it
-        private static IEnumerable<Result<TOutput, TFailure>> SelectManySafeFromResult<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source,
-            Func<TInput, Result<IEnumerable<TOutput>, TFailure>> selector)
-        {
-            if (!source.IsSuccess)
-            {
-                return Enumerable.Repeat(Result.Failure<TOutput, TFailure>(source.Failure), 1);
-            }
-            Result<IEnumerable<TOutput>, TFailure> res = selector(source.Success);
-            return res.Match(success => success.Select<TOutput, Result<TOutput, TFailure>>(item => item.ToResult<TOutput, TFailure>()),
-                failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
-        }
-
     }
 }
