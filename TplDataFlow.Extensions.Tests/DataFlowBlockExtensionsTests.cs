@@ -68,7 +68,7 @@ namespace TplDataFlow.Extensions.UnitTests
         //    var target = new BufferBlock<int>();
         //    var targetOnException = new BufferBlock<Tuple<Exception, int>>();
 
-        //    var sut = new SafeTransformBlock<int, int>(i => i)
+        //    var sut = new TransformSafeBlock<int, int>(i => i)
         //                .HandleExceptionWith(targetOnException)
         //                .LinkWith(target);
 
@@ -99,7 +99,7 @@ namespace TplDataFlow.Extensions.UnitTests
         //    var target = new BufferBlock<int>();
         //    var targetException = new BufferBlock<Tuple<Exception, int>>();
 
-        //    var sut = new SafeTransformBlock<int, int>(i =>
+        //    var sut = new TransformSafeBlock<int, int>(i =>
         //                    {
         //                        if (i < 0)
         //                        {
@@ -140,7 +140,7 @@ namespace TplDataFlow.Extensions.UnitTests
         //    var target = new BufferBlock<int>();
         //    var targetOnException = new BufferBlock<Tuple<Exception, int>>();
 
-        //    var sut = new SafeTransformManyBlock<int, int>(i => new[] { i })
+        //    var sut = new TransformManySafeBlock<int, int>(i => new[] { i })
         //                .HandleExceptionWith(targetOnException)
         //                .LinkWith(target);
 
@@ -171,7 +171,7 @@ namespace TplDataFlow.Extensions.UnitTests
         //    var target = new BufferBlock<int>();
         //    var targetException = new BufferBlock<Tuple<Exception, int>>();
 
-        //    var sut = new SafeTransformManyBlock<int, int>(i =>
+        //    var sut = new TransformManySafeBlock<int, int>(i =>
         //    {
         //        if (i < 0)
         //        {

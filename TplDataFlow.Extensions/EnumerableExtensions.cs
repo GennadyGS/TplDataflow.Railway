@@ -150,6 +150,7 @@ namespace TplDataFlow.Extensions
                 .Select(item => item.ToResult<TOutput, TFailure>());
         }
 
+        // TODO: Refactoring
         private static IEnumerable<Result<TOutput, TFailure>> SelectManySafeFromResult<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source,
             Func<TInput, Result<IEnumerable<TOutput>, TFailure>> selector)
         {
@@ -157,9 +158,10 @@ namespace TplDataFlow.Extensions
             {
                 return Enumerable.Repeat(Result.Failure<TOutput, TFailure>(source.Failure), 1);
             }
-            Result<IEnumerable<TOutput>, TFailure> res = selector(source.Success);
-            return res.Match(success => success.Select(item => item.ToResult<TOutput, TFailure>()),
-                failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
+            return selector(source.Success)
+                .Match(
+                    success => success.ToResult<TOutput, TFailure>(),
+                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
         }
     }
 }

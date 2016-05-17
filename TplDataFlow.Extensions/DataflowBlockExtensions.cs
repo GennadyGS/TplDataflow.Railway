@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
-using TplDataFlow.Extensions;
 
 namespace TplDataFlow.Extensions
 {
@@ -98,16 +97,13 @@ namespace TplDataFlow.Extensions
             return source.LinkWith(new TransformManyBlock<TInput, TOutput>(selector));
         }
 
-        // TODO: Refactoring
-
         public static ISourceBlock<Result<TOutput, TFailure>> SelectSafe<TInput, TOutput, TFailure>(
             this ISourceBlock<Result<TInput, TFailure>> source, Func<TInput, Result<TOutput, TFailure>> selector)
         {
-            return source.LinkWith(
-                new TransformBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>(
-                    item => item.SelectSafe(selector)));
+            return source.LinkWith(new TransformSafeBlock<TInput, TOutput, TFailure>(selector));
         }
 
+        // TODO: Refactoring
         public static ISourceBlock<Result<TOutput, TFailure>> SelectManySafe<TInput, TOutput, TFailure>(
             this ISourceBlock<Result<TInput, TFailure>> source, Func<TInput, Result<IEnumerable<TOutput>, TFailure>> selector)
         {

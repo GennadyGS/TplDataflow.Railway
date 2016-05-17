@@ -65,10 +65,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Result.cs" />
     <Compile Include="ResultExtensions.cs" />
-    <Compile Include="SafeTransformBlock.cs">
+    <Compile Include="TransformSafeBlock.cs">
       <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
-    <Compile Include="SafeTransformManyBlock.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
