@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reactive.Linq;
 
 namespace TplDataFlow.Extensions
 {
@@ -8,7 +10,13 @@ namespace TplDataFlow.Extensions
         public static IObservable<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(
             this IObservable<Result<TSuccess, TFailure>> source, TimeSpan timeSpan, int count)
         {
-            throw new NotImplementedException();
+            return source
+                .Buffer(timeSpan, count)
+                .SelectMany(batch => batch
+                    .GroupBy(item => item.IsSuccess)
+                    .SelectMany(group => group.Key
+                        ? Enumerable.Repeat(Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()), 1)
+                        : group.Select(item => Result.Failure<IList<TSuccess>, TFailure>(item.Failure))));
         }
     }
 }

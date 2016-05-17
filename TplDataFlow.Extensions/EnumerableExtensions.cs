@@ -15,13 +15,22 @@ namespace TplDataFlow.Extensions
         public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source,
             TimeSpan timeSpan, int count)
         {
-            throw new NotImplementedException();
+            return source
+                .Select((value, index) => new { value, index })
+                .GroupBy(item => item.index / count)
+                .Select(group => group.Select(item => item.value).ToList());
         }
 
-        public static IEnumerable<Result<IList<TInput>, TFailure>> BufferSafe<TInput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
+        public static IEnumerable<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(this IEnumerable<Result<TSuccess, TFailure>> source,
             TimeSpan timeSpan, int count)
         {
-            throw new NotImplementedException();
+            return source
+                .Buffer(timeSpan, count)
+                .SelectMany(batch => batch
+                    .GroupBy(item => item.IsSuccess)
+                    .SelectMany(group => group.Key
+                        ? Enumerable.Repeat(Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()), 1)
+                        : group.Select(item => Result.Failure<IList<TSuccess>, TFailure>(item.Failure))));
         }
 
         public static IEnumerable<Result<TOutput, TFailure>> Select<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
@@ -116,6 +125,7 @@ namespace TplDataFlow.Extensions
 
         public static void LinkTo<T>(this IEnumerable<T> source, IObserver<T> target)
         {
+            // TODO: Decouple from observable
             source.ToObservable().Subscribe(target);
         }
 
@@ -148,7 +158,7 @@ namespace TplDataFlow.Extensions
                 return Enumerable.Repeat(Result.Failure<TOutput, TFailure>(source.Failure), 1);
             }
             Result<IEnumerable<TOutput>, TFailure> res = selector(source.Success);
-            return res.Match(success => success.Select<TOutput, Result<TOutput, TFailure>>(item => item.ToResult<TOutput, TFailure>()),
+            return res.Match(success => success.Select(item => item.ToResult<TOutput, TFailure>()),
                 failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
         }
     }
