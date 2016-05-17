@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Runtime.Remoting.MetadataServices;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using log4net;
@@ -230,8 +231,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
             if (exception != null)
             {
-                return Result.Failure<IEnumerable<EventGroup>, UnsuccessResult>(
-                    new UnsuccessResult(isSkipped: false, events: events, message: exception.Message));
+                return Result.Failure<IEnumerable<EventGroup>, UnsuccessResult>(UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.UnhandledException.Code, exception.Message));
             }
             return Result.Success<IEnumerable<EventGroup>, UnsuccessResult>(successResult);
         }
@@ -240,8 +240,7 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             if (NeedSkipEventGroup(eventGroup))
             {
-                return Result.Failure<EventGroup, UnsuccessResult>(
-                    new UnsuccessResult(isSkipped: true, events: eventGroup.Events));
+                return Result.Failure<EventGroup, UnsuccessResult>(UnsuccessResult.CreateSkipped(eventGroup.Events));
             }
             return Result.Success<EventGroup, UnsuccessResult>(eventGroup);
         }
@@ -292,7 +291,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             if (exception != null)
             {
                 return Result.Failure<IEnumerable<SuccessResult>, UnsuccessResult>(
-                    new UnsuccessResult(isSkipped: false, events: eventGroupsBatch.SelectMany(group => group.Events), message: exception.Message));
+                    UnsuccessResult.CreateError(eventGroupsBatch.SelectMany(group => group.Events), Metadata.ExceptionHandling.UnhandledException.Code, exception.Message));
             }
             return Result.Success<IEnumerable<SuccessResult>, UnsuccessResult>(successResult);
         }
@@ -554,13 +553,15 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             private readonly bool _isSkipped;
             private readonly IEnumerable<EventDetails> _events;
-            private readonly string _message;
+            private readonly int _errorCode;
+            private readonly string _errorMessage;
 
-            public UnsuccessResult(bool isSkipped, IEnumerable<EventDetails> events, string message = null)
+            private UnsuccessResult(bool isSkipped, IEnumerable<EventDetails> events, int errorCode, string errorMessage)
             {
                 _isSkipped = isSkipped;
                 _events = events;
-                _message = message;
+                _errorCode = errorCode;
+                _errorMessage = errorMessage;
             }
 
             public bool IsSkipped
@@ -579,12 +580,30 @@ namespace TplDataflow.Extensions.Example.Implementation
                 }
             }
 
-            public string Message
+            public int ErrorCode
             {
                 get
                 {
-                    return _message;
+                    return _errorCode;
                 }
+            }
+
+            public string ErrorMessage
+            {
+                get
+                {
+                    return _errorMessage;
+                }
+            }
+
+            public static UnsuccessResult CreateError(IEnumerable<EventDetails> events, int errorCode, string errorMessage)
+            {
+                return new UnsuccessResult(false, events, errorCode, errorMessage);
+            }
+
+            public static UnsuccessResult CreateSkipped(IEnumerable<EventDetails> events)
+            {
+                return new UnsuccessResult(true, events, 0, string.Empty);
             }
         }
     }
