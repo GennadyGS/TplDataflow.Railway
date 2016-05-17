@@ -10,25 +10,6 @@ namespace TplDataFlow.Extensions.UnitTests
 {
     public class DataFlowBlockExtensionsTests
     {
-        //[Fact]
-        //public void TestCombine()
-        //{
-        //    var items = new[] { 1, 2, 3 };
-
-        //    var sut = new TransformBlock<int, int>(i => i)
-        //        .CombineWith(new BufferBlock<int>());
-
-        //    items.ToObservable()
-        //        .Subscribe(sut.AsObserver());
-
-        //    IList<int> output = sut
-        //        .AsObservable()
-        //        .ToEnumerable()
-        //        .ToList();
-
-        //    output.Should().BeEquivalentTo(items);
-        //}
-
         [Fact]
         public void TestSwitch()
         {
