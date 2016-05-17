@@ -9,8 +9,8 @@ namespace TplDataFlow.Extensions
         IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>,
         IReceivableSourceBlock<Result<TOutput, TFailure>>
     {
-        private readonly JointPointBlock<Result<TOutput, TFailure>> _outputBufferBlock =
-            new JointPointBlock<Result<TOutput, TFailure>>();
+        private readonly IPropagatorBlock<Result<TOutput, TFailure>, Result<TOutput, TFailure>> _outputBufferBlock =
+            new BufferBlock<Result<TOutput, TFailure>>();
 
         private readonly IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>> _transformFailureBlock = new TransformBlock
             <Result<TInput, TFailure>, Result<TOutput, TFailure>>(
@@ -36,11 +36,22 @@ namespace TplDataFlow.Extensions
         {
         }
 
-        private TransformSafeBlock(IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>> transformBlock)
+        private TransformSafeBlock(IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>> transformSuccessBlock)
         {
-            _transformSuccessBlock = transformBlock;
-            _transformSuccessBlock.LinkWith(_outputBufferBlock.AddInput());
-            _transformFailureBlock.LinkWith(_outputBufferBlock.AddInput());
+            _transformSuccessBlock = transformSuccessBlock;
+
+            _transformSuccessBlock.LinkTo(_outputBufferBlock);
+            _transformFailureBlock.LinkTo(_outputBufferBlock);
+
+            Task.WhenAll(_transformSuccessBlock.Completion, _transformFailureBlock.Completion)
+                .ContinueWith(
+                    task =>
+                    {
+                        if (task.IsFaulted)
+                            _outputBufferBlock.Fault(task.Exception);
+                        else
+                            _outputBufferBlock.Complete();
+                    });
         }
 
         DataflowMessageStatus ITargetBlock<Result<TInput, TFailure>>.OfferMessage(DataflowMessageHeader messageHeader,
@@ -84,20 +95,20 @@ namespace TplDataFlow.Extensions
             DataflowMessageHeader messageHeader, ITargetBlock<Result<TOutput, TFailure>> target,
             out bool messageConsumed)
         {
-            return ((ISourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).ConsumeMessage(messageHeader, target,
+            return _outputBufferBlock.ConsumeMessage(messageHeader, target,
                 out messageConsumed);
         }
 
         bool ISourceBlock<Result<TOutput, TFailure>>.ReserveMessage(DataflowMessageHeader messageHeader,
             ITargetBlock<Result<TOutput, TFailure>> target)
         {
-            return ((ISourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).ReserveMessage(messageHeader, target);
+            return _outputBufferBlock.ReserveMessage(messageHeader, target);
         }
 
         void ISourceBlock<Result<TOutput, TFailure>>.ReleaseReservation(DataflowMessageHeader messageHeader,
             ITargetBlock<Result<TOutput, TFailure>> target)
         {
-            ((ISourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).ReleaseReservation(messageHeader, target);
+            _outputBufferBlock.ReleaseReservation(messageHeader, target);
         }
 
         bool IReceivableSourceBlock<Result<TOutput, TFailure>>.TryReceive(Predicate<Result<TOutput, TFailure>> filter,
