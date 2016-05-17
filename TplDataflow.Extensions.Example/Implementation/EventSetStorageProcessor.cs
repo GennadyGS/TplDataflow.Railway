@@ -222,7 +222,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             IEnumerable<EventGroup> successResult = null;
             try
             {
-                successResult = SplitEventsIntoGroups(events);
+                successResult = SplitEventsIntoGroups(events).ToList();
             }
             catch (Exception e)
             {

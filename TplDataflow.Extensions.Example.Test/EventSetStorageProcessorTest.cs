@@ -112,7 +112,7 @@ namespace TplDataflow.Extensions.Example.Test
         }
 
         [TestMethod]
-        public void WhenEventSetProcessTypeWasNotFound_EventShoulBeFailed()
+        public void WhenEventSetProcessTypeWasNotFound_EventShouldBeFailed()
         {
             Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
                 .Returns((EventSetProcessType)null);
