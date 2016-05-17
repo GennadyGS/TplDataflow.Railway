@@ -38,12 +38,14 @@ namespace TplDataFlow.Extensions.UnitTests
             var target1 = new BufferBlock<int>();
             var target2 = new BufferBlock<int>();
 
-            var combined = new TransformBlock<int, int>(i => i)
+            var inputBlock = new TransformBlock<int, int>(i => i);
+
+            inputBlock
                 .LinkWhen(predicate, target1)
                 .LinkOtherwise(target2);
 
             input.ToObservable()
-                .Subscribe(combined.AsObserver());
+                .Subscribe(inputBlock.AsObserver());
 
             IList<int> output1 = target1
                 .AsObservable()

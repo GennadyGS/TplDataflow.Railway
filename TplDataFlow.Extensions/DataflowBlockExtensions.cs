@@ -1,35 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace TplDataFlow.Extensions
 {
     public static class DataflowBlockExtensions
     {
-        public static IDisposable LinkWith<T>(this ISourceBlock<T> sourceBlock,
-            ITargetBlock<T> targetBlock)
-        {
-            return sourceBlock.LinkTo(targetBlock,
-                new DataflowLinkOptions { PropagateCompletion = true });
-        }
-
         public static ISourceBlock<TOutput> LinkWith<TInput, TOutput>(this ISourceBlock<TInput> sourceBlock,
             IPropagatorBlock<TInput, TOutput> targetBlock)
         {
             sourceBlock.LinkTo(targetBlock,
                 new DataflowLinkOptions { PropagateCompletion = true });
             return targetBlock;
-        }
-
-        public static ITargetBlock<TInput> LinkWith<TInput, TOutput>(this IPropagatorBlock<TInput, TOutput> sourceBlock,
-            ITargetBlock<TOutput> targetBlock)
-        {
-            sourceBlock.LinkTo(targetBlock,
-                new DataflowLinkOptions { PropagateCompletion = true });
-            return sourceBlock;
         }
 
         public static ISourceBlock<T> LinkWhen<T>(this ISourceBlock<T> sourceBlock,
@@ -42,29 +25,11 @@ namespace TplDataFlow.Extensions
             return sourceBlock;
         }
 
-        public static IPropagatorBlock<TInput, TOutput> LinkWhen<TInput, TOutput>(this IPropagatorBlock<TInput, TOutput> sourceBlock,
-            Predicate<TOutput> predicate,
-            ITargetBlock<TOutput> targetBlock)
-        {
-            sourceBlock.LinkTo(targetBlock,
-                new DataflowLinkOptions { PropagateCompletion = true, Append = true },
-                predicate);
-            return sourceBlock;
-        }
-
         public static void LinkOtherwise<T>(this ISourceBlock<T> sourceBlock,
             ITargetBlock<T> targetBlock)
         {
             sourceBlock.LinkTo(targetBlock,
                 new DataflowLinkOptions { PropagateCompletion = true, Append = true });
-        }
-
-        public static ITargetBlock<TInput> LinkOtherwise<TInput, TMedium>(this IPropagatorBlock<TInput, TMedium> sourceBlock,
-            ITargetBlock<TMedium> targetBlock)
-        {
-            sourceBlock.LinkTo(targetBlock,
-                new DataflowLinkOptions { PropagateCompletion = true, Append = true });
-            return sourceBlock;
         }
 
         public static ISourceBlock<TOutput> Select<TInput, TOutput>(
@@ -105,7 +70,7 @@ namespace TplDataFlow.Extensions
             onFailure(failureBlock.Select(result => result.Failure));
         }
 
-        public static void Split<T>(this ISourceBlock<T> source,
+        public static void Map<T>(this ISourceBlock<T> source,
             Predicate<T> predicate, Action<ISourceBlock<T>> onTrue, Action<ISourceBlock<T>> onFalse)
         {
             var trueBlock = new BufferBlock<T>();

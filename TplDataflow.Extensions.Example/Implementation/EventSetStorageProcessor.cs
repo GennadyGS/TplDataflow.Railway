@@ -140,12 +140,12 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .SelectManySafe(ProcessEventGroupsBatchSafe)
                 .Match(
                     success =>
-                        success.Split(result => result.IsCreated,
+                        success.Map(result => result.IsCreated,
                             resultCreated => resultCreated.Select(result => result.EventSetWithEvents)
                                 .LinkWith(_eventSetCreatedBlock),
                             resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents)
                                 .LinkWith(_eventSetUpdatedBlock)),
-                    failure => failure.Split(result => result.IsSkipped,
+                    failure => failure.Map(result => result.IsSkipped,
                         resultSkipped => resultSkipped.SelectMany(result => result.Events)
                             .LinkWith(_eventSkippedBlock),
                         resultFailed => resultFailed.SelectMany(result => result.Events)
