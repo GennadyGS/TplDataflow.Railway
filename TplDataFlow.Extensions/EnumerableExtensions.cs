@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Reactive.Linq;
 
@@ -40,13 +39,18 @@ namespace TplDataFlow.Extensions
             return source.Select(item => item.Select(selector));
         }
 
-        public static IEnumerable<Result<TOutput, TFailure>> SelectMany<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
+        public static IEnumerable<Result<TOutput, TFailure>> SelectMany<TInput, TOutput, TFailure>(
+            this IEnumerable<Result<TInput, TFailure>> source,
             Func<TInput, IEnumerable<TOutput>> selector)
         {
-            return source.SelectMany(item => item.SelectManyFromResult(selector));
+            return source.SelectMany(item =>
+                item.Match(
+                    success => selector(success).ToResult<TOutput, TFailure>(),
+                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1)));
         }
 
-        public static IEnumerable<Result<TOutput, TFailure>> SelectSafe<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
+        public static IEnumerable<Result<TOutput, TFailure>> SelectSafe<TInput, TOutput, TFailure>(
+            this IEnumerable<Result<TInput, TFailure>> source,
             Func<TInput, Result<TOutput, TFailure>> selector)
         {
             return source.Select(item => item.SelectSafe(selector));
@@ -141,18 +145,6 @@ namespace TplDataFlow.Extensions
                 sideEffect(item);
                 return item;
             });
-        }
-
-        // TODO: Refactoring
-        private static IEnumerable<Result<TOutput, TFailure>> SelectManyFromResult<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source,
-            Func<TInput, IEnumerable<TOutput>> selector)
-        {
-            if (!source.IsSuccess)
-            {
-                return Enumerable.Repeat(Result.Failure<TOutput, TFailure>(source.Failure), 1);
-            }
-            return selector(source.Success)
-                .Select(item => item.ToResult<TOutput, TFailure>());
         }
     }
 }
