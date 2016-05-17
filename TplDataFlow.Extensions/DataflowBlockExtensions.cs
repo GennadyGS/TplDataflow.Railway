@@ -79,12 +79,6 @@ namespace TplDataFlow.Extensions
             return sourceBlock;
         }
 
-        public static IPropagatorBlock<TInput, TOutput> CombineWith<TInput, TMedium, TOutput>(this IPropagatorBlock<TInput, TMedium> previous,
-            IPropagatorBlock<TMedium, TOutput> next)
-        {
-            return new CombinedPropagatorBlock<TInput, TMedium, TOutput>(previous, next);
-        }
-
         public static ISourceBlock<TOutput> Select<TInput, TOutput>(
             this ISourceBlock<TInput> source, Func<TInput, TOutput> selector)
         {
@@ -170,8 +164,13 @@ namespace TplDataFlow.Extensions
         public static ISourceBlock<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(this ISourceBlock<Result<TSuccess, TFailure>> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {
-            return source.LinkWith(
-                DataflowBlockFactory.CreateTimedBatchBlockSafe<TSuccess, TFailure>(batchTimeout, batchMaxSize));
+            var outputBlock = new BufferBlock<Result<IList<TSuccess>, TFailure>>();
+
+            source.AsObservable()
+                .BufferSafe(batchTimeout, batchMaxSize)
+                .Subscribe(outputBlock.AsObserver());
+
+            return outputBlock;
         }
     }
 }

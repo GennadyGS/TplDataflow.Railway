@@ -57,11 +57,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActionExtensions.cs" />
-    <Compile Include="CombinedPropagatorBlock.cs" />
     <Compile Include="DataflowBlockExtensions.cs" />
-    <Compile Include="DataflowBlockFactory.cs" />
     <Compile Include="EnumerableExtensions.cs" />
-    <Compile Include="JointPointBlock.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Result.cs" />
