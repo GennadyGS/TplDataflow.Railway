@@ -44,14 +44,7 @@ namespace TplDataFlow.Extensions
             _transformFailureBlock.LinkTo(_outputBufferBlock);
 
             Task.WhenAll(_transformSuccessBlock.Completion, _transformFailureBlock.Completion)
-                .ContinueWith(
-                    task =>
-                    {
-                        if (task.IsFaulted)
-                            _outputBufferBlock.Fault(task.Exception);
-                        else
-                            _outputBufferBlock.Complete();
-                    });
+                .ContinueWith(task => PropagateCompletion(task, _outputBufferBlock));
         }
 
         DataflowMessageStatus ITargetBlock<Result<TInput, TFailure>>.OfferMessage(DataflowMessageHeader messageHeader,
@@ -120,6 +113,14 @@ namespace TplDataFlow.Extensions
         bool IReceivableSourceBlock<Result<TOutput, TFailure>>.TryReceiveAll(out IList<Result<TOutput, TFailure>> items)
         {
             return ((IReceivableSourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).TryReceiveAll(out items);
+        }
+
+        public static void PropagateCompletion(Task task, IDataflowBlock targetBlock)
+        {
+            if (task.IsFaulted)
+                targetBlock.Fault(task.Exception);
+            else
+                targetBlock.Complete();
         }
     }
 }
