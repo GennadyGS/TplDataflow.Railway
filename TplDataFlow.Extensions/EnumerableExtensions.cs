@@ -67,69 +67,35 @@ namespace TplDataFlow.Extensions
         }
 
         public static IEnumerable<TOutput> Match<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
-            Func<TInput, TOutput> selectorOnSuccess, Func<TFailure, TOutput> selectorOnFailure)
+            Func<IEnumerable<TInput>, TOutput> selectorOnSuccess, Func<IEnumerable<TFailure>, TOutput> selectorOnFailure)
         {
             return source
                 .GroupBy(item => item.IsSuccess)
-                .SelectMany(group => group.Key
-                    ? group.Select(item => selectorOnSuccess(item.Success))
-                    : group.Select(item => selectorOnFailure(item.Failure)));
-        }
-
-        public static IEnumerable<TOutput> Match<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
-            Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnSuccess, Func<IEnumerable<TFailure>, IEnumerable<TOutput>> selectorOnFailure)
-        {
-            return source
-                .GroupBy(item => item.IsSuccess)
-                .SelectMany(group => group.Key
+                .Select(group => group.Key
                     ? selectorOnSuccess(group.Select(item => item.Success))
                     : selectorOnFailure(group.Select(item => item.Failure)));
         }
 
-        public static void Match<TSuccess, TFailure>(this IEnumerable<Result<TSuccess, TFailure>> source,
-            Action<IEnumerable<TSuccess>> onSuccess, Action<IEnumerable<TFailure>> onFailure)
+        public static void Match<TInput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
+            Action<IEnumerable<TInput>> actionOnSuccess, Action<IEnumerable<TFailure>> actionOnFailure)
         {
-            source.Split(result => result.IsSuccess,
-                resultSuccess => { onSuccess(resultSuccess.Select(item => item.Success)); },
-                resultFailure => { onFailure(resultFailure.Select(item => item.Failure)); });
+            Match(source, actionOnSuccess.ToFunc(), actionOnFailure.ToFunc());
         }
 
-        public static void Match<TSuccess, TFailure>(this IEnumerable<Result<TSuccess, TFailure>> source,
-            Action<TSuccess> onSuccess, Action<TFailure> onFailure)
+        public static IEnumerable<TOutput> Map<TInput, TOutput>(this IEnumerable<TInput> source, Predicate<TInput> predicate,
+            Func<IEnumerable<TInput>, TOutput> selectorOnTrue, Func<IEnumerable<TInput>, TOutput> selectorOnFalse)
         {
-            source
-                .GroupBy(item => item.IsSuccess)
-                .ToList()
-                .ForEach(group =>
-                {
-                    if (group.Key)
-                    {
-                        group.ToList().ForEach(item => onSuccess(item.Success));
-                    }
-                    else
-                    {
-                        group.ToList().ForEach(item => onFailure(item.Failure));
-                    }
-                });
-        }
-
-        public static void Split<T>(this IEnumerable<T> source, Predicate<T> predicate,
-            Action<IEnumerable<T>> onTrue, Action<IEnumerable<T>> onFalse)
-        {
-            source
+            return source
                 .GroupBy(item => predicate(item))
-                .ToList()
-                .ForEach(group =>
-                {
-                    if (group.Key)
-                    {
-                        onTrue(group);
-                    }
-                    else
-                    {
-                        onFalse(group);
-                    }
-                });
+                .Select(group => group.Key
+                    ? selectorOnTrue(group)
+                    : selectorOnFalse(group));
+        }
+
+        public static void Map<T>(this IEnumerable<T> source, Predicate<T> predicate,
+            Action<IEnumerable<T>> actionOnTrue, Action<IEnumerable<T>> actionOnFalse)
+        {
+            source.Map(predicate, actionOnTrue.ToFunc(), actionOnFalse.ToFunc());
         }
 
         public static void LinkTo<T>(this IEnumerable<T> source, IObserver<T> target)

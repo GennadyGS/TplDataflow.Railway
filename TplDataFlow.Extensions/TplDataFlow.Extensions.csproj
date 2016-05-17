@@ -56,6 +56,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActionExtensions.cs" />
     <Compile Include="CombinedPropagatorBlock.cs" />
     <Compile Include="DataflowBlockExtensions.cs" />
     <Compile Include="DataflowBlockFactory.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="TransformSafeBlock.cs">
       <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
+    <Compile Include="Unit.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -132,10 +132,9 @@ namespace TplDataflow.Extensions.Example.Implementation
         private void CreateDataflowAsync()
         {
             _inputEventsBlock
-                .ToResult<EventDetails, UnsuccessResult>()
-                .SideEffect(@event => _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Success.Id))
-                .BufferSafe(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
-                .SelectManySafe(SplitEventsIntoGroupsSafe)
+                .SideEffect(LogEvent)
+                .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
+                .SelectMany(SplitEventsIntoGroupsSafe)
                 .SelectSafe(CheckNeedSkipEventGroup)
                 .BufferSafe(TimeSpan.Parse(EventGroupBatchTimeout), EventGroupBatchSize)
                 .SelectManySafe(ProcessEventGroupsBatchSafe)
@@ -156,25 +155,29 @@ namespace TplDataflow.Extensions.Example.Implementation
         private void CreateDataflowSync()
         {
             _inputEventsBlock.AsObservable().ToEnumerable()
-                .ToResult<EventDetails, UnsuccessResult>()
-                .SideEffect(@event => _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Success.Id))
-                .BufferSafe(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
-                .SelectManySafe(SplitEventsIntoGroupsSafe)
+                .SideEffect(LogEvent)
+                .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
+                .SelectMany(SplitEventsIntoGroupsSafe)
                 .SelectSafe(CheckNeedSkipEventGroup)
                 .BufferSafe(TimeSpan.Parse(EventGroupBatchTimeout), EventGroupBatchSize)
                 .SelectManySafe(ProcessEventGroupsBatchSafe)
                 .Match(
                     success =>
-                        success.Split(result => result.IsCreated,
+                        success.Map(result => result.IsCreated,
                             resultCreated => resultCreated.Select(result => result.EventSetWithEvents)
                                 .LinkTo(_eventSetCreatedBlock.AsObserver()),
                             resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents)
                                 .LinkTo(_eventSetUpdatedBlock.AsObserver())),
-                    failure => failure.Split(result => result.IsSkipped,
+                    failure => failure.Map(result => result.IsSkipped,
                         resultSkipped => resultSkipped.SelectMany(result => result.Events)
                             .LinkTo(_eventSkippedBlock.AsObserver()),
                         resultFailed => resultFailed.SelectMany(result => result.Events)
                             .LinkTo(_eventFailedBlock.AsObserver())));
+        }
+
+        private void LogEvent(EventDetails @event)
+        {
+            _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Id);
         }
 
         private IEnumerable<EventGroup> SplitEventsIntoGroups(IList<EventDetails> events)
