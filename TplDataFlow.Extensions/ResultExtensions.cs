@@ -9,19 +9,6 @@ namespace TplDataFlow.Extensions
             return Result.Success<TSuccess, TFailure>(source);
         }
 
-        public static void Match<TSuccess, TFailure>(this Result<TSuccess, TFailure> source,
-            Action<TSuccess> onSuccess, Action<TFailure> onFailure)
-        {
-            if (source.IsSuccess)
-            {
-                onSuccess(source.Success);
-            }
-            else
-            {
-                onFailure(source.Failure);
-            }
-        }
-
         public static TOutput Match<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source,
             Func<TInput, TOutput> onSuccess, Func<TFailure, TOutput> onFailure)
         {
@@ -33,21 +20,13 @@ namespace TplDataFlow.Extensions
         public static Result<TOutput, TFailure> Select<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source,
             Func<TInput, TOutput> selector)
         {
-            if (!source.IsSuccess)
-            {
-                return Result.Failure<TOutput, TFailure>(source.Failure);
-            }
-            return Result.Success<TOutput, TFailure>(selector(source.Success));
+            return source.Match(success => selector(success), Result.Failure<TOutput, TFailure>);
         }
 
         public static Result<TOutput, TFailure> SelectSafe<TInput, TOutput, TFailure>(
             this Result<TInput, TFailure> source, Func<TInput, Result<TOutput, TFailure>> selector)
         {
-            if (!source.IsSuccess)
-            {
-                return Result.Failure<TOutput, TFailure>(source.Failure);
-            }
-            return selector(source.Success);
+            return source.Match(selector, Result.Failure<TOutput, TFailure>);
         }
     }
 }
