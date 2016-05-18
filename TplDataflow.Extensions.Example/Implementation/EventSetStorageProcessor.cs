@@ -170,52 +170,12 @@ namespace TplDataflow.Extensions.Example.Implementation
             _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Id);
         }
 
-        private IEnumerable<EventGroup> SplitEventsIntoGroups(IList<EventDetails> events)
-        {
-            var eventGroupsByEventType = events
-                .GroupBy(@event => new
-                {
-                    EventTypeId = @event.EventTypeId,
-                    EventCategory = @event.Category
-                })
-                .Select(groups => groups);
-
-            var processTypesWithEvents = eventGroupsByEventType.Select(eventGroup => new
-            {
-                EventSetProcessType = GetProcessType(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory),
-                Events = eventGroup.ToList()
-            });
-
-            var eventInfos =
-                processTypesWithEvents.SelectMany(processType => processType.Events,
-                    (processType, @event) => new
-                    {
-                        Event = @event,
-                        EventSetProcessType = processType.EventSetProcessType,
-                        EventSetType = EventSetType.CreateFromEventAndLevel(@event, (EventLevel)processType.EventSetProcessType.Level)
-                    });
-
-            var eventGroupsByEventSetType = eventInfos
-                .GroupBy(eventInfo => eventInfo.EventSetType)
-                .Select(eventGroup => new EventGroup
-                {
-                    EventSetType = eventGroup.Key,
-                    EventSetProcessType = eventGroup.First().EventSetProcessType,
-                    Events = eventGroup.Select(arg => arg.Event).ToList()
-                });
-
-            // TODO: Get rid of ToList 
-            return eventGroupsByEventSetType
-                .SelectMany(SplitEventGroupByThreshold)
-                .ToList();
-        }
-
         private static Result<T, UnsuccessResult> InvokeSafe<T>(
-            IList<EventDetails> events, Func<T> func)
+            IEnumerable<EventDetails> events, Func<Result<T, UnsuccessResult>> func)
         {
             try
             {
-                return Result.Success<T, UnsuccessResult>(func());
+                return func();
             }
             catch (EventHandlingException e)
             {
@@ -234,18 +194,49 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
         }
 
-        private static IEnumerable<Result<T, UnsuccessResult>> InvokeManySafe<T>(
-            IList<EventDetails> events, Func<IEnumerable<T>> func)
+        private static Result<T, UnsuccessResult> InvokeSafe<T>(
+            IEnumerable<EventDetails> events, Func<T> func)
         {
-            return InvokeSafe(events, func)
-                .Match(
-                    success => success.ToResult<T, UnsuccessResult>(),
-                    unsuccess => Enumerable.Repeat(Result.Failure<T, UnsuccessResult>(unsuccess), 1));
+            return InvokeSafe(events, () => func().ToResult<T, UnsuccessResult>());
         }
 
         private IEnumerable<Result<EventGroup, UnsuccessResult>> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
         {
-            return InvokeManySafe(events, () => SplitEventsIntoGroups(events));
+            var eventGroupsByEventType = events
+                .GroupBy(@event => new
+                    {
+                        EventTypeId = @event.EventTypeId,
+                        EventCategory = @event.Category
+                    });
+
+            var processTypesWithEvents = eventGroupsByEventType
+                .Select(eventGroup => GetProcessTypeSafe(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory, eventGroup)
+                    .Select(processType => new
+                            {
+                                EventSetProcessType = processType,
+                                Events = eventGroup
+                            }));
+
+            var eventInfos =
+                processTypesWithEvents.SelectMany(processType => processType.Events,
+                    (processType, @event) => new
+                        {
+                            Event = @event,
+                            EventSetProcessType = processType.EventSetProcessType,
+                            EventSetType = EventSetType.CreateFromEventAndLevel(@event, (EventLevel)processType.EventSetProcessType.Level)
+                        });
+
+            var eventGroupsByEventSetType = eventInfos
+                .GroupBy(eventInfo => eventInfo.EventSetType)
+                .Select(eventGroup => new EventGroup
+                    {
+                        EventSetType = eventGroup.Key,
+                        EventSetProcessType = eventGroup.First().EventSetProcessType,
+                        Events = eventGroup.Select(arg => arg.Event).ToList()
+                    });
+
+            return eventGroupsByEventSetType
+                .SelectMany(SplitEventGroupByThreshold);
         }
 
         private Result<EventGroup, UnsuccessResult> CheckNeedSkipEventGroup(EventGroup eventGroup)
@@ -277,15 +268,6 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
         }
 
-        private IEnumerable<Result<SuccessResult, UnsuccessResult>> InternalProcessEventGroupsBatchSafe(IEventSetRepository repository, IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
-        {
-            return eventGroupsBatch
-                .GroupBy(eventGroup => NeedToCreateEventSet(eventGroup, lastEventSets))
-                .SelectMany(eventGroup => eventGroup.Key
-                    ? CreateEventSets(eventGroup.ToList())
-                    : UpdateEventSets(eventGroup.ToList(), lastEventSets));
-        }
-
         private static Result<IList<EventSet>, UnsuccessResult> FindLastEventSetsSafe(IEventSetRepository repository,
             IList<EventGroup> eventGroupsBatch, IList<EventDetails> events)
         {
@@ -294,6 +276,15 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .Distinct()
                 .ToArray();
             return InvokeSafe(events, () => repository.FindLastEventSetsByTypeCodes(typeCodes));
+        }
+
+        private IEnumerable<Result<SuccessResult, UnsuccessResult>> InternalProcessEventGroupsBatchSafe(IEventSetRepository repository, IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
+        {
+            return eventGroupsBatch
+                .GroupBy(eventGroup => NeedToCreateEventSet(eventGroup, lastEventSets))
+                .SelectMany(eventGroup => eventGroup.Key
+                    ? CreateEventSets(eventGroup.ToList())
+                    : UpdateEventSets(eventGroup.ToList(), lastEventSets));
         }
 
         private static Result<IList<SuccessResult>, UnsuccessResult> ApplyChangesSafe(IEventSetRepository repository, IList<SuccessResult> results)
@@ -482,16 +473,13 @@ namespace TplDataflow.Extensions.Example.Implementation
             };
         }
 
-        private EventSetProcessType GetProcessType(int eventTypeId, EventTypeCategory category)
-        {
-            var eventSetProcessType = _processTypeManager.GetProcessType(eventTypeId, category);
-            if (eventSetProcessType == null)
-            {
-                throw EventHandlingException.CreateNotFoundException("EventSetProcessingType was not found for [EventTypeId = {0}, Category = {1}]",
-                    eventTypeId, category);
-            }
-
-            return eventSetProcessType;
+        private Result<EventSetProcessType, UnsuccessResult> GetProcessTypeSafe(int eventTypeId, EventTypeCategory category, IEnumerable<EventDetails> events){
+            return InvokeSafe(events, () =>
+                _processTypeManager.GetProcessType(eventTypeId, category) ??
+                    Result.Failure<EventSetProcessType, UnsuccessResult>(
+                        UnsuccessResult.CreateError(events,
+                            Metadata.ExceptionHandling.NotFoundException.Code,
+                            "EventSetProcessingType was not found for [EventTypeId = {0}, Category = {1}]", eventTypeId, category)));
         }
 
         private class EventGroup
@@ -578,9 +566,9 @@ namespace TplDataflow.Extensions.Example.Implementation
                 }
             }
 
-            public static UnsuccessResult CreateError(IEnumerable<EventDetails> events, int errorCode, string errorMessage)
+            public static UnsuccessResult CreateError(IEnumerable<EventDetails> events, int errorCode, string errorMessageFormat, params object[] args)
             {
-                return new UnsuccessResult(false, events, errorCode, errorMessage);
+                return new UnsuccessResult(false, events, errorCode, string.Format(errorMessageFormat, args));
             }
 
             public static UnsuccessResult CreateSkipped(IEnumerable<EventDetails> events)
