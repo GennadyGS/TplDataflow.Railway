@@ -6,14 +6,14 @@ namespace TplDataFlow.Extensions.UnitTests
 {
     public class ResultTests
     {
+        // TODO: Split unit tests
         [Fact]
-        public void Result_ShouldBeSuccess()
+        public void Select_ShouldReturnSuccess()
         {
             const int input = 1;
 
-            var result = 
-                from i in Result.Success<int, string>(input)
-                select i + 1;
+            var result = Result.Success<int, string>(input)
+                .Select(i => i + 1);
 
             result.IsSuccess
                 .Should().BeTrue();
@@ -21,9 +21,9 @@ namespace TplDataFlow.Extensions.UnitTests
                 .Should().Be(input + 1);
             Assert.Throws<InvalidOperationException>(() => result.Failure);
         }
-        [Fact]
 
-        public void Result_ShouldBeFailure()
+        [Fact]
+        public void SelectSafe_ShouldReturnFailure()
         {
             const int input = 1;
             const string failure = "failure";
@@ -36,6 +36,17 @@ namespace TplDataFlow.Extensions.UnitTests
             result.Failure
                 .Should().Be(failure);
             Assert.Throws<InvalidOperationException>(() => result.Success);
+        }
+
+        [Fact]
+        public void Select_ShouldWorkWithAnonymousTypes()
+        {
+            const int input = 1;
+
+            var result = Result.Success<int, string>(input)
+                .Select(item => new {Item = input, Next = input + 1});
+
+            result.Success.Next.Should().Be(input + 1);
         }
     }
 }
