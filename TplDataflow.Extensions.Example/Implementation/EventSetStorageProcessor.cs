@@ -451,25 +451,6 @@ namespace TplDataflow.Extensions.Example.Implementation
             };
         }
 
-        private EventDetails[] HandleSplitEventsIntoGroupsException(Tuple<Exception, EventDetails[]> tuple)
-        {
-            IList<EventDetails> events = tuple.Item2
-                .ToList();
-            _logger.ErrorFormat(tuple.Item1.Message, "Split events into groups failed [EventIds = {0}]",
-                string.Join(",", events));
-            return events.ToArray();
-        }
-
-        private EventDetails[] HandleEventGroupsBatchException(Tuple<Exception, EventGroup[]> tuple)
-        {
-            IList<EventDetails> events = tuple.Item2
-                .SelectMany(eventGroup => eventGroup.Events)
-                .ToList();
-            _logger.ErrorFormat(tuple.Item1.Message, "Event group processing failed [EventIds = {0}]",
-                string.Join(",", events.Select(@event => @event.Id)));
-            return events.ToArray();
-        }
-
         private EventSetProcessType GetProcessType(int eventTypeId, EventTypeCategory category)
         {
             var eventSetProcessType = _processTypeManager.GetProcessType(eventTypeId, category);
