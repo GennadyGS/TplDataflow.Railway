@@ -43,10 +43,7 @@ namespace TplDataFlow.Extensions
             this IEnumerable<Result<TInput, TFailure>> source,
             Func<TInput, IEnumerable<TOutput>> selector)
         {
-            return source.SelectMany(item =>
-                item.Match(
-                    success => selector(success).ToResult<TOutput, TFailure>(),
-                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1)));
+            return source.SelectMany(item => item.SelectMany(selector));
         }
 
         public static IEnumerable<Result<TOutput, TFailure>> SelectSafe<TInput, TOutput, TFailure>(
@@ -60,10 +57,16 @@ namespace TplDataFlow.Extensions
             this IEnumerable<Result<TInput, TFailure>> source,
             Func<TInput, IEnumerable<Result<TOutput, TFailure>>> selector)
         {
-            return source.SelectMany(item => 
-                item.Match(
-                    success => selector(success),
-                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1)));
+            return source.SelectMany(item => item.SelectManySafe(selector));
+        }
+
+        public static IEnumerable<Result<IList<T>, TFailure>> ToList<T, TFailure>(this IEnumerable<Result<T, TFailure>> source)
+        {
+            return source
+                .GroupBy(item => item.IsSuccess)
+                .SelectMany(group => group.Key
+                    ? Enumerable.Repeat(Result.Success<IList<T>, TFailure>(@group.Select(item => item.Success).ToList()), 1)
+                    : group.Select(item => Result.Failure<IList<T>, TFailure>(item.Failure)));
         }
 
         public static IEnumerable<TOutput> Match<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,

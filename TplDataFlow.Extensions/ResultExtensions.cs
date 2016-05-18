@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace TplDataFlow.Extensions
 {
@@ -27,6 +29,20 @@ namespace TplDataFlow.Extensions
             this Result<TInput, TFailure> source, Func<TInput, Result<TOutput, TFailure>> selector)
         {
             return source.Match(selector, Result.Failure<TOutput, TFailure>);
+        }
+
+        public static IEnumerable<Result<TOutput, TFailure>> SelectMany<TInput, TOutput, TFailure>(
+            this Result<TInput, TFailure> source, Func<TInput, IEnumerable<TOutput>> selector)
+        {
+            return source.Match(
+                    success => selector(success).ToResult<TOutput, TFailure>(),
+                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
+        }
+
+        public static IEnumerable<Result<TOutput, TFailure>> SelectManySafe<TInput, TOutput, TFailure>(
+            this Result<TInput, TFailure> source, Func<TInput, IEnumerable<Result<TOutput, TFailure>>> selector)
+        {
+            return source.Match(selector, failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
         }
     }
 }
