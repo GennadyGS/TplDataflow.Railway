@@ -1,14 +1,3 @@
-// ==========================================================
-//  Title: Central.Implementation
-//  Description: Processes EventSet based on new upcoming events.
-//  Copyright © 2004-2014 Modular Mining Systems, Inc.
-//  All Rights Reserved
-// ==========================================================
-//  The information described in this document is furnished as proprietary
-//  information and may not be copied or sold without the written permission
-//  of Modular Mining Systems, Inc.
-// ==========================================================
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -252,7 +241,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             return eventGroup.EventSetType.Level == EventLevel.Information;
         }
 
-        private async Task<IEnumerable<SuccessResult>> ProcessEventGroupsBatchAsync(IList<EventGroup> eventGroupsBatch)
+        private IEnumerable<SuccessResult> ProcessEventGroupsBatch(IList<EventGroup> eventGroupsBatch)
         {
             using (var repository = _repositoryResolver())
             {
@@ -260,21 +249,16 @@ namespace TplDataflow.Extensions.Example.Implementation
                     .Select(eventGroup => eventGroup.EventSetType.GetCode())
                     .Distinct()
                     .ToArray();
-                IList<EventSet> lastEventSets = await FindLastEventSetsByTypeCodesAsync(repository, typeCodes);
+                IList<EventSet> lastEventSets = repository.FindLastEventSetsByTypeCodes(typeCodes);
                 var results = eventGroupsBatch
                     .GroupBy(eventGroup => NeedToCreateEventSet(eventGroup, lastEventSets))
-                    .SelectMany(group => @group.Key
-                        ? CreateEventSets(@group.ToList())
-                        : UpdateEventSets(@group.ToList(), lastEventSets))
+                    .SelectMany(eventGroup => eventGroup.Key
+                        ? CreateEventSets(eventGroup.ToList())
+                        : UpdateEventSets(eventGroup.ToList(), lastEventSets))
                     .ToList();
-                await ApplyChangesAsync(repository, results);
+                ApplyChanges(repository, results);
                 return results;
             }
-        }
-
-        private IEnumerable<SuccessResult> ProcessEventGroupsBatch(IList<EventGroup> eventGroupsBatch)
-        {
-            return ProcessEventGroupsBatchAsync(eventGroupsBatch).Result;
         }
 
         private IEnumerable<Result<SuccessResult, UnsuccessResult>> ProcessEventGroupsBatchSafe(IList<EventGroup> eventGroupsBatch)
@@ -298,23 +282,17 @@ namespace TplDataflow.Extensions.Example.Implementation
             return successResult.ToResult<SuccessResult, UnsuccessResult>();
         }
 
-        private static Task ApplyChangesAsync(IEventSetRepository repository, IList<SuccessResult> results)
+        private static void ApplyChanges(IEventSetRepository repository, IList<SuccessResult> results)
         {
-            return Task.Run(() =>
-                repository.ApplyChanges(
-                    results
-                        .Where(result => result.IsCreated)
-                        .Select(result => result.EventSetWithEvents.EventSet)
-                        .ToList(),
-                    results
-                        .Where(result => !result.IsCreated)
-                        .Select(result => result.EventSetWithEvents.EventSet)
-                        .ToList()));
-        }
-
-        private static Task<IList<EventSet>> FindLastEventSetsByTypeCodesAsync(IEventSetRepository repository, long[] typeCodes)
-        {
-            return Task.Run(() => repository.FindLastEventSetsByTypeCodes(typeCodes));
+            repository.ApplyChanges(
+                results
+                    .Where(result => result.IsCreated)
+                    .Select(result => result.EventSetWithEvents.EventSet)
+                    .ToList(),
+                results
+                    .Where(result => !result.IsCreated)
+                    .Select(result => result.EventSetWithEvents.EventSet)
+                    .ToList());
         }
 
         private bool NeedToCreateEventSet(EventGroup eventGroup, IList<EventSet> lastEventSets)
@@ -361,9 +339,9 @@ namespace TplDataflow.Extensions.Example.Implementation
                        );
         }
 
-        private async Task<IList<SuccessResult>> CreateEventSetsAsync(IList<EventGroup> eventGroups)
+        private IList<SuccessResult> CreateEventSets(IList<EventGroup> eventGroups)
         {
-            IList<long> ids = await GetNextLongIdsAsync(eventGroups);
+            IList<long> ids = _identityService.GetNextLongIds(EventSetSequenceName, eventGroups.Count);
 
             if (ids.Count < eventGroups.Count)
             {
@@ -372,19 +350,9 @@ namespace TplDataflow.Extensions.Example.Implementation
 
             return eventGroups
                 .Zip(ids, (eventGroup, eventSetId) =>
-                    new {EventGroup = eventGroup, EventSetId = eventSetId})
+                    new { EventGroup = eventGroup, EventSetId = eventSetId })
                 .Select(item => CreateEventSet(item.EventSetId, item.EventGroup))
                 .ToList();
-        }
-
-        private IList<SuccessResult> CreateEventSets(IList<EventGroup> eventGroups)
-        {
-            return CreateEventSetsAsync(eventGroups).Result;
-        }
-
-        private Task<IList<long>> GetNextLongIdsAsync(IList<EventGroup> eventGroups)
-        {
-            return Task.Run(() => _identityService.GetNextLongIds(EventSetSequenceName, eventGroups.Count));
         }
 
         private SuccessResult CreateEventSet(long eventSetId, EventGroup eventGroup)
@@ -436,7 +404,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .Max();
             lastEventSet.LastUpdateTime = _currentTimeProvider();
             lastEventSet.EventsCount += events.Count;
-             
+
             _logger.DebugFormat("EventSet entity updated [Id = {0}, EventTypeId = {1}, ResourceId = {2}, EventsCountDelta = {3}, EventsCount = {4}, EventIds = {5}].",
                 lastEventSet.Id, lastEventSet.EventTypeId, lastEventSet.ResourceId, events.Count, lastEventSet.EventsCount, string.Join(",", events.Select(@event => @event.Id)));
 
