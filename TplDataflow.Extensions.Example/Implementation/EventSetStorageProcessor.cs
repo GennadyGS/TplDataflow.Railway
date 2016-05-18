@@ -207,24 +207,29 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .SelectMany(SplitEventGroupByThreshold);
         }
 
-        private IEnumerable<Result<EventGroup, UnsuccessResult>> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
+        private static Result<TOutput, UnsuccessResult> InvokeSafe<TInput, TOutput>(
+            IList<EventDetails> events, TInput input, Func<TInput, TOutput> func)
         {
-            // TODO: Handle exceptions more specifically inside SplitEventsIntoGroups
-            Exception exception = null;
-            IEnumerable<EventGroup> successResult = null;
+            throw new NotImplementedException();
+        }
+
+        private static IEnumerable<Result<TOutput, UnsuccessResult>> InvokeManySafe<TInput, TOutput>(
+            IList<EventDetails> events, TInput input, Func<TInput, IEnumerable<TOutput>> func)
+        {
             try
             {
-                successResult = SplitEventsIntoGroups(events).ToList();
+                return func(input).ToResult<TOutput, UnsuccessResult>();
             }
+            // TODO: Handle mote specifical exceptions
             catch (Exception e)
             {
-                exception = e;
+                return Enumerable.Repeat(Result.Failure<TOutput, UnsuccessResult>(UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.UnhandledException.Code, e.Message)), 1);
             }
-            if (exception != null)
-            {
-                return Enumerable.Repeat(Result.Failure<EventGroup, UnsuccessResult>(UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.UnhandledException.Code, exception.Message)), 1);
-            }
-            return successResult.ToResult<EventGroup, UnsuccessResult>();
+        }
+
+        private IEnumerable<Result<EventGroup, UnsuccessResult>> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
+        {
+            return InvokeManySafe(events, events, SplitEventsIntoGroups);
         }
 
         private Result<EventGroup, UnsuccessResult> CheckNeedSkipEventGroup(EventGroup eventGroup)
@@ -245,15 +250,18 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             using (var repository = _repositoryResolver())
             {
-                return FindLastEventSetsSafe(repository, eventGroupsBatch)
-                    .SelectManySafe(lastEventSets => StoreEventsSafe(repository, eventGroupsBatch, lastEventSets))
+                var events = eventGroupsBatch
+                    .SelectMany(eventGroup => eventGroup.Events)
+                    .ToList();
+                return FindLastEventSetsSafe(repository, eventGroupsBatch, events)
+                    .SelectManySafe(lastEventSets => InternalProcessEventGroupsBatchSafe(repository, eventGroupsBatch, lastEventSets))
                     .ToList()
                     .SelectSafe(resultList => ApplyChangesSafe(repository, resultList))
                     .SelectMany(result => result);
             }
         }
 
-        private IEnumerable<Result<SuccessResult, UnsuccessResult>> StoreEventsSafe(IEventSetRepository repository, IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
+        private IEnumerable<Result<SuccessResult, UnsuccessResult>> InternalProcessEventGroupsBatchSafe(IEventSetRepository repository, IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
         {
             // TODO: Handle exceptions
             return eventGroupsBatch
@@ -265,14 +273,13 @@ namespace TplDataflow.Extensions.Example.Implementation
         }
 
         private static Result<IList<EventSet>, UnsuccessResult> FindLastEventSetsSafe(IEventSetRepository repository,
-            IList<EventGroup> eventGroupsBatch)
+            IList<EventGroup> eventGroupsBatch, IList<EventDetails> events)
         {
-            // TODO: Handle exceptions
             long[] typeCodes = eventGroupsBatch
                 .Select(eventGroup => eventGroup.EventSetType.GetCode())
                 .Distinct()
                 .ToArray();
-            return Result.Success<IList<EventSet>, UnsuccessResult>(repository.FindLastEventSetsByTypeCodes(typeCodes));
+            return InvokeSafe(events, typeCodes, repository.FindLastEventSetsByTypeCodes);
         }
 
         private static Result<IList<SuccessResult>, UnsuccessResult> ApplyChangesSafe(IEventSetRepository repository, IList<SuccessResult> results)
@@ -335,6 +342,7 @@ namespace TplDataflow.Extensions.Example.Implementation
 
         private IList<SuccessResult> CreateEventSets(IList<EventGroup> eventGroups)
         {
+            // TODO: Handle exception
             IList<long> ids = _identityService.GetNextLongIds(EventSetSequenceName, eventGroups.Count);
 
             if (ids.Count < eventGroups.Count)
