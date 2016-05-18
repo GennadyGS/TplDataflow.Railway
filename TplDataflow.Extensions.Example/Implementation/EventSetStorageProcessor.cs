@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -214,12 +215,22 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             try
             {
-                return func().ToResult<T, UnsuccessResult>();
+                return Result.Success<T, UnsuccessResult>(func());
             }
-            // TODO: Handle mote specifical exceptions
+            catch (EventHandlingException e)
+            {
+                return Result.Failure<T, UnsuccessResult>(
+                    UnsuccessResult.CreateError(events, e.ErrorCode, e.Message));
+            }
+            catch (DBConcurrencyException e)
+            {
+                return Result.Failure<T, UnsuccessResult>(
+                    UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.DbUpdateConcurrencyException.Code, e.Message));
+            }
             catch (Exception e)
             {
-                return Result.Failure<T, UnsuccessResult>(UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.UnhandledException.Code, e.Message));
+                return Result.Failure<T, UnsuccessResult>(
+                    UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.UnhandledException.Code, e.Message));
             }
         }
 
