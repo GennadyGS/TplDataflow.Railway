@@ -226,15 +226,10 @@ namespace TplDataflow.Extensions.Example.Implementation
         private static IEnumerable<Result<T, UnsuccessResult>> InvokeManySafe<T>(
             IList<EventDetails> events, Func<IEnumerable<T>> func)
         {
-            try
-            {
-                return func().ToResult<T, UnsuccessResult>();
-            }
-            // TODO: Handle mote specifical exceptions
-            catch (Exception e)
-            {
-                return Enumerable.Repeat(Result.Failure<T, UnsuccessResult>(UnsuccessResult.CreateError(events, Metadata.ExceptionHandling.UnhandledException.Code, e.Message)), 1);
-            }
+            return InvokeSafe(events, func)
+                .Match(
+                    success => success.ToResult<T, UnsuccessResult>(),
+                    unsuccess => Enumerable.Repeat(Result.Failure<T, UnsuccessResult>(unsuccess), 1));
         }
 
         private IEnumerable<Result<EventGroup, UnsuccessResult>> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
