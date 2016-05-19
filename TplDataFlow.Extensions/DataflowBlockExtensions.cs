@@ -56,14 +56,14 @@ namespace TplDataFlow.Extensions
             return source.LinkWith(new TransformSafeBlock<TInput, TOutput, TFailure>(selector));
         }
 
-        public static TResult Match<TInput, TFailure, TOutputSuccess, TOutputFailure, TResult>(
-            this ISourceBlock<Result<TInput, TFailure>> source,
-            Func<ISourceBlock<TInput>, TOutputSuccess> selectorOnSuccess,
-            Func<ISourceBlock<TFailure>, TOutputFailure> selectorOnFailure,
-            Func<TOutputSuccess, TOutputFailure, TResult> resultSelector)
+        public static TResult Match<TInput, TInputFailure, TOutput, TOutputFailure, TResult>(
+            this ISourceBlock<Result<TInput, TInputFailure>> source,
+            Func<ISourceBlock<TInput>, TOutput> selectorOnSuccess,
+            Func<ISourceBlock<TInputFailure>, TOutputFailure> selectorOnFailure,
+            Func<TOutput, TOutputFailure, TResult> resultSelector)
         {
-            var successBlock = new BufferBlock<Result<TInput, TFailure>>();
-            var failureBlock = new BufferBlock<Result<TInput, TFailure>>();
+            var successBlock = new BufferBlock<Result<TInput, TInputFailure>>();
+            var failureBlock = new BufferBlock<Result<TInput, TInputFailure>>();
 
             source
                 .LinkWhen(result => result.IsSuccess, successBlock)
@@ -74,15 +74,14 @@ namespace TplDataFlow.Extensions
                 selectorOnFailure(failureBlock.Select(result => result.Failure)));
         }
 
-
-        public static TResult Map<T, TOutputTrue, TOutputFalse, TResult>(this ISourceBlock<T> source, 
-            Predicate<T> predicate,
-            Func<ISourceBlock<T>, TOutputTrue> selectorOnTrue,
-            Func<ISourceBlock<T>, TOutputFalse> selectorOnFalse,
+        public static TResult Map<TInput, TOutputTrue, TOutputFalse, TResult>(this ISourceBlock<TInput> source, 
+            Predicate<TInput> predicate,
+            Func<ISourceBlock<TInput>, TOutputTrue> selectorOnTrue,
+            Func<ISourceBlock<TInput>, TOutputFalse> selectorOnFalse,
             Func<TOutputTrue, TOutputFalse, TResult> resultSelector)
         {
-            var trueBlock = new BufferBlock<T>();
-            var falseBlock = new BufferBlock<T>();
+            var trueBlock = new BufferBlock<TInput>();
+            var falseBlock = new BufferBlock<TInput>();
 
             source
                 .LinkWhen(predicate, trueBlock)

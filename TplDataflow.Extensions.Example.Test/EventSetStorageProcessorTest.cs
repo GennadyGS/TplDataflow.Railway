@@ -1,15 +1,4 @@
-﻿// ==========================================================
-//  Title: Central.Implementation.Test
-//  Description: Test for EventSetProcessTypeRepository.
-//  Copyright © 2004-2014 Modular Mining Systems, Inc.
-//  All Rights Reserved
-// ==========================================================
-//  The information described in this document is furnished as proprietary
-//  information and may not be copied or sold without the written permission
-//  of Modular Mining Systems, Inc.
-// ==========================================================
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
@@ -26,6 +15,12 @@ namespace TplDataflow.Extensions.Example.Test
     [TestClass]
     public class EventSetStorageProcessorTest
     {
+        private const int EventBatchSize = 1000;
+        private const string EventBatchTimeout = "00:00:05";
+
+        private const int EventGroupBatchSize = 25;
+        private const string EventGroupBatchTimeout = "00:00:05";
+
         private IEventSetRepository _repositoryMock;
         private IIdentityManagementService _identityManagementServiceMock;
         private IEventSetProcessTypeManager _processTypeManagerMock;
@@ -75,7 +70,15 @@ namespace TplDataflow.Extensions.Example.Test
             _processTypeManagerMock = Mock.Create<IEventSetProcessTypeManager>();
             _configurationMock = Mock.Create<IEventSetConfiguration>();
 
-            _storageProcessor = new EventSetStorageProcessor(() => _repositoryMock, _identityManagementServiceMock, _processTypeManagerMock, _configurationMock, () => _currentTime);
+            ArrangeMocks();
+
+            _storageProcessor = new EventSetStorageProcessorTplDataflow(
+                () => _repositoryMock, 
+                _identityManagementServiceMock, 
+                _processTypeManagerMock, 
+                _configurationMock, 
+                () => _currentTime);
+
             _storageProcessorEventSetCreatedOutput = _storageProcessor.EventSetCreatedOutput.CreateList();
             _storageProcessorEventSetUpdatedOutput = _storageProcessor.EventSetUpdatedOutput.CreateList();
             _storageProcessorEventSkippedOutput = _storageProcessor.EventSkippedOutput.CreateList();
@@ -571,14 +574,6 @@ namespace TplDataflow.Extensions.Example.Test
             _storageProcessor.CompletionTask.Wait();
         }
 
-        private void AssertMocks()
-        {
-            Mock.Assert(_processTypeManagerMock);
-            Mock.Assert(_identityManagementServiceMock);
-            Mock.Assert(_repositoryMock);
-            Mock.Assert(_configurationMock);
-        }
-
         private long GetCriticalEventsetTypeCode()
         {
             return EventSetType.CreateFromEventAndLevel(_criticalEvent, EventLevel.Critical).GetCode();
@@ -630,6 +625,30 @@ namespace TplDataflow.Extensions.Example.Test
             eventSet.EventsCount.Should().Be(expectedEventCount);
             eventSet.LastReadTime.Should().Be(sourceEvent.ReadTime);
             eventSet.LastUpdateTime.Should().Be(_currentTime);
+        }
+
+        private void ArrangeMocks()
+        {
+            _configurationMock
+                .Arrange(configuration => configuration.EventBatchSize)
+                .Returns(EventBatchSize);
+            _configurationMock
+                .Arrange(configuration => configuration.EventBatchTimeout)
+                .Returns(EventBatchTimeout);
+            _configurationMock
+                .Arrange(configuration => configuration.EventGroupBatchSize)
+                .Returns(EventGroupBatchSize);
+            _configurationMock
+                .Arrange(configuration => configuration.EventGroupBatchTimeout)
+                .Returns(EventGroupBatchTimeout);
+        }
+
+        private void AssertMocks()
+        {
+            Mock.Assert(_processTypeManagerMock);
+            Mock.Assert(_identityManagementServiceMock);
+            Mock.Assert(_repositoryMock);
+            Mock.Assert(_configurationMock);
         }
     }
 }

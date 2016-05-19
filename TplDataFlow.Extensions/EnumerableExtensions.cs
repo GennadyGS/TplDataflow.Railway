@@ -107,7 +107,7 @@ namespace TplDataFlow.Extensions
 
         public static IEnumerable<TOutput> Match<TInput, TOutput, TFailure>(
             this IEnumerable<Result<TInput, TFailure>> source,
-            Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnSuccess, 
+            Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnSuccess,
             Func<IEnumerable<TFailure>, IEnumerable<TOutput>> selectorOnFailure)
         {
             return source
@@ -117,16 +117,30 @@ namespace TplDataFlow.Extensions
                     : selectorOnFailure(group.Select(item => item.Failure)));
         }
 
-        public static void Match<TInput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
-            Action<IEnumerable<TInput>> actionOnSuccess, 
-            Action<IEnumerable<TFailure>> actionOnFailure)
+        public static TResult Match<TInput, TInputFailure, TOutput, TOutputFailure, TResult>(
+            this IEnumerable<Result<TInput, TInputFailure>> source,
+            Func<IEnumerable<TInput>, TOutput> selectorOnSuccess,
+            Func<IEnumerable<TInputFailure>, TOutputFailure> selectorOnFailure,
+            Func<TOutput, TOutputFailure, TResult> resultSelector)
         {
-            Match(source, actionOnSuccess.ToFunc(), actionOnFailure.ToFunc());
+            var mapBySuccess = source
+                .GroupBy(item => item.IsSuccess)
+                .ToDictionary(group => group.Key);
+
+            var outputSuccess = mapBySuccess.ContainsKey(true) 
+                ? mapBySuccess[true].Select(item =>item.Success) 
+                : Enumerable.Empty<TInput>();
+
+            var outputFailure = mapBySuccess.ContainsKey(false)
+                ? mapBySuccess[false].Select(item => item.Failure)
+                : Enumerable.Empty<TInputFailure>();
+
+            return resultSelector(selectorOnSuccess(outputSuccess), selectorOnFailure(outputFailure));
         }
 
-        public static IEnumerable<TOutput> Map<TInput, TOutput>(this IEnumerable<TInput> source, 
+        public static IEnumerable<TOutput> Map<TInput, TOutput>(this IEnumerable<TInput> source,
             Predicate<TInput> predicate,
-            Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnTrue, 
+            Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnTrue,
             Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnFalse)
         {
             return source
@@ -136,10 +150,25 @@ namespace TplDataFlow.Extensions
                     : selectorOnFalse(group));
         }
 
-        public static void Map<T>(this IEnumerable<T> source, Predicate<T> predicate,
-            Action<IEnumerable<T>> actionOnTrue, Action<IEnumerable<T>> actionOnFalse)
+        public static TResult Map<TInput, TOutputTrue, TOutputFalse, TResult>(this IEnumerable<TInput> source,
+            Predicate<TInput> predicate,
+            Func<IEnumerable<TInput>, TOutputTrue> selectorOnTrue,
+            Func<IEnumerable<TInput>, TOutputFalse> selectorOnFalse,
+            Func<TOutputTrue, TOutputFalse, TResult> resultSelector)
         {
-            source.Map(predicate, actionOnTrue.ToFunc(), actionOnFalse.ToFunc());
+            var mapByPredicate = source
+                .GroupBy(item => predicate(item))
+                .ToDictionary(group => group.Key);
+
+            var outputSuccess = mapByPredicate.ContainsKey(true)
+                ? mapByPredicate[true]
+                : Enumerable.Empty<TInput>();
+
+            var outputFailure = mapByPredicate.ContainsKey(false)
+                ? mapByPredicate[false]
+                : Enumerable.Empty<TInput>();
+
+            return resultSelector(selectorOnTrue(outputSuccess), selectorOnFalse(outputFailure));
         }
 
         public static void LinkTo<T>(this IEnumerable<T> source, IObserver<T> target)

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using log4net;
 using TplDataflow.Extensions.Example.BusinessObjects;
 using TplDataflow.Extensions.Example.Exceptions;
@@ -17,166 +15,23 @@ namespace TplDataflow.Extensions.Example.Implementation
     /// Implements <see cref="IEventSetStorageProcessor" /> interface
     /// </summary>
     /// <seealso cref="IEventSetStorageProcessor" />
-    internal class EventSetStorageProcessor : IEventSetStorageProcessor
+    internal class EventSetStorageProcessorLogic
     {
-        // TODO: Introduce configuration parameters
-        private const int EventBatchSize = 1000;
-        private const string EventBatchTimeout = "00:00:05";
-
-        private const int EventGroupBatchSize = 25;
-        private const string EventGroupBatchTimeout = "00:00:05";
-
         private const string EventSetSequenceName = "EventSet";
+
         private readonly Func<IEventSetRepository> _repositoryResolver;
         private readonly IIdentityManagementService _identityService;
         private readonly IEventSetProcessTypeManager _processTypeManager;
-        private readonly IEventSetConfiguration _configuration;
         private readonly Func<DateTime> _currentTimeProvider;
 
-        private readonly BufferBlock<EventDetails> _inputEventsBlock = new BufferBlock<EventDetails>();
-        private readonly BufferBlock<EventSetWithEvents> _eventSetCreatedBlock = new BufferBlock<EventSetWithEvents>();
-        private readonly BufferBlock<EventSetWithEvents> _eventSetUpdatedBlock = new BufferBlock<EventSetWithEvents>();
-        private readonly BufferBlock<EventDetails> _eventSkippedBlock = new BufferBlock<EventDetails>();
-        private readonly BufferBlock<EventDetails> _eventFailedBlock = new BufferBlock<EventDetails>();
-        private readonly ILog _logger = LogManager.GetLogger(typeof(EventSetStorageProcessor));
+        private readonly ILog _logger = LogManager.GetLogger(typeof(EventSetStorageProcessorLogic));
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EventSetStorageProcessor" /> class.
-        /// </summary>
-        /// <param name="repositoryResolver">The repository resolver.</param>
-        /// <param name="identityService">The identity service.</param>
-        /// <param name="processTypeManager">The process type manager.</param>
-        /// <param name="configuration">The configuration.</param>
-        /// <param name="currentTimeProvider">The current time provider.</param>
-        /// <param name="isAsync">if set to <c>true</c> [is asynchronous].</param>
-        public EventSetStorageProcessor(Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider, bool isAsync = true)
+        public EventSetStorageProcessorLogic(Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager, Func<DateTime> currentTimeProvider)
         {
             _repositoryResolver = repositoryResolver;
             _identityService = identityService;
             _processTypeManager = processTypeManager;
-            _configuration = configuration;
             _currentTimeProvider = currentTimeProvider;
-
-            if (isAsync)
-            {
-                var result = CreateDataflowAsync(_inputEventsBlock);
-                result.EventSetCreated.LinkWith(_eventSetCreatedBlock);
-                result.EventSetUpdated.LinkWith(_eventSetUpdatedBlock);
-                result.EventSkipped.LinkWith(_eventSkippedBlock);
-                result.EventFailed.LinkWith(_eventFailedBlock);
-            }
-            else
-            {
-                CreateDataflowSync();
-            }
-        }
-
-        public IObserver<EventDetails> Input
-        {
-            get
-            {
-                return _inputEventsBlock.AsObserver();
-            }
-        }
-
-        IObservable<EventSetWithEvents> IEventSetStorageProcessor.EventSetCreatedOutput
-        {
-            get
-            {
-                return _eventSetCreatedBlock.AsObservable();
-            }
-        }
-
-        IObservable<EventSetWithEvents> IEventSetStorageProcessor.EventSetUpdatedOutput
-        {
-            get
-            {
-                return _eventSetUpdatedBlock.AsObservable();
-            }
-        }
-
-        IObservable<EventDetails> IEventSetStorageProcessor.EventSkippedOutput
-        {
-            get
-            {
-                return _eventSkippedBlock.AsObservable();
-            }
-        }
-
-        IObservable<EventDetails> IEventSetStorageProcessor.EventFailedOutput
-        {
-            get
-            {
-                return _eventFailedBlock.AsObservable();
-            }
-        }
-
-        public Task CompletionTask
-        {
-            get
-            {
-                return Task.WhenAll(
-                    _eventSetCreatedBlock.Completion,
-                    _eventSetUpdatedBlock.Completion,
-                    _eventSkippedBlock.Completion,
-                    _eventFailedBlock.Completion);
-            }
-        }
-
-        private CombinedDataflowResult CreateDataflowAsync(ISourceBlock<EventDetails> input)
-        {
-            return input
-                .Select(LogEvent)
-                .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
-                .SelectMany(SplitEventsIntoGroupsSafe)
-                .SelectSafe(CheckNeedSkipEventGroup)
-                .BufferSafe(TimeSpan.Parse(EventGroupBatchTimeout), EventGroupBatchSize)
-                .SelectManySafe(ProcessEventGroupsBatchSafe)
-                .Match(
-                    success => success.Map(result => result.IsCreated,
-                        resultCreated => resultCreated.Select(result => result.EventSetWithEvents),
-                        resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents),
-                        (eventSetCreated, eventSetUpdated) => new { eventSetCreated, eventSetUpdated }),
-                    failure => failure.Map(result => result.IsSkipped,
-                        resultSkipped => resultSkipped.SelectMany(result => result.Events),
-                        resultFailed => resultFailed.SelectMany(result => result.Events),
-                        (eventSkipped, eventFailed) => new { eventSkipped, eventFailed }),
-                    (success, failure) => new CombinedDataflowResult()
-                    {
-                        EventSetCreated = success.eventSetCreated,
-                        EventSetUpdated = success.eventSetUpdated,
-                        EventSkipped = failure.eventSkipped,
-                        EventFailed = failure.eventFailed
-                    });
-        }
-
-        private void CreateDataflowSync()
-        {
-            _inputEventsBlock.AsObservable().ToEnumerable()
-                .Select(LogEvent)
-                .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
-                .SelectMany(SplitEventsIntoGroupsSafe)
-                .SelectSafe(CheckNeedSkipEventGroup)
-                .BufferSafe(TimeSpan.Parse(EventGroupBatchTimeout), EventGroupBatchSize)
-                .SelectManySafe(ProcessEventGroupsBatchSafe)
-                .Match(
-                    success =>
-                        success.Map(result => result.IsCreated,
-                            resultCreated => resultCreated.Select(result => result.EventSetWithEvents)
-                                .LinkTo(_eventSetCreatedBlock.AsObserver()),
-                            resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents)
-                                .LinkTo(_eventSetUpdatedBlock.AsObserver())),
-                    failure => failure.Map(result => result.IsSkipped,
-                        resultSkipped => resultSkipped.SelectMany(result => result.Events)
-                            .LinkTo(_eventSkippedBlock.AsObserver()),
-                        resultFailed => resultFailed.SelectMany(result => result.Events)
-                            .LinkTo(_eventFailedBlock.AsObserver())));
-        }
-
-        private EventDetails LogEvent(EventDetails @event)
-        {
-            _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Id);
-            return @event;
         }
 
         private static Result<T, UnsuccessResult> InvokeSafe<T>(
@@ -209,7 +64,13 @@ namespace TplDataflow.Extensions.Example.Implementation
             return InvokeSafe(events, () => func().ToResult<T, UnsuccessResult>());
         }
 
-        private IEnumerable<Result<EventGroup, UnsuccessResult>> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
+        public EventDetails LogEvent(EventDetails @event)
+        {
+            _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Id);
+            return @event;
+        }
+
+        public IEnumerable<Result<EventGroup, UnsuccessResult>> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
         {
             var eventGroupsByEventType = events
                 .GroupBy(@event => new
@@ -248,7 +109,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .SelectMany(SplitEventGroupByThreshold);
         }
 
-        private Result<EventGroup, UnsuccessResult> CheckNeedSkipEventGroup(EventGroup eventGroup)
+        public Result<EventGroup, UnsuccessResult> CheckNeedSkipEventGroup(EventGroup eventGroup)
         {
             if (NeedSkipEventGroup(eventGroup))
             {
@@ -262,7 +123,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             return eventGroup.EventSetType.Level == EventLevel.Information;
         }
 
-        private IEnumerable<Result<SuccessResult, UnsuccessResult>> ProcessEventGroupsBatchSafe(IList<EventGroup> eventGroupsBatch)
+        public IEnumerable<Result<SuccessResult, UnsuccessResult>> ProcessEventGroupsBatchSafe(IList<EventGroup> eventGroupsBatch)
         {
             using (var repository = _repositoryResolver())
             {
@@ -492,7 +353,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                             "EventSetProcessingType was not found for [EventTypeId = {0}, Category = {1}]", eventTypeId, category)));
         }
 
-        private class EventGroup
+        internal class EventGroup
         {
             public EventSetType EventSetType { get; set; }
 
@@ -501,7 +362,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             public List<EventDetails> Events { get; set; }
         }
 
-        private class SuccessResult
+        internal class SuccessResult
         {
             private readonly bool _isCreated;
             private readonly EventSetWithEvents _eventSetWithEvents;
@@ -529,7 +390,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
         }
 
-        private class UnsuccessResult
+        internal class UnsuccessResult
         {
             private readonly bool _isSkipped;
             private readonly IEnumerable<EventDetails> _events;
@@ -586,16 +447,5 @@ namespace TplDataflow.Extensions.Example.Implementation
                 return new UnsuccessResult(true, events, 0, string.Empty);
             }
         }
-
-        private class CombinedDataflowResult
-        {
-            public ISourceBlock<EventSetWithEvents> EventSetCreated { get; set; }
-
-            public ISourceBlock<EventSetWithEvents> EventSetUpdated { get; set; }
-
-            public ISourceBlock<EventDetails> EventSkipped { get; set; }
-
-            public ISourceBlock<EventDetails> EventFailed { get; set; }
-        }
-    }
+     }
 }
