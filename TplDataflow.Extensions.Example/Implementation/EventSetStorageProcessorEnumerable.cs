@@ -22,7 +22,6 @@ namespace TplDataflow.Extensions.Example.Implementation
         private readonly Subject<EventDetails> _eventSkippedOutput = new Subject<EventDetails>();
         private readonly Task _completionTask;
 
-
         public EventSetStorageProcessorEnumerable(Func<IEventSetRepository> repositoryResolver,
             IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager,
             IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider)
@@ -31,14 +30,18 @@ namespace TplDataflow.Extensions.Example.Implementation
                 identityService, processTypeManager, currentTimeProvider);
             _configuration = configuration;
 
-            _completionTask = GetCompletionTask();
-
-            var dataflowResult = Process(_input.ToEnumerable());
-
-            dataflowResult.EventSetCreated.Subscribe(_eventSetCreatedOutput);
-            dataflowResult.EventSetUpdated.Subscribe(_eventSetUpdatedOutput);
-            dataflowResult.EventSkipped.Subscribe(_eventSkippedOutput);
-            dataflowResult.EventFailed.Subscribe(_eventFailedOutput);
+            _completionTask = Task.Run(async () =>
+            {
+                var dataflowResult = Process(_input.ToEnumerable().ToList());
+                dataflowResult.EventSetCreated.Subscribe(_eventSetCreatedOutput);
+                dataflowResult.EventSetUpdated.Subscribe(_eventSetUpdatedOutput);
+                dataflowResult.EventSkipped.Subscribe(_eventSkippedOutput);
+                dataflowResult.EventFailed.Subscribe(_eventFailedOutput);
+                await _eventSetCreatedOutput.LastOrDefaultAsync();
+                await _eventSetUpdatedOutput.LastOrDefaultAsync();
+                await _eventSkippedOutput.LastOrDefaultAsync();
+                await _eventFailedOutput.LastOrDefaultAsync();
+            });
         }
 
         IObserver<EventDetails> IEventSetStorageProcessor.Input
@@ -110,11 +113,11 @@ namespace TplDataflow.Extensions.Example.Implementation
                     success => success.Map(result => result.IsCreated,
                         resultCreated => resultCreated.Select(result => result.EventSetWithEvents),
                         resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents),
-                        (eventSetCreated, eventSetUpdated) => new {eventSetCreated, eventSetUpdated}),
+                        (eventSetCreated, eventSetUpdated) => new { eventSetCreated, eventSetUpdated }),
                     failure => failure.Map(result => result.IsSkipped,
                         resultSkipped => resultSkipped.SelectMany(result => result.Events),
                         resultFailed => resultFailed.SelectMany(result => result.Events),
-                        (eventSkipped, eventFailed) => new {eventSkipped, eventFailed}),
+                        (eventSkipped, eventFailed) => new { eventSkipped, eventFailed }),
                     (success, failure) => new DataflowResult
                     {
                         EventSetCreated = success.eventSetCreated,
