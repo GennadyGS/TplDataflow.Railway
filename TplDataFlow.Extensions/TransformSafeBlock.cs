@@ -81,7 +81,7 @@ namespace TplDataFlow.Extensions
         IDisposable ISourceBlock<Result<TOutput, TFailure>>.LinkTo(ITargetBlock<Result<TOutput, TFailure>> target,
             DataflowLinkOptions linkOptions)
         {
-            return ((ISourceBlock<Result<TOutput, TFailure>>)_outputBufferBlock).LinkTo(target, linkOptions);
+            return _outputBufferBlock.LinkTo(target, linkOptions);
         }
 
         Result<TOutput, TFailure> ISourceBlock<Result<TOutput, TFailure>>.ConsumeMessage(

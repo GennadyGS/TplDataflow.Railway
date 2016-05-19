@@ -18,15 +18,22 @@ namespace TplDataflow.Extensions.Example.Implementation
         private readonly Subject<EventDetails> _input = new Subject<EventDetails>();
         private readonly Subject<EventSetWithEvents> _eventSetCreatedOutput = new Subject<EventSetWithEvents>();
         private readonly Subject<EventSetWithEvents> _eventSetUpdatedOutput = new Subject<EventSetWithEvents>();
-        private readonly Subject<EventDetails> _eventSkippedOutput = new Subject<EventDetails>();
         private readonly Subject<EventDetails> _eventFailedOutput = new Subject<EventDetails>();
+        private readonly Subject<EventDetails> _eventSkippedOutput = new Subject<EventDetails>();
+        private readonly Task _completionTask;
 
-        public EventSetStorageProcessorEnumerable(Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider)
+
+        public EventSetStorageProcessorEnumerable(Func<IEventSetRepository> repositoryResolver,
+            IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager,
+            IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider)
         {
-            _logic = new EventSetStorageProcessorLogic(repositoryResolver, identityService, processTypeManager, currentTimeProvider);
+            _logic = new EventSetStorageProcessorLogic(repositoryResolver, 
+                identityService, processTypeManager, currentTimeProvider);
             _configuration = configuration;
 
-            var dataflowResult = CreateDataflow(_input.ToEnumerable());
+            _completionTask = GetCompletionTask();
+
+            var dataflowResult = Process(_input.ToEnumerable());
 
             dataflowResult.EventSetCreated.Subscribe(_eventSetCreatedOutput);
             dataflowResult.EventSetUpdated.Subscribe(_eventSetUpdatedOutput);
@@ -78,11 +85,19 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             get
             {
-                throw new NotImplementedException();
+                return _completionTask;
             }
         }
 
-        private DataflowResult CreateDataflow(IEnumerable<EventDetails> input)
+        private async Task GetCompletionTask()
+        {
+            await _eventSetCreatedOutput.LastOrDefaultAsync();
+            await _eventSetUpdatedOutput.LastOrDefaultAsync();
+            await _eventSkippedOutput.LastOrDefaultAsync();
+            await _eventFailedOutput.LastOrDefaultAsync();
+        }
+
+        private DataflowResult Process(IEnumerable<EventDetails> input)
         {
             return input
                 .Select(_logic.LogEvent)
@@ -95,11 +110,11 @@ namespace TplDataflow.Extensions.Example.Implementation
                     success => success.Map(result => result.IsCreated,
                         resultCreated => resultCreated.Select(result => result.EventSetWithEvents),
                         resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents),
-                        (eventSetCreated, eventSetUpdated) => new { eventSetCreated, eventSetUpdated }),
+                        (eventSetCreated, eventSetUpdated) => new {eventSetCreated, eventSetUpdated}),
                     failure => failure.Map(result => result.IsSkipped,
                         resultSkipped => resultSkipped.SelectMany(result => result.Events),
                         resultFailed => resultFailed.SelectMany(result => result.Events),
-                        (eventSkipped, eventFailed) => new { eventSkipped, eventFailed }),
+                        (eventSkipped, eventFailed) => new {eventSkipped, eventFailed}),
                     (success, failure) => new DataflowResult
                     {
                         EventSetCreated = success.eventSetCreated,
@@ -108,6 +123,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                         EventFailed = failure.eventFailed
                     });
         }
+
         private class DataflowResult
         {
             public IEnumerable<EventSetWithEvents> EventSetCreated { get; set; }

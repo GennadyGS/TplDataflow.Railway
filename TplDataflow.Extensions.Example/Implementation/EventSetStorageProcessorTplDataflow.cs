@@ -85,10 +85,9 @@ namespace TplDataflow.Extensions.Example.Implementation
 
         private DataflowResult CreateDataflow(ISourceBlock<EventDetails> input)
         {
-            var batchTimeout = TimeSpan.Parse(_configuration.EventBatchTimeout);
             return input
                 .Select(_logic.LogEvent)
-                .Buffer(batchTimeout, _configuration.EventBatchSize)
+                .Buffer(TimeSpan.Parse(_configuration.EventBatchTimeout), _configuration.EventBatchSize)
                 .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                 .SelectSafe(_logic.CheckNeedSkipEventGroup)
                 .BufferSafe(TimeSpan.Parse(_configuration.EventGroupBatchTimeout), _configuration.EventGroupBatchSize)

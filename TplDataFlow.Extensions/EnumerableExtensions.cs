@@ -116,26 +116,20 @@ namespace TplDataFlow.Extensions
                     ? selectorOnSuccess(group.Select(item => item.Success))
                     : selectorOnFailure(group.Select(item => item.Failure)));
         }
-
         public static TResult Match<TInput, TInputFailure, TOutput, TOutputFailure, TResult>(
             this IEnumerable<Result<TInput, TInputFailure>> source,
             Func<IEnumerable<TInput>, TOutput> selectorOnSuccess,
             Func<IEnumerable<TInputFailure>, TOutputFailure> selectorOnFailure,
             Func<TOutput, TOutputFailure, TResult> resultSelector)
         {
-            var mapBySuccess = source
-                .GroupBy(item => item.IsSuccess)
-                .ToDictionary(group => group.Key);
-
-            var outputSuccess = mapBySuccess.ContainsKey(true) 
-                ? mapBySuccess[true].Select(item =>item.Success) 
-                : Enumerable.Empty<TInput>();
-
-            var outputFailure = mapBySuccess.ContainsKey(false)
-                ? mapBySuccess[false].Select(item => item.Failure)
-                : Enumerable.Empty<TInputFailure>();
-
-            return resultSelector(selectorOnSuccess(outputSuccess), selectorOnFailure(outputFailure));
+            // TODO: Avoid multiple enumerations
+            return resultSelector(
+                selectorOnSuccess(source
+                    .Where(item => item.IsSuccess)
+                    .Select(item => item.Success)), 
+                selectorOnFailure(source
+                    .Where(item => !item.IsSuccess)
+                    .Select(item => item.Failure)));
         }
 
         public static IEnumerable<TOutput> Map<TInput, TOutput>(this IEnumerable<TInput> source,
@@ -156,19 +150,10 @@ namespace TplDataFlow.Extensions
             Func<IEnumerable<TInput>, TOutputFalse> selectorOnFalse,
             Func<TOutputTrue, TOutputFalse, TResult> resultSelector)
         {
-            var mapByPredicate = source
-                .GroupBy(item => predicate(item))
-                .ToDictionary(group => group.Key);
-
-            var outputSuccess = mapByPredicate.ContainsKey(true)
-                ? mapByPredicate[true]
-                : Enumerable.Empty<TInput>();
-
-            var outputFailure = mapByPredicate.ContainsKey(false)
-                ? mapByPredicate[false]
-                : Enumerable.Empty<TInput>();
-
-            return resultSelector(selectorOnTrue(outputSuccess), selectorOnFalse(outputFailure));
+            // TODO: Avoid multiple enumerations
+            return resultSelector(
+                selectorOnTrue(source.Where(item => predicate(item))), 
+                selectorOnFalse(source.Where(item => !predicate(item))));
         }
 
         public static void LinkTo<T>(this IEnumerable<T> source, IObserver<T> target)
