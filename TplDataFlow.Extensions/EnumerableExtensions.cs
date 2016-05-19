@@ -147,14 +147,5 @@ namespace TplDataFlow.Extensions
             // TODO: Decouple from observable
             source.ToObservable().Subscribe(target);
         }
-
-        public static IEnumerable<T> SideEffect<T>(this IEnumerable<T> source, Action<T> sideEffect)
-        {
-            return source.Select(item =>
-            {
-                sideEffect(item);
-                return item;
-            });
-        }
     }
 }

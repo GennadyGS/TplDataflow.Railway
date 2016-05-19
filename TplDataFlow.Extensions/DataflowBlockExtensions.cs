@@ -98,15 +98,6 @@ namespace TplDataFlow.Extensions
                     item.ToResult<TSuccess, TFailure>()));
         }
 
-        public static ISourceBlock<T> SideEffect<T>(this ISourceBlock<T> source, Action<T> sideEffect)
-        {
-            return source.LinkWith(new TransformBlock<T, T>(item =>
-                {
-                    sideEffect(item);
-                    return item;
-                }));
-        }
-
         public static ISourceBlock<IList<T>> Buffer<T>(this ISourceBlock<T> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {

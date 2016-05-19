@@ -126,7 +126,7 @@ namespace TplDataflow.Extensions.Example.Implementation
         private CombinedDataflowResult CreateDataflowAsync(ISourceBlock<EventDetails> input)
         {
             return input
-                .SideEffect(LogEvent)
+                .Select(LogEvent)
                 .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
                 .SelectMany(SplitEventsIntoGroupsSafe)
                 .SelectSafe(CheckNeedSkipEventGroup)
@@ -153,7 +153,7 @@ namespace TplDataflow.Extensions.Example.Implementation
         private void CreateDataflowSync()
         {
             _inputEventsBlock.AsObservable().ToEnumerable()
-                .SideEffect(LogEvent)
+                .Select(LogEvent)
                 .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
                 .SelectMany(SplitEventsIntoGroupsSafe)
                 .SelectSafe(CheckNeedSkipEventGroup)
@@ -173,9 +173,10 @@ namespace TplDataflow.Extensions.Example.Implementation
                             .LinkTo(_eventFailedBlock.AsObserver())));
         }
 
-        private void LogEvent(EventDetails @event)
+        private EventDetails LogEvent(EventDetails @event)
         {
             _logger.DebugFormat("EventSet processing started for event [EventId = {0}]", @event.Id);
+            return @event;
         }
 
         private static Result<T, UnsuccessResult> InvokeSafe<T>(
