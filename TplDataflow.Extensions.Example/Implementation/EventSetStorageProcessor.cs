@@ -17,7 +17,7 @@ namespace TplDataflow.Extensions.Example.Implementation
     /// Implements <see cref="IEventSetStorageProcessor" /> interface
     /// </summary>
     /// <seealso cref="IEventSetStorageProcessor" />
-    public class EventSetStorageProcessor : IEventSetStorageProcessor
+    internal class EventSetStorageProcessor : IEventSetStorageProcessor
     {
         // TODO: Introduce configuration parameters
         private const int EventBatchSize = 1000;
@@ -59,7 +59,11 @@ namespace TplDataflow.Extensions.Example.Implementation
 
             if (isAsync)
             {
-                CreateDataflowAsync();
+                var result = CreateDataflowAsync(_inputEventsBlock);
+                result.EventSetCreated.LinkWith(_eventSetCreatedBlock);
+                result.EventSetUpdated.LinkWith(_eventSetUpdatedBlock);
+                result.EventSkipped.LinkWith(_eventSkippedBlock);
+                result.EventFailed.LinkWith(_eventFailedBlock);
             }
             else
             {
@@ -119,9 +123,9 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
         }
 
-        private void CreateDataflowAsync()
+        private CombinedDataflowResult CreateDataflowAsync(ISourceBlock<EventDetails> input)
         {
-            _inputEventsBlock
+            return input
                 .SideEffect(LogEvent)
                 .Buffer(TimeSpan.Parse(EventBatchTimeout), EventBatchSize)
                 .SelectMany(SplitEventsIntoGroupsSafe)
@@ -129,17 +133,21 @@ namespace TplDataflow.Extensions.Example.Implementation
                 .BufferSafe(TimeSpan.Parse(EventGroupBatchTimeout), EventGroupBatchSize)
                 .SelectManySafe(ProcessEventGroupsBatchSafe)
                 .Match(
-                    success =>
-                        success.Map(result => result.IsCreated,
-                            resultCreated => resultCreated.Select(result => result.EventSetWithEvents)
-                                .LinkWith(_eventSetCreatedBlock),
-                            resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents)
-                                .LinkWith(_eventSetUpdatedBlock)),
+                    success => success.Map(result => result.IsCreated,
+                        resultCreated => resultCreated.Select(result => result.EventSetWithEvents),
+                        resultUpdated => resultUpdated.Select(result => result.EventSetWithEvents),
+                        (eventSetCreated, eventSetUpdated) => new { eventSetCreated, eventSetUpdated }),
                     failure => failure.Map(result => result.IsSkipped,
-                        resultSkipped => resultSkipped.SelectMany(result => result.Events)
-                            .LinkWith(_eventSkippedBlock),
-                        resultFailed => resultFailed.SelectMany(result => result.Events)
-                            .LinkWith(_eventFailedBlock)));
+                        resultSkipped => resultSkipped.SelectMany(result => result.Events),
+                        resultFailed => resultFailed.SelectMany(result => result.Events),
+                        (eventSkipped, eventFailed) => new { eventSkipped, eventFailed }),
+                    (success, failure) => new CombinedDataflowResult()
+                    {
+                        EventSetCreated = success.eventSetCreated,
+                        EventSetUpdated = success.eventSetUpdated,
+                        EventSkipped = failure.eventSkipped,
+                        EventFailed = failure.eventFailed
+                    });
         }
 
         private void CreateDataflowSync()
@@ -204,36 +212,36 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             var eventGroupsByEventType = events
                 .GroupBy(@event => new
-                    {
-                        EventTypeId = @event.EventTypeId,
-                        EventCategory = @event.Category
-                    });
+                {
+                    EventTypeId = @event.EventTypeId,
+                    EventCategory = @event.Category
+                });
 
             var processTypesWithEvents = eventGroupsByEventType
                 .Select(eventGroup => GetProcessTypeSafe(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory, eventGroup)
                     .Select(processType => new
-                            {
-                                EventSetProcessType = processType,
-                                Events = eventGroup
-                            }));
+                    {
+                        EventSetProcessType = processType,
+                        Events = eventGroup
+                    }));
 
             var eventInfos =
                 processTypesWithEvents.SelectMany(processType => processType.Events,
                     (processType, @event) => new
-                        {
-                            Event = @event,
-                            EventSetProcessType = processType.EventSetProcessType,
-                            EventSetType = EventSetType.CreateFromEventAndLevel(@event, (EventLevel)processType.EventSetProcessType.Level)
-                        });
+                    {
+                        Event = @event,
+                        EventSetProcessType = processType.EventSetProcessType,
+                        EventSetType = EventSetType.CreateFromEventAndLevel(@event, (EventLevel)processType.EventSetProcessType.Level)
+                    });
 
             var eventGroupsByEventSetType = eventInfos
                 .GroupBy(eventInfo => eventInfo.EventSetType)
                 .Select(eventGroup => new EventGroup
-                    {
-                        EventSetType = eventGroup.Key,
-                        EventSetProcessType = eventGroup.First().EventSetProcessType,
-                        Events = eventGroup.Select(arg => arg.Event).ToList()
-                    });
+                {
+                    EventSetType = eventGroup.Key,
+                    EventSetProcessType = eventGroup.First().EventSetProcessType,
+                    Events = eventGroup.Select(arg => arg.Event).ToList()
+                });
 
             return eventGroupsByEventSetType
                 .SelectMany(SplitEventGroupByThreshold);
@@ -473,7 +481,8 @@ namespace TplDataflow.Extensions.Example.Implementation
             };
         }
 
-        private Result<EventSetProcessType, UnsuccessResult> GetProcessTypeSafe(int eventTypeId, EventTypeCategory category, IEnumerable<EventDetails> events){
+        private Result<EventSetProcessType, UnsuccessResult> GetProcessTypeSafe(int eventTypeId, EventTypeCategory category, IEnumerable<EventDetails> events)
+        {
             return InvokeSafe(events, () =>
                 _processTypeManager.GetProcessType(eventTypeId, category) ??
                     Result.Failure<EventSetProcessType, UnsuccessResult>(
@@ -575,6 +584,17 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 return new UnsuccessResult(true, events, 0, string.Empty);
             }
+        }
+
+        private class CombinedDataflowResult
+        {
+            public ISourceBlock<EventSetWithEvents> EventSetCreated { get; set; }
+
+            public ISourceBlock<EventSetWithEvents> EventSetUpdated { get; set; }
+
+            public ISourceBlock<EventDetails> EventSkipped { get; set; }
+
+            public ISourceBlock<EventDetails> EventFailed { get; set; }
         }
     }
 }

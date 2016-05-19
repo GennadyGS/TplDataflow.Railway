@@ -56,22 +56,30 @@ namespace TplDataFlow.Extensions
             return source.LinkWith(new TransformSafeBlock<TInput, TOutput, TFailure>(selector));
         }
 
-        public static void Match<TSuccess, TFailure>(this ISourceBlock<Result<TSuccess, TFailure>> source,
-            Action<ISourceBlock<TSuccess>> onSuccess, Action<ISourceBlock<TFailure>> onFailure)
+        public static TResult Match<TInput, TFailure, TOutputSuccess, TOutputFailure, TResult>(
+            this ISourceBlock<Result<TInput, TFailure>> source,
+            Func<ISourceBlock<TInput>, TOutputSuccess> selectorOnSuccess,
+            Func<ISourceBlock<TFailure>, TOutputFailure> selectorOnFailure,
+            Func<TOutputSuccess, TOutputFailure, TResult> resultSelector)
         {
-            var successBlock = new BufferBlock<Result<TSuccess, TFailure>>();
-            var failureBlock = new BufferBlock<Result<TSuccess, TFailure>>();
+            var successBlock = new BufferBlock<Result<TInput, TFailure>>();
+            var failureBlock = new BufferBlock<Result<TInput, TFailure>>();
 
             source
                 .LinkWhen(result => result.IsSuccess, successBlock)
                 .LinkOtherwise(failureBlock);
 
-            onSuccess(successBlock.Select(result => result.Success));
-            onFailure(failureBlock.Select(result => result.Failure));
+            return resultSelector(
+                selectorOnSuccess(successBlock.Select(result => result.Success)),
+                selectorOnFailure(failureBlock.Select(result => result.Failure)));
         }
 
-        public static void Map<T>(this ISourceBlock<T> source,
-            Predicate<T> predicate, Action<ISourceBlock<T>> onTrue, Action<ISourceBlock<T>> onFalse)
+
+        public static TResult Map<T, TOutputTrue, TOutputFalse, TResult>(this ISourceBlock<T> source, 
+            Predicate<T> predicate,
+            Func<ISourceBlock<T>, TOutputTrue> selectorOnTrue,
+            Func<ISourceBlock<T>, TOutputFalse> selectorOnFalse,
+            Func<TOutputTrue, TOutputFalse, TResult> resultSelector)
         {
             var trueBlock = new BufferBlock<T>();
             var falseBlock = new BufferBlock<T>();
@@ -80,10 +88,8 @@ namespace TplDataFlow.Extensions
                 .LinkWhen(predicate, trueBlock)
                 .LinkOtherwise(falseBlock);
 
-            onTrue(trueBlock);
-            onFalse(falseBlock);
+            return resultSelector(selectorOnTrue(trueBlock), selectorOnFalse(falseBlock));
         }
-
 
         public static ISourceBlock<Result<TSuccess, TFailure>> ToResult<TSuccess, TFailure>(this ISourceBlock<TSuccess> source)
         {
