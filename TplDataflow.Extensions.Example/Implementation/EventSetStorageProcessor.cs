@@ -175,6 +175,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 _logic = new EventSetStorageProcessorLogic(repositoryResolver, identityService, processTypeManager,
                     currentTimeProvider);
                 _configuration = configuration;
+                InitializeDataflow();
             }
 
             protected override ISourceBlock<Result> CreateDataflow(

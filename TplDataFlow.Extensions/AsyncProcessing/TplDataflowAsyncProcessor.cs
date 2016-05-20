@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace TplDataFlow.Extensions.AsyncProcessing
@@ -10,7 +11,6 @@ namespace TplDataFlow.Extensions.AsyncProcessing
 
         protected TplDataflowAsyncProcessor()
         {
-            Process();
         }
 
         private IObserver<TInput> InputObserver => _inputBlock.AsObserver();
@@ -37,10 +37,10 @@ namespace TplDataFlow.Extensions.AsyncProcessing
 
         protected abstract ISourceBlock<TOutput> CreateDataflow(ISourceBlock<TInput> input);
 
-        private ISourceBlock<TOutput> Process()
+        // TODO: Get rid of it
+        protected void InitializeDataflow()
         {
-            return CreateDataflow(_inputBlock)
-                .LinkWith(_outputBlock);
+            CreateDataflow(_inputBlock).LinkWith(_outputBlock);
         }
     }
 }

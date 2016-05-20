@@ -67,7 +67,7 @@ namespace TplDataflow.Extensions.Example.Test
 
             ArrangeMocks();
 
-            _storageProcessor = new EventSetStorageProcessor.EnumerableImpl(
+            _storageProcessor = new EventSetStorageProcessor.TplDataflowImpl(
                 () => _repositoryMock,
                 _identityManagementServiceMock,
                 _processTypeManagerMock,
