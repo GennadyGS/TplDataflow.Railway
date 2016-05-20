@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Linq;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Telerik.JustMock;
@@ -9,6 +8,7 @@ using Telerik.JustMock.Helpers;
 using TplDataflow.Extensions.Example.BusinessObjects;
 using TplDataflow.Extensions.Example.Implementation;
 using TplDataflow.Extensions.Example.Interfaces;
+using TplDataFlow.Extensions.AsyncProcessing;
 
 namespace TplDataflow.Extensions.Example.Test
 {
@@ -26,12 +26,7 @@ namespace TplDataflow.Extensions.Example.Test
         private IEventSetProcessTypeManager _processTypeManagerMock;
         private IEventSetConfiguration _configurationMock;
 
-        private IEventSetStorageProcessor _storageProcessor;
-
-        private IList<EventSetWithEvents> _storageProcessorEventSetCreatedOutput;
-        private IList<EventSetWithEvents> _storageProcessorEventSetUpdatedOutput;
-        private IList<EventDetails> _storageProcessorEventSkippedOutput;
-        private IList<EventDetails> _storageProcessorEventFailedOutput;
+        private IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> _storageProcessor;
 
         private readonly DateTime _currentTime = DateTime.UtcNow;
 
@@ -72,17 +67,12 @@ namespace TplDataflow.Extensions.Example.Test
 
             ArrangeMocks();
 
-            _storageProcessor = new EventSetStorageProcessorTplDataflow(
-                () => _repositoryMock, 
-                _identityManagementServiceMock, 
-                _processTypeManagerMock, 
-                _configurationMock, 
+            _storageProcessor = new EventSetStorageProcessor.EnumerableImpl(
+                () => _repositoryMock,
+                _identityManagementServiceMock,
+                _processTypeManagerMock,
+                _configurationMock,
                 () => _currentTime);
-
-            _storageProcessorEventSetCreatedOutput = _storageProcessor.EventSetCreatedOutput.CreateList();
-            _storageProcessorEventSetUpdatedOutput = _storageProcessor.EventSetUpdatedOutput.CreateList();
-            _storageProcessorEventSkippedOutput = _storageProcessor.EventSkippedOutput.CreateList();
-            _storageProcessorEventFailedOutput = _storageProcessor.EventFailedOutput.CreateList();
         }
 
         [TestMethod]
@@ -104,12 +94,10 @@ namespace TplDataflow.Extensions.Example.Test
             Mock.Arrange(() => _identityManagementServiceMock.GetNextLongIds(Arg.IsAny<string>(), Arg.IsAny<int>()))
                 .OccursNever();
 
-            ProcessEvents(new[] { _informationalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _informationalEvent });
 
-            _storageProcessorEventSetCreatedOutput.Should().BeEmpty();
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.ShouldAllBeEquivalentTo(new[] { _informationalEvent });
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSkipped(_informationalEvent);
 
             AssertMocks();
         }
@@ -120,12 +108,10 @@ namespace TplDataflow.Extensions.Example.Test
             Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
                 .Returns((EventSetProcessType)null);
 
-            ProcessEvents(new[] { _informationalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _informationalEvent });
 
-            _storageProcessorEventSetCreatedOutput.Should().BeEmpty();
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.ShouldAllBeEquivalentTo(new[] { _informationalEvent });
+            result.Should().HaveCount(1);
+            result.First().VerifyEventFailed(_informationalEvent);
         }
 
         [TestMethod]
@@ -152,15 +138,15 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(new[] { newEventSetId }.ToList())
                 .OccursOnce();
 
-            ProcessEvents(new[] { _criticalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
 
-            VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical);
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical, _currentTime);
 
             AssertMocks();
         }
+
+        // TODO: Verify all exceptions
 
         [TestMethod]
         public void WhenEventSetWasFoundInDb_ItShouldBeUpdated()
@@ -190,12 +176,10 @@ namespace TplDataflow.Extensions.Example.Test
             Mock.Arrange(() => _identityManagementServiceMock.GetNextLongIds(Arg.IsAny<string>(), Arg.IsAny<int>()))
                 .OccursNever();
 
-            ProcessEvents(new[] { _criticalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
 
-            _storageProcessorEventSetCreatedOutput.Should().BeEmpty();
-            VerifyEventSetUpdated(_criticalEvent, 1);
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSetUpdated(_criticalEvent, 1, _currentTime);
 
             AssertMocks();
         }
@@ -229,12 +213,10 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(new[] { newEventSetId }.ToList())
                 .OccursOnce();
 
-            ProcessEvents(new[] { _criticalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
 
-            VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical);
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical, _currentTime);
 
             AssertMocks();
         }
@@ -272,12 +254,10 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(new[] { newEventSetId }.ToList())
                 .OccursOnce();
 
-            ProcessEvents(new[] { _criticalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
 
-            VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical);
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical, _currentTime);
 
             AssertMocks();
         }
@@ -316,12 +296,10 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(new[] { newEventSetId }.ToList())
                 .OccursOnce();
 
-            ProcessEvents(new[] { _criticalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
 
-            VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical);
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical, _currentTime);
 
             AssertMocks();
         }
@@ -363,12 +341,10 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(new[] { newEventSetId }.ToList())
                 .OccursOnce();
 
-            ProcessEvents(new[] { _criticalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
 
-            VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical);
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical, _currentTime);
 
             AssertMocks();
         }
@@ -410,12 +386,10 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(new[] { newEventSetId }.ToList())
                 .OccursOnce();
 
-            ProcessEvents(new[] { _criticalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
 
-            VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical);
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical, _currentTime);
 
             AssertMocks();
         }
@@ -457,12 +431,10 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(new[] { newEventSetId }.ToList())
                 .OccursOnce();
 
-            ProcessEvents(new[] { _criticalEvent });
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
 
-            VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical);
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(1);
+            result.First().VerifyEventSetCreated(newEventSetId, _criticalEvent, EventLevel.Critical, _currentTime);
 
             AssertMocks();
         }
@@ -507,12 +479,10 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(eventSetIds.ToList())
                 .OccursOnce();
 
-            ProcessEvents(events);
+            var result = _storageProcessor.InvokeSync(events);
 
-            VerifyEventSetsCreatedForEachEvent(eventSetIds, events, EventLevel.Critical);
-            _storageProcessorEventSetUpdatedOutput.Should().BeEmpty();
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.VerifyEventSetsCreatedForEachEvent(
+                eventSetIds, events, EventLevel.Critical, _currentTime);
 
             AssertMocks();
         }
@@ -557,74 +527,18 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(new[] { newEventSetId }.ToList())
                 .OccursOnce();
 
-            ProcessEvents(events);
+            var result = _storageProcessor.InvokeSync(events);
 
-            VerifyEventSetCreated(newEventSetId, events.Last(), EventLevel.Critical);
-            VerifyEventSetUpdated(events.First(), 1);
-            _storageProcessorEventSkippedOutput.Should().BeEmpty();
-            _storageProcessorEventFailedOutput.Should().BeEmpty();
+            result.Should().HaveCount(2);
+            result[0].VerifyEventSetCreated(newEventSetId, events.Last(), EventLevel.Critical, _currentTime);
+            result[1].VerifyEventSetUpdated(events.First(), 1, _currentTime);
 
             AssertMocks();
-        }
-
-        private void ProcessEvents(EventDetails[] inputEvents)
-        {
-            inputEvents.ToObservable()
-                .Subscribe(_storageProcessor.Input);
-            _storageProcessor.CompletionTask.Wait();
         }
 
         private long GetCriticalEventsetTypeCode()
         {
             return EventSetType.CreateFromEventAndLevel(_criticalEvent, EventLevel.Critical).GetCode();
-        }
-
-        private void VerifyEventSetCreated(long eventSetId, EventDetails sourceEvent, EventLevel level)
-        {
-            _storageProcessorEventSetCreatedOutput
-                .Should().HaveCount(1, "Expected that event set should be created while actually not.");
-            VerifyCreatedEventSet(_storageProcessorEventSetCreatedOutput.First().EventSet, eventSetId, sourceEvent, level);
-        }
-
-        private void VerifyEventSetsCreatedForEachEvent(IList<long> eventSetIds, IList<EventDetails> sourceEvents, EventLevel level)
-        {
-            _storageProcessorEventSetCreatedOutput
-                .Should()
-                .HaveCount(sourceEvents.Count, "Expected that {0} event set should be created while actually {1}.", sourceEvents.Count, _storageProcessorEventSetCreatedOutput.Count);
-            _storageProcessorEventSetCreatedOutput
-                .Zip(sourceEvents, (eventSetWithEvents, sourceEvent) =>
-                    new { EventSetWithEvents = eventSetWithEvents, SourceEvent = sourceEvent })
-                .Zip(eventSetIds, (item, eventSetId) =>
-                    new { EventSetId = eventSetId, EventSetWithEvents = item.EventSetWithEvents, SourceEvent = item.SourceEvent })
-                .ToList()
-                .ForEach(item => VerifyCreatedEventSet(item.EventSetWithEvents.EventSet, item.EventSetId, item.SourceEvent, level));
-        }
-
-        private void VerifyCreatedEventSet(EventSet eventSet, long eventSetId, EventDetails sourceEvent, EventLevel level)
-        {
-            eventSet.Id.Should().Be(eventSetId);
-            eventSet.Level.Should().Be((byte)level);
-            eventSet.EventTypeId.Should().Be(sourceEvent.EventTypeId);
-            eventSet.ResourceCategory.Should().Be(sourceEvent.ResourceCategory);
-            eventSet.ResourceId.Should().Be(sourceEvent.ResourceId);
-            eventSet.SiteId.Should().Be(sourceEvent.SiteId);
-            eventSet.EventsCount.Should().Be(1);
-            eventSet.LastReadTime.Should().Be(sourceEvent.ReadTime);
-            eventSet.LastUpdateTime.Should().Be(_currentTime);
-            eventSet.CreationTime.Should().Be(_currentTime);
-        }
-
-        private void VerifyEventSetUpdated(EventDetails sourceEvent, int expectedEventCount)
-        {
-            _storageProcessorEventSetUpdatedOutput.Should().HaveCount(1, "Expected that event set should be updated while actually not.");
-            VerifyUpdatedEventSet(_storageProcessorEventSetUpdatedOutput.First().EventSet, sourceEvent, expectedEventCount);
-        }
-
-        private void VerifyUpdatedEventSet(EventSet eventSet, EventDetails sourceEvent, int expectedEventCount)
-        {
-            eventSet.EventsCount.Should().Be(expectedEventCount);
-            eventSet.LastReadTime.Should().Be(sourceEvent.ReadTime);
-            eventSet.LastUpdateTime.Should().Be(_currentTime);
         }
 
         private void ArrangeMocks()
@@ -634,13 +548,13 @@ namespace TplDataflow.Extensions.Example.Test
                 .Returns(EventBatchSize);
             _configurationMock
                 .Arrange(configuration => configuration.EventBatchTimeout)
-                .Returns(EventBatchTimeout);
+                .Returns(TimeSpan.Parse(EventBatchTimeout));
             _configurationMock
                 .Arrange(configuration => configuration.EventGroupBatchSize)
                 .Returns(EventGroupBatchSize);
             _configurationMock
                 .Arrange(configuration => configuration.EventGroupBatchTimeout)
-                .Returns(EventGroupBatchTimeout);
+                .Returns(TimeSpan.Parse(EventGroupBatchTimeout));
         }
 
         private void AssertMocks()

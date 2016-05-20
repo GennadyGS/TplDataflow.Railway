@@ -1,15 +1,17 @@
-﻿namespace TplDataflow.Extensions.Example.Interfaces
+﻿using System;
+
+namespace TplDataflow.Extensions.Example.Interfaces
 {
     /// <summary>
     /// Interface for configuring EventSets.
     /// </summary>
     public interface IEventSetConfiguration
     {
-        string EventBatchTimeout { get; }
+        TimeSpan EventBatchTimeout { get; }
 
         int EventBatchSize { get; }
 
-        string EventGroupBatchTimeout { get; }
+        TimeSpan EventGroupBatchTimeout { get; }
 
         int EventGroupBatchSize { get; }
     }

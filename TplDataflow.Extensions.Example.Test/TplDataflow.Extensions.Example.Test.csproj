@@ -82,10 +82,9 @@
   </Choose>
   <ItemGroup>
     <Compile Include="EventDetailsExtensions.cs" />
+    <Compile Include="EventSetProcessingResultExtensions.cs" />
     <Compile Include="EventSetStorageProcessorTest.cs" />
-    <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ReactiveMockUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -94,6 +93,10 @@
     <ProjectReference Include="..\TplDataflow.Extensions.Example\TplDataflow.Extensions.Example.csproj">
       <Project>{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3}</Project>
       <Name>TplDataflow.Extensions.Example</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TplDataFlow.Extensions\TplDataFlow.Extensions.csproj">
+      <Project>{6c3df27a-610c-48b9-a815-cf1496cb5663}</Project>
+      <Name>TplDataFlow.Extensions</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>

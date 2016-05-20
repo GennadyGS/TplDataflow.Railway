@@ -72,13 +72,10 @@
     <Compile Include="BusinessObjects\EventSetWithEvents.cs" />
     <Compile Include="BusinessObjects\EventTypeCategory.cs" />
     <Compile Include="Exceptions\EventHandlingException.cs" />
-    <Compile Include="Implementation\EventSetStorageProcessorEnumerable.cs" />
-    <Compile Include="Implementation\EventSetStorageProcessorTplDataflow.cs" />
-    <Compile Include="Implementation\EventSetStorageProcessorLogic.cs" />
+    <Compile Include="Implementation\EventSetStorageProcessor.cs" />
     <Compile Include="Interfaces\IEventSetConfiguration.cs" />
     <Compile Include="Interfaces\IEventSetProcessTypeManager.cs" />
     <Compile Include="Interfaces\IEventSetRepository.cs" />
-    <Compile Include="Interfaces\IEventSetStorageProcessor.cs" />
     <Compile Include="Interfaces\IIdentityManagementService.cs" />
     <Compile Include="BusinessObjects\Metadata.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

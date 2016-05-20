@@ -57,6 +57,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActionExtensions.cs" />
+    <Compile Include="AsyncProcessing\AsyncProcessorExtensions.cs" />
+    <Compile Include="AsyncProcessing\EnumerableAyncProcessor.cs" />
+    <Compile Include="AsyncProcessing\IAsyncProcessor.cs" />
+    <Compile Include="AsyncProcessing\TplDataflowAsyncProcessor.cs" />
     <Compile Include="DataflowBlockExtensions.cs" />
     <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="ObservableExtensions.cs" />
