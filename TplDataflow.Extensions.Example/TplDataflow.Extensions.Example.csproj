@@ -76,6 +76,7 @@
     <Compile Include="Interfaces\IEventSetConfiguration.cs" />
     <Compile Include="Interfaces\IEventSetProcessTypeManager.cs" />
     <Compile Include="Interfaces\IEventSetRepository.cs" />
+    <Compile Include="Interfaces\IEventSetStorageProcessorFactory.cs" />
     <Compile Include="Interfaces\IIdentityManagementService.cs" />
     <Compile Include="BusinessObjects\Metadata.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

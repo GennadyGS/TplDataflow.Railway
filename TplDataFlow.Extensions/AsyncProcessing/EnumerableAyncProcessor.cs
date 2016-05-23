@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 namespace TplDataFlow.Extensions.AsyncProcessing
 {
-    public abstract class EnumerableAsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
+    public class EnumerableAsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
     {
         private readonly Subject<TInput> _input = new Subject<TInput>();
         private readonly Subject<TOutput> _output = new Subject<TOutput>();
 
-        protected EnumerableAsyncProcessor()
+        public EnumerableAsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflow)
         {
             Task.Run(() =>
             {
-                CreateDataflow(_input.ToEnumerable().ToList())
+                dataflow(_input.ToEnumerable().ToList())
                     .Subscribe(_output);
             });
         }
@@ -40,7 +40,5 @@ namespace TplDataFlow.Extensions.AsyncProcessing
         {
             return _output.Subscribe(observer);
         }
-
-        protected abstract IEnumerable<TOutput> CreateDataflow(IEnumerable<TInput> input);
     }
 }

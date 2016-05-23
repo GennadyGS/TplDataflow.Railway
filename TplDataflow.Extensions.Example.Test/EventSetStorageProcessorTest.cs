@@ -12,7 +12,7 @@ using Xunit;
 
 namespace TplDataflow.Extensions.Example.Test
 {
-    public class EventSetStorageProcessorTest
+    public abstract class EventSetStorageProcessorTest
     {
         private const int EventBatchSize = 1000;
         private const string EventBatchTimeout = "00:00:05";
@@ -32,7 +32,7 @@ namespace TplDataflow.Extensions.Example.Test
 
         private readonly DateTime _currentTime = DateTime.UtcNow;
 
-        public EventSetStorageProcessorTest()
+        protected EventSetStorageProcessorTest(EventSetStorageProcessor.IFactory storageProcessorFactory)
         {
             _criticalEvent = new EventDetails
             {
@@ -61,11 +61,11 @@ namespace TplDataflow.Extensions.Example.Test
 
             ArrangeMocks();
 
-            _storageProcessor = new EventSetStorageProcessor.TplDataflowImpl(
-                () => _repositoryMock,
-                _identityManagementServiceMock,
-                _processTypeManagerMock,
-                _configurationMock,
+            _storageProcessor = storageProcessorFactory.CreateStorageProcessor(
+                () => _repositoryMock, 
+                _identityManagementServiceMock, 
+                _processTypeManagerMock, 
+                _configurationMock, 
                 () => _currentTime);
         }
 
@@ -557,6 +557,18 @@ namespace TplDataflow.Extensions.Example.Test
             Mock.Assert(_identityManagementServiceMock);
             Mock.Assert(_repositoryMock);
             Mock.Assert(_configurationMock);
+        }
+
+        public class EnumerableImpl : EventSetStorageProcessorTest
+        {
+            public EnumerableImpl() : base(new EventSetStorageProcessor.EnumerableFactory())
+            { }
+        }
+
+        public class TplDataflowImpl : EventSetStorageProcessorTest
+        {
+            public TplDataflowImpl() : base(new EventSetStorageProcessor.TplDataflowFactory())
+            { }
         }
     }
 }

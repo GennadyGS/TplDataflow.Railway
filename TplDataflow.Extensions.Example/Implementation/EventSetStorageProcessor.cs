@@ -22,7 +22,14 @@ namespace TplDataflow.Extensions.Example.Implementation
             EventFailed
         }
 
-        public struct Result: IEquatable<Result>
+        public interface IFactory
+        {
+            IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(Func<IEventSetRepository> repositoryResolver,
+                IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager,
+                IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider);
+        }
+
+        public class Result : IEquatable<Result>
         {
             private readonly EventDetails _eventFailed;
             private readonly EventSetWithEvents _eventSetCreated;
@@ -105,6 +112,16 @@ namespace TplDataflow.Extensions.Example.Implementation
                 }
             }
 
+            public bool Equals(Result other)
+            {
+                var eventSetCreatedEquals = _eventSetCreated.Equals(other._eventSetCreated);
+                return (_resultCode == other.ResultCode) &&
+                       eventSetCreatedEquals &&
+                       _eventSetUpdated.Equals(other._eventSetUpdated) &&
+                       _eventSkipped.Equals(other._eventSkipped) &&
+                       _eventFailed.Equals(other._eventFailed);
+            }
+
             public static Result CreateEventSetCreated(EventSetWithEvents eventsetWithEvents)
             {
                 return new Result(ResultCode.EventSetCreated, eventsetWithEvents, null, null, null);
@@ -124,71 +141,60 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 return new Result(ResultCode.EventFailed, null, null, null, @event);
             }
-
-            public bool Equals(Result other)
-            {
-                var eventSetCreatedEquals = _eventSetCreated.Equals(other._eventSetCreated);
-                return (_resultCode == other.ResultCode) &&
-                       eventSetCreatedEquals &&
-                       _eventSetUpdated.Equals(other._eventSetUpdated) &&
-                       _eventSkipped.Equals(other._eventSkipped) &&
-                       _eventFailed.Equals(other._eventFailed);
-            }
         }
 
-        public class EnumerableImpl : EnumerableAsyncProcessor<EventDetails, Result>
+        public class TplDataflowFactory : IFactory
         {
-            private readonly IEventSetConfiguration _configuration;
-            private readonly EventSetStorageProcessorLogic _logic;
-
-            public EnumerableImpl(Func<IEventSetRepository> repositoryResolver,
-                IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager,
-                IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider)
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
             {
-                _logic = new EventSetStorageProcessorLogic(repositoryResolver,
+                var logic = new Logic(repositoryResolver,
                     identityService, processTypeManager, currentTimeProvider);
-                _configuration = configuration;
+
+                return
+                    new TplDataflowAsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
             }
 
-            protected override IEnumerable<Result> CreateDataflow(IEnumerable<EventDetails> input)
-            {
-                return input
-                    .Select(_logic.LogEvent)
-                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(_logic.CheckNeedSkipEventGroup)
-                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany((Result<SuccessResult, UnsuccessResult> res) => _logic.TransformResult(res));
-            }
-        }
-
-        public class TplDataflowImpl : TplDataflowAsyncProcessor<EventDetails, Result>
-        {
-            private readonly IEventSetConfiguration _configuration;
-            private readonly EventSetStorageProcessorLogic _logic;
-
-            public TplDataflowImpl(Func<IEventSetRepository> repositoryResolver,
-                IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager,
-                IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider)
-            {
-                _logic = new EventSetStorageProcessorLogic(repositoryResolver, identityService, processTypeManager,
-                    currentTimeProvider);
-                _configuration = configuration;
-                InitializeDataflow();
-            }
-
-            protected override ISourceBlock<Result> CreateDataflow(
+            private static ISourceBlock<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
                 ISourceBlock<EventDetails> input)
             {
                 return input
-                    .Select(_logic.LogEvent)
-                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(_logic.CheckNeedSkipEventGroup)
-                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany(_logic.TransformResult);
+                    .Select(logic.LogEvent)
+                    .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
+                    .SelectMany(logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(logic.CheckNeedSkipEventGroup)
+                    .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
+                    .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany(logic.TransformResult);
+            }
+        }
+
+        public class EnumerableFactory : IFactory
+        {
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                var logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+
+                return new EnumerableAsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+            }
+
+            private static IEnumerable<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
+                IEnumerable<EventDetails> input)
+            {
+                return input
+                    .Select(logic.LogEvent)
+                    .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
+                    .SelectMany(logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(logic.CheckNeedSkipEventGroup)
+                    .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
+                    .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Result<SuccessResult, UnsuccessResult> res) => logic.TransformResult(res));
             }
         }
 
@@ -200,7 +206,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             public SuccessResult(bool isCreated, EventSet eventSet, IList<EventDetails> events)
             {
                 _isCreated = isCreated;
-                _eventSetWithEvents = new EventSetWithEvents { EventSet = eventSet, Events = events };
+                _eventSetWithEvents = new EventSetWithEvents {EventSet = eventSet, Events = events};
             }
 
             public bool IsCreated
@@ -288,18 +294,18 @@ namespace TplDataflow.Extensions.Example.Implementation
             public List<EventDetails> Events { get; set; }
         }
 
-        private class EventSetStorageProcessorLogic
+        private class Logic
         {
             private const string EventSetSequenceName = "EventSet";
             private readonly Func<DateTime> _currentTimeProvider;
             private readonly IIdentityManagementService _identityService;
 
-            private readonly ILog _logger = LogManager.GetLogger(typeof(EventSetStorageProcessorLogic));
+            private readonly ILog _logger = LogManager.GetLogger(typeof(Logic));
             private readonly IEventSetProcessTypeManager _processTypeManager;
 
             private readonly Func<IEventSetRepository> _repositoryResolver;
 
-            public EventSetStorageProcessorLogic(Func<IEventSetRepository> repositoryResolver,
+            public Logic(Func<IEventSetRepository> repositoryResolver,
                 IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager,
                 Func<DateTime> currentTimeProvider)
             {
@@ -413,7 +419,8 @@ namespace TplDataflow.Extensions.Example.Implementation
                 catch (DBConcurrencyException e)
                 {
                     return TplDataFlow.Extensions.Result.Failure<T, UnsuccessResult>(
-                        UnsuccessResult.CreateFailed(events, Metadata.ExceptionHandling.DbUpdateConcurrencyException.Code,
+                        UnsuccessResult.CreateFailed(events,
+                            Metadata.ExceptionHandling.DbUpdateConcurrencyException.Code,
                             e.Message));
                 }
                 catch (Exception e)
