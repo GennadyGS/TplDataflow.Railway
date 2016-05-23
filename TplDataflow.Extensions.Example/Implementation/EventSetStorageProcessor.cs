@@ -206,7 +206,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             public SuccessResult(bool isCreated, EventSet eventSet, IList<EventDetails> events)
             {
                 _isCreated = isCreated;
-                _eventSetWithEvents = new EventSetWithEvents {EventSet = eventSet, Events = events};
+                _eventSetWithEvents = new EventSetWithEvents { EventSet = eventSet, Events = events };
             }
 
             public bool IsCreated
@@ -348,7 +348,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                             EventSetProcessType = processType.EventSetProcessType,
                             EventSetType =
                                 EventSetType.CreateFromEventAndLevel(@event,
-                                    (EventLevel) processType.EventSetProcessType.Level)
+                                    (EventLevel)processType.EventSetProcessType.Level)
                         });
 
                 var eventGroupsByEventSetType = eventInfos
@@ -388,7 +388,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                             lastEventSets =>
                                 InternalProcessEventGroupsBatchSafe(repository, eventGroupsBatch, lastEventSets))
                         .BufferSafe(int.MaxValue)
-                        .SelectSafe(resultList => ApplyChangesSafe(repository, resultList))
+                        .SelectSafe(resultList => ApplyChangesSafe(repository, resultList, events))
                         .SelectMany(result => result);
                 }
             }
@@ -464,7 +464,12 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
 
             private static Result<IList<SuccessResult>, UnsuccessResult> ApplyChangesSafe(
-                IEventSetRepository repository, IList<SuccessResult> results)
+                IEventSetRepository repository, IList<SuccessResult> results, IList<EventDetails> events)
+            {
+                return InvokeSafe(events, () => ApplyChanges(repository, results));
+            }
+
+            private static IList<SuccessResult> ApplyChanges(IEventSetRepository repository, IList<SuccessResult> results)
             {
                 repository.ApplyChanges(
                     results
@@ -475,7 +480,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                         .Where(result => !result.IsCreated)
                         .Select(result => result.EventSetWithEvents.EventSet)
                         .ToList());
-                return results.ToResult<IList<SuccessResult>, UnsuccessResult>();
+                return results;
             }
 
             private bool NeedToCreateEventSet(EventGroup eventGroup, IList<EventSet> lastEventSets)
@@ -491,7 +496,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             private bool IsEventSetOutdated(EventSet eventSet, EventSetProcessType eventSetProcessType,
                 DateTime nextReadTime)
             {
-                if (eventSet.Status == (int) EventSetStatus.Completed)
+                if (eventSet.Status == (int)EventSetStatus.Completed)
                 {
                     _logger.DebugFormat("EventSet is already completed [Id = {0}].", eventSet.Id);
                     return true;
@@ -521,11 +526,11 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 DateTime autoCompleteTime = DateTime.UtcNow.Subtract(timeout);
 
-                return (eventSet.Status == (byte) EventSetStatus.New && eventSet.CreationTime < autoCompleteTime)
+                return (eventSet.Status == (byte)EventSetStatus.New && eventSet.CreationTime < autoCompleteTime)
                        ||
                        (
-                           (eventSet.Status == (byte) EventSetStatus.Accepted ||
-                            eventSet.Status == (byte) EventSetStatus.Rejected)
+                           (eventSet.Status == (byte)EventSetStatus.Accepted ||
+                            eventSet.Status == (byte)EventSetStatus.Rejected)
                            && eventSet.AcceptedTime < autoCompleteTime
                            );
             }
@@ -536,7 +541,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                     .SelectMany(eventSetIds =>
                         eventGroups
                             .Zip(eventSetIds, (eventGroup, eventSetId) =>
-                                new {EventGroup = eventGroup, EventSetId = eventSetId})
+                                new { EventGroup = eventGroup, EventSetId = eventSetId })
                             .Select(item => CreateEventSet(item.EventSetId, item.EventGroup)));
             }
 
@@ -569,12 +574,12 @@ namespace TplDataflow.Extensions.Example.Implementation
                 {
                     Id = eventSetId,
                     EventTypeId = eventGroup.EventSetType.EventTypeId,
-                    EventTypeCategory = (byte) eventGroup.EventSetType.EventTypeCategory,
+                    EventTypeCategory = (byte)eventGroup.EventSetType.EventTypeCategory,
                     ResourceId = eventGroup.EventSetType.ResourceId,
                     ResourceCategory = eventGroup.EventSetType.ResourceCategory,
                     SiteId = eventGroup.EventSetType.SiteId,
-                    Level = (byte) eventGroup.EventSetType.Level,
-                    Status = (byte) EventSetStatus.New,
+                    Level = (byte)eventGroup.EventSetType.Level,
+                    Status = (byte)EventSetStatus.New,
                     CreationTime = currentTime,
                     FirstReadTime = eventGroup.Events.Min(@event => @event.ReadTime),
                     LastReadTime = eventGroup.Events.Max(@event => @event.ReadTime),
@@ -606,11 +611,11 @@ namespace TplDataflow.Extensions.Example.Implementation
 
                 lastEventSet.FirstReadTime = events
                     .Select(@event => @event.ReadTime)
-                    .Concat(new[] {lastEventSet.FirstReadTime})
+                    .Concat(new[] { lastEventSet.FirstReadTime })
                     .Min();
                 lastEventSet.LastReadTime = events
                     .Select(@event => @event.ReadTime)
-                    .Concat(new[] {lastEventSet.LastReadTime})
+                    .Concat(new[] { lastEventSet.LastReadTime })
                     .Max();
                 lastEventSet.LastUpdateTime = _currentTimeProvider();
                 lastEventSet.EventsCount += events.Count;

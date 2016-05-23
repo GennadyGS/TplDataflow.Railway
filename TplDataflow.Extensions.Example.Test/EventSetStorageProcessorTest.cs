@@ -70,6 +70,121 @@ namespace TplDataflow.Extensions.Example.Test
         }
 
         [Fact]
+        public void WhenEventSetProcessTypeWasNotFound_EventShouldBeFailed()
+        {
+            Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
+                .Returns((EventSetProcessType)null);
+
+            var result = _storageProcessor.InvokeSync(new[] { _informationalEvent });
+
+            result.Should().HaveCount(1);
+            result.First().VerifyEventFailed(_informationalEvent);
+        }
+
+        [Fact]
+        public void WhenEventSetProcessTypeThrowsException_EventShouldBeFailed()
+        {
+            Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
+                .Throws<Exception>();
+
+            var result = _storageProcessor.InvokeSync(new[] { _informationalEvent });
+
+            result.Should().HaveCount(1);
+            result.First().VerifyEventFailed(_informationalEvent);
+        }
+
+        [Fact]
+        public void WhenFindLastEventSetsThrowsException_EventShouldBeFailed()
+        {
+            var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical };
+            Mock.Arrange(() => _processTypeManagerMock.GetProcessType(
+                    Arg.Is(_criticalEvent.EventTypeId), Arg.Is(_criticalEvent.Category)))
+                .Returns(processType);
+
+            Mock.Arrange(() => _repositoryMock.FindLastEventSetsByTypeCodes(
+                Arg.Matches<long[]>(typeCodes => typeCodes.SequenceEqual(new[] {GetCriticalEventsetTypeCode()}))))
+                .Throws<Exception>();
+
+            Mock.Arrange(() => _repositoryMock.ApplyChanges(
+                    Arg.IsAny<IList<EventSet>>(),
+                    Arg.IsAny<IList<EventSet>>()))
+                .OccursNever();
+
+            Mock.Arrange(() => _identityManagementServiceMock.GetNextLongIds(
+                Arg.IsAny<string>(), Arg.IsAny<int>()))
+                .OccursNever();
+
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
+
+            result.Should().HaveCount(1);
+            result.First().VerifyEventFailed(_criticalEvent);
+
+            AssertMocks();
+        }
+
+        [Fact]
+        public void WhenGetNextLongIdsThrowsException_EventShouldBeFailed()
+        {
+            var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical };
+            Mock.Arrange(() => _processTypeManagerMock.GetProcessType(
+                    Arg.Is(_criticalEvent.EventTypeId), Arg.Is(_criticalEvent.Category)))
+                .Returns(processType);
+
+            Mock.Arrange(() => _repositoryMock.FindLastEventSetsByTypeCodes(
+                    Arg.Matches<long[]>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
+                .Returns(new List<EventSet>())
+                .OccursOnce();
+
+            Mock.Arrange(() => _repositoryMock.ApplyChanges(
+                    Arg.IsAny<IList<EventSet>>(),
+                    Arg.IsAny<IList<EventSet>>()))
+                .OccursNever();
+
+            Mock.Arrange(() => _identityManagementServiceMock.GetNextLongIds(
+                    Arg.IsAny<string>(), Arg.IsAny<int>()))
+                .Throws<Exception>();
+
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
+
+            result.Should().HaveCount(1);
+            result.First().VerifyEventFailed(_criticalEvent);
+
+            AssertMocks();
+        }
+
+        [Fact]
+        public void WhenApplyChangesThrowsException_EventShouldBeFailed()
+        {
+            var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical };
+            Mock.Arrange(() => _processTypeManagerMock.GetProcessType(
+                    Arg.Is(_criticalEvent.EventTypeId), Arg.Is(_criticalEvent.Category)))
+                .Returns(processType);
+
+            Mock.Arrange(() => _repositoryMock.FindLastEventSetsByTypeCodes(
+                    Arg.Matches<long[]>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
+                .Returns(new List<EventSet>())
+                .OccursOnce();
+
+            Mock.Arrange(() => _repositoryMock.ApplyChanges(
+                    Arg.IsAny<IList<EventSet>>(),
+                    Arg.IsAny<IList<EventSet>>()))
+                .Throws<Exception>();
+
+            long newEventSetId = 15345;
+
+            Mock.Arrange(() => _identityManagementServiceMock.GetNextLongIds(Arg.IsAny<string>(), 1))
+                .Returns(new[] { newEventSetId }.ToList())
+                .OccursOnce();
+
+            var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
+
+            result.Should().HaveCount(1);
+            result.First().VerifyEventFailed(_criticalEvent);
+
+            AssertMocks();
+        }
+
+        [Fact]
         public void WhenInformationalEventOccured_EventShouldBeSkipped()
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Information };
@@ -94,18 +209,6 @@ namespace TplDataflow.Extensions.Example.Test
             result.First().VerifyEventSkipped(_informationalEvent);
 
             AssertMocks();
-        }
-
-        [Fact]
-        public void WhenEventSetProcessTypeWasNotFound_EventShouldBeFailed()
-        {
-            Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
-                .Returns((EventSetProcessType)null);
-
-            var result = _storageProcessor.InvokeSync(new[] { _informationalEvent });
-
-            result.Should().HaveCount(1);
-            result.First().VerifyEventFailed(_informationalEvent);
         }
 
         [Fact]
@@ -139,8 +242,6 @@ namespace TplDataflow.Extensions.Example.Test
 
             AssertMocks();
         }
-
-        // TODO: Verify all exceptions
 
         [Fact]
         public void WhenEventSetWasFoundInDb_ItShouldBeUpdated()
