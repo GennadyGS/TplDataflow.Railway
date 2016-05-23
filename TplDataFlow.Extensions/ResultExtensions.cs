@@ -42,8 +42,7 @@ namespace TplDataFlow.Extensions
             this Result<TInput, TFailure> source, Func<TInput, IEnumerable<TOutput>> selector)
         {
             return source.Match(
-                    success => selector(success)
-                        .ToResult<TOutput, TFailure>(),
+                    success => selector(success).Select(Result.Success<TOutput, TFailure>),
                     failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
         }
 
@@ -55,7 +54,7 @@ namespace TplDataFlow.Extensions
             return source.Match(
                     success => mediumSelector(success)
                         .Select(medium => resultSelector(success, medium))
-                        .ToResult<TOutput, TFailure>(),
+                        .Select(Result.Success<TOutput, TFailure>),
                     failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
         }
 

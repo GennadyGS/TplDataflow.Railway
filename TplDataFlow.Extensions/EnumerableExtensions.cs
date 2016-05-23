@@ -6,11 +6,6 @@ namespace TplDataFlow.Extensions
 {
     public static class EnumerableExtensions
     {
-        public static IEnumerable<Result<T, TFailure>> ToResult<T, TFailure>(this IEnumerable<T> source)
-        {
-            return source.Select(Result.Success<T, TFailure>);
-        }
-
         public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source, int count)
         {
             return source
@@ -90,7 +85,7 @@ namespace TplDataFlow.Extensions
                 .Match(success => 
                     success
                         .GroupBy(keySelector)
-                        .ToResult<IGrouping<TKey, T>, TFailure>(),
+                        .Select(Result.Success<IGrouping<TKey, T>, TFailure>),
                     failure => failure.Select(Result.Failure<IGrouping<TKey, T>, TFailure>));
         }
 

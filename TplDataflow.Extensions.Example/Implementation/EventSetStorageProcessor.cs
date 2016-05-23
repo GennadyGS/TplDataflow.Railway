@@ -602,7 +602,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 return eventGroups
                     .Select(eventGroup => UpdateEventSet(eventGroup, lastEventSets))
-                    .ToResult<SuccessResult, UnsuccessResult>();
+                    .Select(TplDataFlow.Extensions.Result.Success<SuccessResult, UnsuccessResult>);
             }
 
             private SuccessResult UpdateEventSet(EventGroup eventGroup, IList<EventSet> lastEventSets)
