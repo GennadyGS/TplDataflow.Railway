@@ -6,6 +6,11 @@ namespace TplDataFlow.Extensions
 {
     public static class EnumerableExtensions
     {
+        public static IEnumerable<T> AsEnumerable<T>(this T value)
+        {
+            yield return value;
+        }
+
         public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source, int count)
         {
             return source
@@ -22,7 +27,7 @@ namespace TplDataFlow.Extensions
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsSuccess)
                     .SelectMany(group => group.Key
-                        ? Enumerable.Repeat(Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()), 1)
+                        ? Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()).AsEnumerable()
                         : group.Select(item => Result.Failure<IList<TSuccess>, TFailure>(item.Failure))));
         }
 

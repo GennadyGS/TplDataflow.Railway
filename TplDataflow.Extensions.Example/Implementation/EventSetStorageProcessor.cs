@@ -398,8 +398,8 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 return result.Match(
                     successResult => successResult.IsCreated
-                        ? Enumerable.Repeat(Result.CreateEventSetCreated(successResult.EventSetWithEvents), 1)
-                        : Enumerable.Repeat(Result.CreateEventSetUpdated(successResult.EventSetWithEvents), 1),
+                        ? Result.CreateEventSetCreated(successResult.EventSetWithEvents).AsEnumerable()
+                        : Result.CreateEventSetUpdated(successResult.EventSetWithEvents).AsEnumerable(),
                     unsuccessResult => unsuccessResult.IsSkipped
                         ? unsuccessResult.Events.Select(Result.CreateEventSkipped)
                         : unsuccessResult.Events.Select(Result.CreateEventFailed));

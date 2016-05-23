@@ -15,7 +15,7 @@ namespace TplDataFlow.Extensions
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsSuccess)
                     .SelectMany(group => group.Key
-                        ? Enumerable.Repeat(Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()), 1)
+                        ? Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()).AsEnumerable()
                         : group.Select(item => Result.Failure<IList<TSuccess>, TFailure>(item.Failure))));
         }
     }

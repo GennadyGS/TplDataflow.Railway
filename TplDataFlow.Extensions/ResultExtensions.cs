@@ -43,7 +43,7 @@ namespace TplDataFlow.Extensions
         {
             return source.Match(
                     success => selector(success).Select(Result.Success<TOutput, TFailure>),
-                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
+                    failure => Result.Failure<TOutput, TFailure>(failure).AsEnumerable());
         }
 
         public static IEnumerable<Result<TOutput, TFailure>> SelectMany<TInput, TOutput, TMedium, TFailure>(
@@ -55,14 +55,14 @@ namespace TplDataFlow.Extensions
                     success => mediumSelector(success)
                         .Select(medium => resultSelector(success, medium))
                         .Select(Result.Success<TOutput, TFailure>),
-                    failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
+                    failure => Result.Failure<TOutput, TFailure>(failure).AsEnumerable());
         }
 
         public static IEnumerable<Result<TOutput, TFailure>> SelectManySafe<TInput, TOutput, TFailure>(
             this Result<TInput, TFailure> source, Func<TInput, IEnumerable<Result<TOutput, TFailure>>> selector)
         {
             return source.Match(selector, 
-                failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
+                failure => Result.Failure<TOutput, TFailure>(failure).AsEnumerable());
         }
 
         public static IEnumerable<Result<TOutput, TFailure>> SelectManySafe<TInput, TMedium, TOutput, TFailure>(
@@ -73,7 +73,7 @@ namespace TplDataFlow.Extensions
             return source.Match(
                 success => mediumSelector(success)
                     .Select(medium => resultSelector(success, medium)),
-                failure => Enumerable.Repeat(Result.Failure<TOutput, TFailure>(failure), 1));
+                failure => Result.Failure<TOutput, TFailure>(failure).AsEnumerable());
         }
     }
 }
