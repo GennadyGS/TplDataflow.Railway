@@ -6,11 +6,6 @@ namespace TplDataFlow.Extensions
 {
     public static class ResultExtensions
     {
-        public static Result<TSuccess, TFailure> ToResult<TSuccess, TFailure>(this TSuccess source)
-        {
-            return Result.Success<TSuccess, TFailure>(source);
-        }
-
         public static TOutput Match<TInput, TOutput, TFailure>(this Result<TInput, TFailure> source,
             Func<TInput, TOutput> onSuccess, Func<TFailure, TOutput> onFailure)
         {

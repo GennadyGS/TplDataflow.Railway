@@ -435,7 +435,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             private static Result<T, UnsuccessResult> InvokeSafe<T>(
                 IEnumerable<EventDetails> events, Func<T> func)
             {
-                return InvokeSafe(events, () => func().ToResult<T, UnsuccessResult>());
+                return InvokeSafe(events, () => (Result<T, UnsuccessResult>)func());
             }
 
             private bool NeedSkipEventGroup(EventGroup eventGroup)
