@@ -2,17 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Telerik.JustMock;
 using Telerik.JustMock.Helpers;
 using TplDataflow.Extensions.Example.BusinessObjects;
 using TplDataflow.Extensions.Example.Implementation;
 using TplDataflow.Extensions.Example.Interfaces;
 using TplDataFlow.Extensions.AsyncProcessing;
+using Xunit;
 
 namespace TplDataflow.Extensions.Example.Test
 {
-    [TestClass]
     public class EventSetStorageProcessorTest
     {
         private const int EventBatchSize = 1000;
@@ -21,17 +20,17 @@ namespace TplDataflow.Extensions.Example.Test
         private const int EventGroupBatchSize = 25;
         private const string EventGroupBatchTimeout = "00:00:05";
 
-        private IEventSetRepository _repositoryMock;
-        private IIdentityManagementService _identityManagementServiceMock;
-        private IEventSetProcessTypeManager _processTypeManagerMock;
-        private IEventSetConfiguration _configurationMock;
-
-        private IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> _storageProcessor;
-
-        private readonly DateTime _currentTime = DateTime.UtcNow;
-
         private readonly EventDetails _criticalEvent;
         private readonly EventDetails _informationalEvent;
+
+        private readonly IEventSetRepository _repositoryMock;
+        private readonly IIdentityManagementService _identityManagementServiceMock;
+        private readonly IEventSetProcessTypeManager _processTypeManagerMock;
+        private readonly IEventSetConfiguration _configurationMock;
+
+        private readonly IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> _storageProcessor;
+
+        private readonly DateTime _currentTime = DateTime.UtcNow;
 
         public EventSetStorageProcessorTest()
         {
@@ -55,11 +54,6 @@ namespace TplDataflow.Extensions.Example.Test
                 SiteId = 12
             };
 
-        }
-
-        [TestInitialize]
-        public void TestSetup()
-        {
             _repositoryMock = Mock.Create<IEventSetRepository>();
             _identityManagementServiceMock = Mock.Create<IIdentityManagementService>();
             _processTypeManagerMock = Mock.Create<IEventSetProcessTypeManager>();
@@ -75,7 +69,7 @@ namespace TplDataflow.Extensions.Example.Test
                 () => _currentTime);
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenInformationalEventOccured_EventShouldBeSkipped()
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Information };
@@ -102,7 +96,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenEventSetProcessTypeWasNotFound_EventShouldBeFailed()
         {
             Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
@@ -114,7 +108,7 @@ namespace TplDataflow.Extensions.Example.Test
             result.First().VerifyEventFailed(_informationalEvent);
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenEventOccurred_NewEventSetShouldBeCreated()
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical };
@@ -148,7 +142,7 @@ namespace TplDataflow.Extensions.Example.Test
 
         // TODO: Verify all exceptions
 
-        [TestMethod]
+        [Fact]
         public void WhenEventSetWasFoundInDb_ItShouldBeUpdated()
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical, Threshold = TimeSpan.FromHours(1) };
@@ -184,7 +178,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenEventSetIsOutdated_NewEventSetShouldBeCreated()
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical };
@@ -221,7 +215,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenThresholdOccurred_NewEventSetShouldBeCreated()
         {
             var processType = new EventSetProcessType
@@ -262,7 +256,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenCurrentEventSetCompleted_NewEventSetShouldBeCreated()
         {
             var processType = new EventSetProcessType
@@ -304,7 +298,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenCurrentAutocompleteTimeOccurredAndStatusIsNew_NewEventSetShouldBeCreated()
         {
             var processType = new EventSetProcessType
@@ -349,7 +343,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenCurrentAutocompleteTimeOccurredAndStatusIsAccepted_NewEventSetShouldBeCreated()
         {
             var processType = new EventSetProcessType
@@ -394,7 +388,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenCurrentAutocompleteTimeOccurredAndStatusIsRejected_NewEventSetShouldBeCreated()
         {
             var processType = new EventSetProcessType
@@ -439,7 +433,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenThresholdOccurredBetweenEvents_NewEventSetsForEachEventShouldBeCreated()
         {
             var processType = new EventSetProcessType
@@ -487,7 +481,7 @@ namespace TplDataflow.Extensions.Example.Test
             AssertMocks();
         }
 
-        [TestMethod]
+        [Fact]
         public void WhenThresholdOccurredBeforeSecondEvent_EventSetShouldBeUpdatedAndNewEventSetsShouldBeCreatedForSecondEvent()
         {
             var processType = new EventSetProcessType
