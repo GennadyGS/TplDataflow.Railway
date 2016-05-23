@@ -13,8 +13,7 @@ namespace TplDataFlow.Extensions
             new BufferBlock<Result<TOutput, TFailure>>();
 
         private readonly IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>> _transformFailureBlock = new TransformBlock
-            <Result<TInput, TFailure>, Result<TOutput, TFailure>>(
-            result => Result.Failure<TOutput, TFailure>(result.Failure));
+            <Result<TInput, TFailure>, Result<TOutput, TFailure>>(result => result.Failure);
 
         private readonly IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>> _transformSuccessBlock;
 
