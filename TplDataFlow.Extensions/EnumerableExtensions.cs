@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Linq;
 
 namespace TplDataFlow.Extensions
 {
@@ -115,51 +114,6 @@ namespace TplDataFlow.Extensions
                 .SelectMany(group => group.Key
                     ? selectorOnSuccess(group.Select(item => item.Success))
                     : selectorOnFailure(group.Select(item => item.Failure)));
-        }
-        public static TResult Match<TInput, TInputFailure, TOutput, TOutputFailure, TResult>(
-            this IEnumerable<Result<TInput, TInputFailure>> source,
-            Func<IEnumerable<TInput>, TOutput> selectorOnSuccess,
-            Func<IEnumerable<TInputFailure>, TOutputFailure> selectorOnFailure,
-            Func<TOutput, TOutputFailure, TResult> resultSelector)
-        {
-            // TODO: Avoid multiple enumerations
-            return resultSelector(
-                selectorOnSuccess(source
-                    .Where(item => item.IsSuccess)
-                    .Select(item => item.Success)), 
-                selectorOnFailure(source
-                    .Where(item => !item.IsSuccess)
-                    .Select(item => item.Failure)));
-        }
-
-        public static IEnumerable<TOutput> Map<TInput, TOutput>(this IEnumerable<TInput> source,
-            Predicate<TInput> predicate,
-            Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnTrue,
-            Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnFalse)
-        {
-            return source
-                .GroupBy(item => predicate(item))
-                .SelectMany(group => group.Key
-                    ? selectorOnTrue(group)
-                    : selectorOnFalse(group));
-        }
-
-        public static TResult Map<TInput, TOutputTrue, TOutputFalse, TResult>(this IEnumerable<TInput> source,
-            Predicate<TInput> predicate,
-            Func<IEnumerable<TInput>, TOutputTrue> selectorOnTrue,
-            Func<IEnumerable<TInput>, TOutputFalse> selectorOnFalse,
-            Func<TOutputTrue, TOutputFalse, TResult> resultSelector)
-        {
-            // TODO: Avoid multiple enumerations
-            return resultSelector(
-                selectorOnTrue(source.Where(item => predicate(item))), 
-                selectorOnFalse(source.Where(item => !predicate(item))));
-        }
-
-        public static void LinkTo<T>(this IEnumerable<T> source, IObserver<T> target)
-        {
-            // TODO: Decouple from observable
-            source.ToObservable().Subscribe(target);
         }
     }
 }

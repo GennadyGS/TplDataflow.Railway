@@ -74,29 +74,6 @@ namespace TplDataFlow.Extensions
                 selectorOnFailure(failureBlock.Select(result => result.Failure)));
         }
 
-        public static TResult Map<TInput, TOutputTrue, TOutputFalse, TResult>(this ISourceBlock<TInput> source, 
-            Predicate<TInput> predicate,
-            Func<ISourceBlock<TInput>, TOutputTrue> selectorOnTrue,
-            Func<ISourceBlock<TInput>, TOutputFalse> selectorOnFalse,
-            Func<TOutputTrue, TOutputFalse, TResult> resultSelector)
-        {
-            var trueBlock = new BufferBlock<TInput>();
-            var falseBlock = new BufferBlock<TInput>();
-
-            source
-                .LinkWhen(predicate, trueBlock)
-                .LinkOtherwise(falseBlock);
-
-            return resultSelector(selectorOnTrue(trueBlock), selectorOnFalse(falseBlock));
-        }
-
-        public static ISourceBlock<Result<TSuccess, TFailure>> ToResult<TSuccess, TFailure>(this ISourceBlock<TSuccess> source)
-        {
-            return source.LinkWith(
-                new TransformBlock<TSuccess, Result<TSuccess, TFailure>>(item =>
-                    item.ToResult<TSuccess, TFailure>()));
-        }
-
         public static ISourceBlock<IList<T>> Buffer<T>(this ISourceBlock<T> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {
