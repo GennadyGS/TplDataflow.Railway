@@ -230,10 +230,10 @@ namespace TplDataflow.Extensions.Example.Implementation
         {
             private readonly int _errorCode;
             private readonly string _errorMessage;
-            private readonly IEnumerable<EventDetails> _events;
+            private readonly IList<EventDetails> _events;
             private readonly bool _isSkipped;
 
-            private UnsuccessResult(bool isSkipped, IEnumerable<EventDetails> events, int errorCode, string errorMessage)
+            private UnsuccessResult(bool isSkipped, IList<EventDetails> events, int errorCode, string errorMessage)
             {
                 _isSkipped = isSkipped;
                 _events = events;
@@ -249,7 +249,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 }
             }
 
-            public IEnumerable<EventDetails> Events
+            public IList<EventDetails> Events
             {
                 get
                 {
@@ -273,13 +273,13 @@ namespace TplDataflow.Extensions.Example.Implementation
                 }
             }
 
-            public static UnsuccessResult CreateFailed(IEnumerable<EventDetails> events, int errorCode,
+            public static UnsuccessResult CreateFailed(IList<EventDetails> events, int errorCode,
                 string errorMessageFormat, params object[] args)
             {
                 return new UnsuccessResult(false, events, errorCode, string.Format(errorMessageFormat, args));
             }
 
-            public static UnsuccessResult CreateSkipped(IEnumerable<EventDetails> events)
+            public static UnsuccessResult CreateSkipped(IList<EventDetails> events)
             {
                 return new UnsuccessResult(true, events, 0, string.Empty);
             }
@@ -333,7 +333,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 var processTypesWithEvents = eventGroupsByEventType
                     .Select(
                         eventGroup =>
-                            GetProcessTypeSafe(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory, eventGroup)
+                            GetProcessTypeSafe(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory, eventGroup.ToList())
                                 .Select(processType => new
                                 {
                                     EventSetProcessType = processType,
@@ -368,11 +368,9 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 if (NeedSkipEventGroup(eventGroup))
                 {
-                    return
-                        TplDataFlow.Extensions.Result.Failure<EventGroup, UnsuccessResult>(
-                            UnsuccessResult.CreateSkipped(eventGroup.Events));
+                    return UnsuccessResult.CreateSkipped(eventGroup.Events);
                 }
-                return TplDataFlow.Extensions.Result.Success<EventGroup, UnsuccessResult>(eventGroup);
+                return eventGroup;
             }
 
             public IEnumerable<Result<SuccessResult, UnsuccessResult>> ProcessEventGroupsBatchSafe(
@@ -406,7 +404,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
 
             private static Result<T, UnsuccessResult> InvokeSafe<T>(
-                IEnumerable<EventDetails> events, Func<Result<T, UnsuccessResult>> func)
+                IList<EventDetails> events, Func<Result<T, UnsuccessResult>> func)
             {
                 try
                 {
@@ -414,26 +412,22 @@ namespace TplDataflow.Extensions.Example.Implementation
                 }
                 catch (EventHandlingException e)
                 {
-                    return TplDataFlow.Extensions.Result.Failure<T, UnsuccessResult>(
-                        UnsuccessResult.CreateFailed(events, e.ErrorCode, e.Message));
+                    return UnsuccessResult.CreateFailed(events, e.ErrorCode, e.Message);
                 }
                 catch (DBConcurrencyException e)
                 {
-                    return TplDataFlow.Extensions.Result.Failure<T, UnsuccessResult>(
-                        UnsuccessResult.CreateFailed(events,
+                    return UnsuccessResult.CreateFailed(events,
                             Metadata.ExceptionHandling.DbUpdateConcurrencyException.Code,
-                            e.Message));
+                            e.Message);
                 }
                 catch (Exception e)
                 {
-                    return TplDataFlow.Extensions.Result.Failure<T, UnsuccessResult>(
-                        UnsuccessResult.CreateFailed(events, Metadata.ExceptionHandling.UnhandledException.Code,
-                            e.Message));
+                    return UnsuccessResult.CreateFailed(events, Metadata.ExceptionHandling.UnhandledException.Code, e.Message);
                 }
             }
 
             private static Result<T, UnsuccessResult> InvokeSafe<T>(
-                IEnumerable<EventDetails> events, Func<T> func)
+                IList<EventDetails> events, Func<T> func)
             {
                 return InvokeSafe(events, () => (Result<T, UnsuccessResult>)func());
             }
@@ -669,7 +663,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
 
             private Result<EventSetProcessType, UnsuccessResult> GetProcessTypeSafe(int eventTypeId,
-                EventTypeCategory category, IEnumerable<EventDetails> events)
+                EventTypeCategory category, IList<EventDetails> events)
             {
                 return InvokeSafe(events, () =>
                     _processTypeManager.GetProcessType(eventTypeId, category) ??
