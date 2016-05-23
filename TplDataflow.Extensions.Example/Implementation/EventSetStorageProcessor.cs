@@ -378,6 +378,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             public IEnumerable<Result<SuccessResult, UnsuccessResult>> ProcessEventGroupsBatchSafe(
                 IList<EventGroup> eventGroupsBatch)
             {
+                // TODO: Fix hint "access to exposed closure"
                 using (var repository = _repositoryResolver())
                 {
                     var events = eventGroupsBatch
