@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
 using FluentAssertions;
+using TplDataFlow.Extensions.TplDataflow.Extensions;
+using TplDataFlow.Extensions.TplDataflow.Linq;
 using Xunit;
 
 namespace TplDataFlow.Extensions.UnitTests

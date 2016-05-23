@@ -1,5 +1,7 @@
 ﻿using System;
 using FluentAssertions;
+using TplDataFlow.Extensions.Railway.Core;
+using TplDataFlow.Extensions.Railway.Linq;
 using Xunit;
 
 namespace TplDataFlow.Extensions.UnitTests

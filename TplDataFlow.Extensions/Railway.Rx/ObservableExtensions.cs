@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using TplDataFlow.Extensions.Linq.Extensions;
+using TplDataFlow.Extensions.Railway.Core;
 
-namespace TplDataFlow.Extensions
+namespace TplDataFlow.Extensions.Railway.Rx
 {
     public static class ObservableExtensions
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TplDataFlow.Extensions
+namespace TplDataFlow.Extensions.Railway.Core
 {
     public class Result<TSuccess, TFailure>
     {

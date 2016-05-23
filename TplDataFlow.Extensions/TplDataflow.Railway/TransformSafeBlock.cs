@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using TplDataFlow.Extensions.Railway.Core;
 
-namespace TplDataFlow.Extensions
+namespace TplDataFlow.Extensions.TplDataflow.Railway
 {
     public class TransformSafeBlock<TInput, TOutput, TFailure> :
         IPropagatorBlock<Result<TInput, TFailure>, Result<TOutput, TFailure>>,

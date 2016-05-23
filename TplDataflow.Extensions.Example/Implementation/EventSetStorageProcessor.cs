@@ -9,6 +9,14 @@ using TplDataflow.Extensions.Example.Exceptions;
 using TplDataflow.Extensions.Example.Interfaces;
 using TplDataFlow.Extensions;
 using TplDataFlow.Extensions.AsyncProcessing;
+using TplDataFlow.Extensions.AsyncProcessing.Core;
+using TplDataFlow.Extensions.AsyncProcessing.Rx;
+using TplDataFlow.Extensions.AsyncProcessing.TplDataflow;
+using TplDataFlow.Extensions.Linq.Extensions;
+using TplDataFlow.Extensions.Railway.Core;
+using TplDataFlow.Extensions.Railway.Linq;
+using TplDataFlow.Extensions.TplDataflow.Linq;
+using TplDataFlow.Extensions.TplDataflow.Railway;
 
 namespace TplDataflow.Extensions.Example.Implementation
 {
@@ -596,7 +604,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 return eventGroups
                     .Select(eventGroup => UpdateEventSet(eventGroup, lastEventSets))
-                    .Select(TplDataFlow.Extensions.Result.Success<SuccessResult, UnsuccessResult>);
+                    .Select(TplDataFlow.Extensions.Railway.Core.Result.Success<SuccessResult, UnsuccessResult>);
             }
 
             private SuccessResult UpdateEventSet(EventGroup eventGroup, IList<EventSet> lastEventSets)
@@ -667,7 +675,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 return InvokeSafe(events, () =>
                     _processTypeManager.GetProcessType(eventTypeId, category) ??
-                    TplDataFlow.Extensions.Result.Failure<EventSetProcessType, UnsuccessResult>(
+                    TplDataFlow.Extensions.Railway.Core.Result.Failure<EventSetProcessType, UnsuccessResult>(
                         UnsuccessResult.CreateFailed(events,
                             Metadata.ExceptionHandling.NotFoundException.Code,
                             "EventSetProcessingType was not found for [EventTypeId = {0}, Category = {1}]", eventTypeId,

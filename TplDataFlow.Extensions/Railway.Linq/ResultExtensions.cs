@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using TplDataFlow.Extensions.Linq.Extensions;
+using TplDataFlow.Extensions.Railway.Core;
 
-namespace TplDataFlow.Extensions
+namespace TplDataFlow.Extensions.Railway.Linq
 {
     public static class ResultExtensions
     {

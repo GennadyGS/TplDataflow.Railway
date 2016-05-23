@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks.Dataflow;
+using TplDataFlow.Extensions.AsyncProcessing.Core;
+using TplDataFlow.Extensions.TplDataflow.Extensions;
 
-namespace TplDataFlow.Extensions.AsyncProcessing
+namespace TplDataFlow.Extensions.AsyncProcessing.TplDataflow
 {
     public class TplDataflowAsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
     {

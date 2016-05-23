@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Reactive;
 using System.Reactive.Linq;
 
-namespace TplDataFlow.Extensions.AsyncProcessing
+namespace TplDataFlow.Extensions.AsyncProcessing.Core
 {
     public static class AsyncProcessorExtensions
     {
-        //TODO: Refactor
+        //TODO: Refactor and decouple from RX
         public static IList<TOutput> InvokeSync<TInput, TOutput>(this IAsyncProcessor<TInput, TOutput> processor, IList<TInput> input)
         {
             var result = processor.SubscribeList();
