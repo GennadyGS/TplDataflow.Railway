@@ -189,10 +189,10 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 return input
                     .Select(logic.LogEvent)
-                    .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
+                    .Buffer(configuration.EventBatchSize)
                     .SelectMany(logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(logic.CheckNeedSkipEventGroup)
-                    .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
+                    .BufferSafe(configuration.EventGroupBatchSize)
                     .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
                     .SelectMany((Result<SuccessResult, UnsuccessResult> res) => logic.TransformResult(res));
             }
@@ -387,7 +387,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                         .SelectManySafe(
                             lastEventSets =>
                                 InternalProcessEventGroupsBatchSafe(repository, eventGroupsBatch, lastEventSets))
-                        .ToList()
+                        .BufferSafe(int.MaxValue)
                         .SelectSafe(resultList => ApplyChangesSafe(repository, resultList))
                         .SelectMany(result => result);
                 }

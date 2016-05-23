@@ -11,8 +11,7 @@ namespace TplDataFlow.Extensions
             return source.Select(Result.Success<T, TFailure>);
         }
 
-        public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source,
-            TimeSpan timeSpan, int count)
+        public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source, int count)
         {
             return source
                 .Select((value, index) => new { value, index })
@@ -20,11 +19,11 @@ namespace TplDataFlow.Extensions
                 .Select(group => group.Select(item => item.value).ToList());
         }
 
-        public static IEnumerable<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(this IEnumerable<Result<TSuccess, TFailure>> source,
-            TimeSpan timeSpan, int count)
+        public static IEnumerable<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(
+            this IEnumerable<Result<TSuccess, TFailure>> source, int count)
         {
             return source
-                .Buffer(timeSpan, count)
+                .Buffer(count)
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsSuccess)
                     .SelectMany(group => group.Key
@@ -93,15 +92,6 @@ namespace TplDataFlow.Extensions
                         .GroupBy(keySelector)
                         .ToResult<IGrouping<TKey, T>, TFailure>(),
                     failure => failure.Select(Result.Failure<IGrouping<TKey, T>, TFailure>));
-        }
-
-        public static IEnumerable<Result<IList<T>, TFailure>> ToList<T, TFailure>(this IEnumerable<Result<T, TFailure>> source)
-        {
-            return source
-                .GroupBy(item => item.IsSuccess)
-                .SelectMany(group => group.Key
-                    ? Enumerable.Repeat(Result.Success<IList<T>, TFailure>(@group.Select(item => item.Success).ToList()), 1)
-                    : group.Select(item => Result.Failure<IList<T>, TFailure>(item.Failure)));
         }
 
         public static IEnumerable<TOutput> Match<TInput, TOutput, TFailure>(
