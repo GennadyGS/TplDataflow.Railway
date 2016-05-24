@@ -5,7 +5,7 @@ using System.Reactive.Linq;
 using TplDataFlow.Extensions.Linq.Extensions;
 using TplDataFlow.Extensions.Railway.Core;
 
-namespace TplDataFlow.Extensions.Railway.Rx
+namespace TplDataFlow.Extensions.Railway.Linq
 {
     public static class ObservableExtensions
     {

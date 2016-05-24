@@ -4,9 +4,8 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using TplDataFlow.Extensions.AsyncProcessing.Core;
 
-namespace TplDataFlow.Extensions.AsyncProcessing.Rx
+namespace TplDataFlow.Extensions.AsyncProcessing.Core
 {
     public class EnumerableAsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
     {

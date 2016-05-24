@@ -10,7 +10,6 @@ using TplDataflow.Extensions.Example.Interfaces;
 using TplDataFlow.Extensions;
 using TplDataFlow.Extensions.AsyncProcessing;
 using TplDataFlow.Extensions.AsyncProcessing.Core;
-using TplDataFlow.Extensions.AsyncProcessing.Rx;
 using TplDataFlow.Extensions.AsyncProcessing.TplDataflow;
 using TplDataFlow.Extensions.Linq.Extensions;
 using TplDataFlow.Extensions.Railway.Core;

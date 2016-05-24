@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks.Dataflow;
 using TplDataFlow.Extensions.Railway.Core;
-using TplDataFlow.Extensions.Railway.Rx;
+using TplDataFlow.Extensions.Railway.Linq;
 using TplDataFlow.Extensions.TplDataflow.Extensions;
 using TplDataFlow.Extensions.TplDataflow.Linq;
 
