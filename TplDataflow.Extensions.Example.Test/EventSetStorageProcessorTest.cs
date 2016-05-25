@@ -71,14 +71,18 @@ namespace TplDataflow.Extensions.Example.Test
         [Fact]
         public void WhenProcessEmptyList_ResultShouldBeEmpty()
         {
-            Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
-                .OccursNever();
-
             var result = _storageProcessor.InvokeSync(new EventDetails[] { });
 
             result.Should().BeEmpty();
 
-            AssertMocks();
+            _processTypeManagerMock.Verify(obj => obj.GetProcessType(
+                It.IsAny<int>(), It.IsAny<EventTypeCategory>()), Times.Never);
+            _identityManagementServiceMock.Verify(obj => obj.GetNextLongIds(
+                    It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+            _repositoryMock.Verify(obj => obj.ApplyChanges(
+                    It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()), Times.Never);
+
+            VerifyMocks();
         }
 
         [Fact]
@@ -93,6 +97,11 @@ namespace TplDataflow.Extensions.Example.Test
 
             result.Should().HaveCount(1);
             result.First().VerifyEventFailed(_informationalEvent);
+
+            _identityManagementServiceMock.Verify(obj => obj.GetNextLongIds(
+                    It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+            _repositoryMock.Verify(obj => obj.ApplyChanges(
+                    It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()), Times.Never);
 
             VerifyMocks();
         }
@@ -147,12 +156,10 @@ namespace TplDataflow.Extensions.Example.Test
                     It.Is<int>(i => i == _criticalEvent.EventTypeId), It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
                 .Returns(processType)
                 .Verifiable();
-
             _repositoryMock.Setup(obj => obj.FindLastEventSetsByTypeCodes(
                 It.Is<long[]>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new List<EventSet>())
                 .Verifiable();
-
             _identityManagementServiceMock.Setup(obj => obj.GetNextLongIds(
                     It.IsAny<string>(), It.IsAny<int>()))
                 .Throws<Exception>();
