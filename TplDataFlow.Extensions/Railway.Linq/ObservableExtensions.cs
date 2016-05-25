@@ -2,23 +2,27 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using TplDataFlow.Extensions.Linq.Extensions;
-using TplDataFlow.Extensions.Railway.Core;
+using LanguageExt;
+using static LanguageExt.Prelude;
 
 namespace TplDataFlow.Extensions.Railway.Linq
 {
     public static class ObservableExtensions
     {
-        public static IObservable<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(
-            this IObservable<Result<TSuccess, TFailure>> source, TimeSpan timeSpan, int count)
+        public static IObservable<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(
+            this IObservable<Either<TLeft, TRight>> source, TimeSpan timeSpan, int count)
         {
             return source
-                .Buffer(timeSpan, count)
+                .Buffer(count)
                 .SelectMany(batch => batch
-                    .GroupBy(item => item.IsSuccess)
+                    .GroupBy(item => item.IsRight)
                     .SelectMany(group => group.Key
-                        ? Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()).AsEnumerable()
-                        : group.Select(item => Result.Failure<IList<TSuccess>, TFailure>(item.Failure))));
+                        ? List(
+                            Right<TLeft, IList<TRight>>(
+                                group.Rights().ToList()))
+                        : group
+                            .Lefts()
+                            .Select(Left<TLeft, IList<TRight>>)));
         }
     }
 }

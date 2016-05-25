@@ -7,7 +7,7 @@ namespace TplDataFlow.Extensions.AsyncProcessing.Core
 {
     public static class AsyncProcessorExtensions
     {
-        //TODO: Refactor and decouple from RX
+        //TODO: Refactor
         public static IList<TOutput> InvokeSync<TInput, TOutput>(this IAsyncProcessor<TInput, TOutput> processor, IList<TInput> input)
         {
             var result = processor.SubscribeList();

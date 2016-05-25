@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks.Dataflow;
-using TplDataFlow.Extensions.Railway.Core;
+using LanguageExt;
 using TplDataFlow.Extensions.Railway.Linq;
 using TplDataFlow.Extensions.TplDataflow.Extensions;
 
@@ -9,22 +9,22 @@ namespace TplDataFlow.Extensions.TplDataflow.Railway
 {
     public static class DataflowBlockExtensions
     {
-        public static ISourceBlock<Result<TOutput, TFailure>> SelectSafe<TInput, TOutput, TFailure>(
-            this ISourceBlock<Result<TInput, TFailure>> source, Func<TInput, Result<TOutput, TFailure>> selector)
+        public static ISourceBlock<Either<TLeft, TRightOutput>> SelectSafe<TLeft, TRightInput, TRightOutput>(
+            this ISourceBlock<Either<TLeft, TRightInput>> source, Func<TRightInput, Either<TLeft, TRightOutput>> selector)
         {
-            return source.LinkWith(new TransformSafeBlock<TInput, TOutput, TFailure>(selector));
+            return source.LinkWith(new TransformSafeBlock<TLeft, TRightInput, TRightOutput>(selector));
         }
 
-        public static ISourceBlock<Result<TOutput, TFailure>> SelectManySafe<TInput, TOutput, TFailure>(
-            this ISourceBlock<Result<TInput, TFailure>> source, Func<TInput, IEnumerable<Result<TOutput, TFailure>>> selector)
+        public static ISourceBlock<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightOutput>(
+            this ISourceBlock<Either<TLeft, TRightInput>> source, Func<TRightInput, IEnumerable<Either<TLeft, TRightOutput>>> selector)
         {
-            return source.LinkWith(new TransformSafeBlock<TInput, TOutput, TFailure>(selector));
+            return source.LinkWith(new TransformSafeBlock<TLeft, TRightInput, TRightOutput>(selector));
         }
 
-        public static ISourceBlock<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(this ISourceBlock<Result<TSuccess, TFailure>> source,
+        public static ISourceBlock<Either<TLeft, IList<TSuccess>>> BufferSafe<TLeft, TSuccess>(this ISourceBlock<Either<TLeft, TSuccess>> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {
-            var outputBlock = new BufferBlock<Result<IList<TSuccess>, TFailure>>();
+            var outputBlock = new BufferBlock<Either<TLeft, IList<TSuccess>>>();
 
             source.AsObservable()
                 .BufferSafe(batchTimeout, batchMaxSize)

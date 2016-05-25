@@ -29,6 +29,5 @@ namespace TplDataFlow.Extensions.TplDataflow.Extensions
             sourceBlock.LinkTo(targetBlock,
                 new DataflowLinkOptions { PropagateCompletion = true, Append = true });
         }
-
     }
 }

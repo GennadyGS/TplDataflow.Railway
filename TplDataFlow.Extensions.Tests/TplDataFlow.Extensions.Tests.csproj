@@ -43,7 +43,6 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DataFlowBlockExtensionsTests.cs" />
-    <Compile Include="ResultTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TplDataFlow.Extensions\TplDataFlow.Extensions.csproj">

@@ -45,15 +45,13 @@
     <Compile Include="AsyncProcessing.Core\EnumerableAyncProcessor.cs" />
     <Compile Include="AsyncProcessing.Core\IAsyncProcessor.cs" />
     <Compile Include="AsyncProcessing.TplDataflow\TplDataflowAsyncProcessor.cs" />
-    <Compile Include="Linq.Extensions\EnumerableExtensions.cs" />
+    <Compile Include="Railway.Linq\EitherExtensions.cs" />
     <Compile Include="TplDataflow.Extensions\DataflowBlockExtensions.cs" />
     <Compile Include="TplDataflow.Linq\DataflowBlockExtensions.cs" />
     <Compile Include="TplDataflow.Railway\DataflowBlockExtensions.cs" />
     <Compile Include="Railway.Linq\EnumerableExtensions.cs" />
     <Compile Include="Railway.Linq\ObservableExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Railway.Core\Result.cs" />
-    <Compile Include="Railway.Linq\ResultExtensions.cs" />
     <Compile Include="TplDataflow.Railway\TransformSafeBlock.cs">
       <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
