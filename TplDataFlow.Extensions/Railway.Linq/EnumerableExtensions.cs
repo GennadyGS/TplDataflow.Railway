@@ -72,27 +72,18 @@ namespace TplDataFlow.Extensions.Railway.Linq
         }
 
         public static IEnumerable<Result<IGrouping<TKey, T>, TFailure>> GroupBy<T, TFailure, TKey>(
-            this IEnumerable<Result<T, TFailure>> source,
-            Func<T, TKey> keySelector)
-        {
-            return source
-                .Match(success => 
-                    success
-                        .GroupBy(keySelector)
-                        .Select(Result.Success<IGrouping<TKey, T>, TFailure>),
-                    failure => failure.Select(Result.Failure<IGrouping<TKey, T>, TFailure>));
-        }
-
-        public static IEnumerable<TOutput> Match<TInput, TOutput, TFailure>(
-            this IEnumerable<Result<TInput, TFailure>> source,
-            Func<IEnumerable<TInput>, IEnumerable<TOutput>> selectorOnSuccess,
-            Func<IEnumerable<TFailure>, IEnumerable<TOutput>> selectorOnFailure)
+            this IEnumerable<Result<T, TFailure>> source, Func<T, TKey> keySelector)
         {
             return source
                 .GroupBy(item => item.IsSuccess)
                 .SelectMany(group => group.Key
-                    ? selectorOnSuccess(group.Select(item => item.Success))
-                    : selectorOnFailure(group.Select(item => item.Failure)));
+                    ? group
+                        .Select(item => item.Success)
+                        .GroupBy(keySelector)
+                        .Select(Result.Success<IGrouping<TKey, T>, TFailure>)
+                    : group
+                        .Select(item => item.Failure)
+                        .Select(Result.Failure<IGrouping<TKey, T>, TFailure>));
         }
     }
 }
