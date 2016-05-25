@@ -8,18 +8,6 @@ namespace TplDataFlow.Extensions.Railway.Linq
 {
     public static class EnumerableExtensions
     {
-        public static IEnumerable<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(
-            this IEnumerable<Result<TSuccess, TFailure>> source, int count)
-        {
-            return source
-                .Buffer(count)
-                .SelectMany(batch => batch
-                    .GroupBy(item => item.IsSuccess)
-                    .SelectMany(group => group.Key
-                        ? Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()).AsEnumerable()
-                        : group.Select(item => Result.Failure<IList<TSuccess>, TFailure>(item.Failure))));
-        }
-
         public static IEnumerable<Result<TOutput, TFailure>> Select<TInput, TOutput, TFailure>(this IEnumerable<Result<TInput, TFailure>> source,
             Func<TInput, TOutput> selector)
         {
@@ -84,6 +72,18 @@ namespace TplDataFlow.Extensions.Railway.Linq
                     : group
                         .Select(item => item.Failure)
                         .Select(Result.Failure<IGrouping<TKey, T>, TFailure>));
+        }
+
+        public static IEnumerable<Result<IList<TSuccess>, TFailure>> BufferSafe<TSuccess, TFailure>(
+            this IEnumerable<Result<TSuccess, TFailure>> source, int count)
+        {
+            return source
+                .Buffer(count)
+                .SelectMany(batch => batch
+                    .GroupBy(item => item.IsSuccess)
+                    .SelectMany(group => group.Key
+                        ? Result.Success<IList<TSuccess>, TFailure>(group.Select(item => item.Success).ToList()).AsEnumerable()
+                        : group.Select(item => item.Failure).Select(Result.Failure<IList<TSuccess>, TFailure>)));
         }
     }
 }

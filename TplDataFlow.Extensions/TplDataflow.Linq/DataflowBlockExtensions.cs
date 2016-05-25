@@ -32,6 +32,5 @@ namespace TplDataFlow.Extensions.TplDataflow.Linq
 
             return outputBlock;
         }
-
     }
 }
