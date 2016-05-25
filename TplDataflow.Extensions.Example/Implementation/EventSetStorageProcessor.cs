@@ -36,7 +36,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider);
         }
 
-        public class Result : IEquatable<Result>
+        public class Result
         {
             private readonly EventDetails _eventFailed;
             private readonly EventSetWithEvents _eventSetCreated;
@@ -117,16 +117,6 @@ namespace TplDataflow.Extensions.Example.Implementation
                     }
                     return _eventFailed;
                 }
-            }
-
-            public bool Equals(Result other)
-            {
-                var eventSetCreatedEquals = _eventSetCreated.Equals(other._eventSetCreated);
-                return (_resultCode == other.ResultCode) &&
-                       eventSetCreatedEquals &&
-                       _eventSetUpdated.Equals(other._eventSetUpdated) &&
-                       _eventSkipped.Equals(other._eventSkipped) &&
-                       _eventFailed.Equals(other._eventFailed);
             }
 
             public static Result CreateEventSetCreated(EventSetWithEvents eventsetWithEvents)
