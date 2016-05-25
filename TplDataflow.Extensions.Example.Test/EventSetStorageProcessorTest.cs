@@ -70,6 +70,19 @@ namespace TplDataflow.Extensions.Example.Test
         }
 
         [Fact]
+        public void WhenProcessEmptyList_ResultShouldBeEmpty()
+        {
+            Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
+                .OccursNever();
+
+            var result = _storageProcessor.InvokeSync(new EventDetails[] { });
+
+            result.Should().BeEmpty();
+
+            AssertMocks();
+        }
+
+        [Fact]
         public void WhenEventSetProcessTypeWasNotFound_EventShouldBeFailed()
         {
             Mock.Arrange(() => _processTypeManagerMock.GetProcessType(Arg.AnyInt, Arg.IsAny<EventTypeCategory>()))
@@ -79,6 +92,8 @@ namespace TplDataflow.Extensions.Example.Test
 
             result.Should().HaveCount(1);
             result.First().VerifyEventFailed(_informationalEvent);
+
+            AssertMocks();
         }
 
         [Fact]
