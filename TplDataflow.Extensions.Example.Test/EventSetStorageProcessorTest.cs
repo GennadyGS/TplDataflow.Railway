@@ -7,7 +7,6 @@ using Telerik.JustMock.Helpers;
 using TplDataflow.Extensions.Example.BusinessObjects;
 using TplDataflow.Extensions.Example.Implementation;
 using TplDataflow.Extensions.Example.Interfaces;
-using TplDataFlow.Extensions.AsyncProcessing;
 using TplDataFlow.Extensions.AsyncProcessing.Core;
 using Xunit;
 

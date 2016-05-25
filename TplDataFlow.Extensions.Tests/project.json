@@ -1,0 +1,15 @@
+﻿{
+  "dependencies": {
+    "FluentAssertions": "4.6.3",
+    "Microsoft.Tpl.Dataflow": "4.5.24",
+    "Rx-Linq": "2.2.5",
+    "xunit": "2.1.0"
+  },
+  "frameworks": {
+    "net461": {}
+  },
+  "runtimes": {
+    "win": {}
+  },
+  "supports": {}
+}
