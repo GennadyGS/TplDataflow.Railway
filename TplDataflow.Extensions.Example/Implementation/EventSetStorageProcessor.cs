@@ -371,8 +371,7 @@ namespace TplDataflow.Extensions.Example.Implementation
             public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupsBatchSafe(
                 IList<EventGroup> eventGroupsBatch)
             {
-                // TODO: Fix hint "access to exposed closure"
-                using (var repository = _repositoryResolver())
+                return use(_repositoryResolver(), repository =>
                 {
                     var events = eventGroupsBatch
                         .SelectMany(eventGroup => eventGroup.Events)
@@ -384,7 +383,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                         .BufferSafe(int.MaxValue)
                         .SelectSafe(resultList => ApplyChangesSafe(repository, resultList, events))
                         .SelectMany(result => result);
-                }
+                });
             }
 
             public IEnumerable<Result> TransformResult(Either<UnsuccessResult, SuccessResult> result)
