@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TplDataFlow.Extensions.AsyncProcessing.Core
@@ -23,10 +25,11 @@ namespace TplDataFlow.Extensions.AsyncProcessing.Core
         {
             var taskSource = new TaskCompletionSource<IList<T>>();
             var result = new List<T>();
-            observable.Subscribe(
-                onNext: result.Add,
-                onError: taskSource.SetException,
-                onCompleted: () => taskSource.SetResult(result));
+            observable
+                .Subscribe(
+                    onNext: result.Add,
+                    onError: taskSource.SetException,
+                    onCompleted: () => taskSource.SetResult(result));
             return taskSource.Task;
         }
     }
