@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TplDataFlow.Extensions.AsyncProcessing.Core
@@ -14,11 +15,9 @@ namespace TplDataFlow.Extensions.AsyncProcessing.Core
 
         public EnumerableAsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflow)
         {
-            Task.Run(() =>
-            {
-                dataflow(_input.ToEnumerable().ToList())
-                    .Subscribe(_output);
-            });
+            _input.ToListAsync()
+                .ContinueWith(task => 
+                    dataflow(task.Result).Subscribe(_output));
         }
 
         void IObserver<TInput>.OnNext(TInput value)
