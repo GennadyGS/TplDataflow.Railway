@@ -288,46 +288,38 @@ namespace TplDataflow.Extensions.Example.Implementation
                 return @event;
             }
 
-            public IEnumerable<Either<UnsuccessResult, EventGroup>> SplitEventsIntoGroupsSafe(IList<EventDetails> events)
+            public IEnumerable<Either<UnsuccessResult, EventGroup>> SplitEventsIntoGroupsSafe(
+                IList<EventDetails> events)
             {
-                var eventGroupsByEventType = events
+                return events
                     .GroupBy(@event => new
-                    {
-                        EventTypeId = @event.EventTypeId,
-                        EventCategory = @event.Category
-                    });
-
-                var processTypesWithEvents = eventGroupsByEventType
+                        {
+                            EventTypeId = @event.EventTypeId,
+                            EventCategory = @event.Category
+                        })
                     .Select(
                         eventGroup =>
                             GetProcessTypeSafe(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory, eventGroup.ToList())
                                 .Select(processType => new
-                                {
-                                    EventSetProcessType = processType,
-                                    Events = eventGroup
-                                }));
-
-                var eventInfos =
-                    processTypesWithEvents.SelectMany(processType => processType.Events,
+                                    {
+                                        EventSetProcessType = processType,
+                                        Events = eventGroup
+                                    }))
+                    .SelectMany(processType => processType.Events, 
                         (processType, @event) => new
-                        {
-                            Event = @event,
-                            EventSetProcessType = processType.EventSetProcessType,
-                            EventSetType =
-                                EventSetType.CreateFromEventAndLevel(@event,
+                            {
+                                Event = @event,
+                                EventSetProcessType = processType.EventSetProcessType,
+                                EventSetType = EventSetType.CreateFromEventAndLevel(@event,
                                     (EventLevel)processType.EventSetProcessType.Level)
-                        });
-
-                var eventGroupsByEventSetType = eventInfos
+                            })
                     .GroupBy(eventInfo => eventInfo.EventSetType)
                     .Select(eventGroup => new EventGroup
-                    {
-                        EventSetType = eventGroup.Key,
-                        EventSetProcessType = eventGroup.First().EventSetProcessType,
-                        Events = eventGroup.Select(arg => arg.Event).ToList()
-                    });
-
-                return eventGroupsByEventSetType
+                        {
+                            EventSetType = eventGroup.Key,
+                            EventSetProcessType = eventGroup.First().EventSetProcessType,
+                            Events = eventGroup.Select(arg => arg.Event).ToList()
+                        })
                     .SelectMany(SplitEventGroupByThreshold);
             }
 
