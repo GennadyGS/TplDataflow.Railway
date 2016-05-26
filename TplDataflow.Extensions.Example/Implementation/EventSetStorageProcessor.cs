@@ -40,36 +40,28 @@ namespace TplDataflow.Extensions.Example.Implementation
             private readonly EventSetWithEvents _eventSetCreated;
             private readonly EventSetWithEvents _eventSetUpdated;
             private readonly EventDetails _eventSkipped;
-            private readonly ResultCode _resultCode;
 
             private Result(ResultCode resultCode,
                 EventSetWithEvents eventSetCreated, EventSetWithEvents eventSetUpdated,
                 EventDetails eventSkipped, EventDetails eventFailed)
             {
-                _resultCode = resultCode;
+                ResultCode = resultCode;
                 _eventSetCreated = eventSetCreated;
                 _eventSetUpdated = eventSetUpdated;
                 _eventSkipped = eventSkipped;
                 _eventFailed = eventFailed;
             }
 
-            public ResultCode ResultCode
-            {
-                get
-                {
-                    return _resultCode;
-                }
-            }
+            public ResultCode ResultCode { get; }
 
             public EventSetWithEvents EventSetCreated
             {
                 get
                 {
-                    if (_resultCode != ResultCode.EventSetCreated)
+                    if (ResultCode != ResultCode.EventSetCreated)
                     {
                         throw new InvalidOperationException(
-                            string.Format("Trying to get EventSetCreated property while actual result code is {0}",
-                                _resultCode));
+                            $"Trying to get EventSetCreated property while actual result code is {ResultCode}");
                     }
                     return _eventSetCreated;
                 }
@@ -79,11 +71,10 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 get
                 {
-                    if (_resultCode != ResultCode.EventSetUpdated)
+                    if (ResultCode != ResultCode.EventSetUpdated)
                     {
                         throw new InvalidOperationException(
-                            string.Format("Trying to get EventSetUpdated property while actual result code is {0}",
-                                _resultCode));
+                            $"Trying to get EventSetUpdated property while actual result code is {ResultCode}");
                     }
                     return _eventSetUpdated;
                 }
@@ -93,11 +84,10 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 get
                 {
-                    if (_resultCode != ResultCode.EventSkipped)
+                    if (ResultCode != ResultCode.EventSkipped)
                     {
                         throw new InvalidOperationException(
-                            string.Format("Trying to get EventSkipped property while actual result code is {0}",
-                                _resultCode));
+                            $"Trying to get EventSkipped property while actual result code is {ResultCode}");
                     }
                     return _eventSkipped;
                 }
@@ -107,11 +97,10 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 get
                 {
-                    if (_resultCode != ResultCode.EventFailed)
+                    if (ResultCode != ResultCode.EventFailed)
                     {
                         throw new InvalidOperationException(
-                            string.Format("Trying to get EventFailed property while actual result code is {0}",
-                                _resultCode));
+                            $"Trying to get EventFailed property while actual result code is {ResultCode}");
                     }
                     return _eventFailed;
                 }
@@ -195,78 +184,34 @@ namespace TplDataflow.Extensions.Example.Implementation
 
         private class SuccessResult
         {
-            private readonly EventSetWithEvents _eventSetWithEvents;
-            private readonly bool _isCreated;
-
             public SuccessResult(bool isCreated, EventSet eventSet, IList<EventDetails> events)
             {
-                _isCreated = isCreated;
-                _eventSetWithEvents = new EventSetWithEvents { EventSet = eventSet, Events = events };
+                IsCreated = isCreated;
+                EventSetWithEvents = new EventSetWithEvents { EventSet = eventSet, Events = events };
             }
 
-            public bool IsCreated
-            {
-                get
-                {
-                    return _isCreated;
-                }
-            }
+            public bool IsCreated { get; }
 
-            public EventSetWithEvents EventSetWithEvents
-            {
-                get
-                {
-                    return _eventSetWithEvents;
-                }
-            }
+            public EventSetWithEvents EventSetWithEvents { get; }
         }
 
         private class UnsuccessResult
         {
-            private readonly int _errorCode;
-            private readonly string _errorMessage;
-            private readonly IList<EventDetails> _events;
-            private readonly bool _isSkipped;
-
             private UnsuccessResult(bool isSkipped, IList<EventDetails> events, int errorCode, string errorMessage)
             {
-                _isSkipped = isSkipped;
-                _events = events;
-                _errorCode = errorCode;
-                _errorMessage = errorMessage;
+                IsSkipped = isSkipped;
+                Events = events;
+                ErrorCode = errorCode;
+                ErrorMessage = errorMessage;
             }
 
-            public bool IsSkipped
-            {
-                get
-                {
-                    return _isSkipped;
-                }
-            }
+            public bool IsSkipped { get; }
 
-            public IList<EventDetails> Events
-            {
-                get
-                {
-                    return _events;
-                }
-            }
+            public IList<EventDetails> Events { get; }
 
-            public int ErrorCode
-            {
-                get
-                {
-                    return _errorCode;
-                }
-            }
+            public int ErrorCode { get; }
 
-            public string ErrorMessage
-            {
-                get
-                {
-                    return _errorMessage;
-                }
-            }
+            public string ErrorMessage { get; }
 
             public static UnsuccessResult CreateFailed(IList<EventDetails> events, int errorCode,
                 string errorMessageFormat, params object[] args)
@@ -426,7 +371,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 return InvokeSafe(events, () => (Either<UnsuccessResult, T>)func());
             }
 
-            private bool NeedSkipEventGroup(EventGroup eventGroup)
+            private static bool NeedSkipEventGroup(EventGroup eventGroup)
             {
                 return eventGroup.EventSetType.Level == EventLevel.Information;
             }
