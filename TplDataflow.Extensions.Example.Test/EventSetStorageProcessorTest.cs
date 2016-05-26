@@ -778,6 +778,13 @@ namespace TplDataflow.Extensions.Example.Test
             }
         }
 
+        public class ObservableImpl : EventSetStorageProcessorTest
+        {
+            public ObservableImpl() : base(new EventSetStorageProcessor.ObservableFactory())
+            {
+            }
+        }
+
         public class TplDataflowImpl : EventSetStorageProcessorTest
         {
             public TplDataflowImpl() : base(new EventSetStorageProcessor.TplDataflowFactory())

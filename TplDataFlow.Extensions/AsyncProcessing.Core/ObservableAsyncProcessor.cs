@@ -1,20 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
 namespace TplDataFlow.Extensions.AsyncProcessing.Core
 {
-    public class EnumerableAsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
+    public class ObservableAsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
     {
         private readonly Subject<TInput> _input = new Subject<TInput>();
         private readonly Subject<TOutput> _output = new Subject<TOutput>();
 
-        public EnumerableAsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflow)
+        public ObservableAsyncProcessor(Func<IObservable<TInput>, IObservable<TOutput>> dataflow)
         {
-            _input.ToListAsync()
-                .ContinueWith(task => 
-                    dataflow(task.Result).Subscribe(_output));
+            dataflow(_input).Subscribe(_output);
         }
 
         void IObserver<TInput>.OnNext(TInput value)

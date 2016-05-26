@@ -44,6 +44,7 @@
     <Compile Include="AsyncProcessing.Core\AsyncProcessorExtensions.cs" />
     <Compile Include="AsyncProcessing.Core\EnumerableAyncProcessor.cs" />
     <Compile Include="AsyncProcessing.Core\IAsyncProcessor.cs" />
+    <Compile Include="AsyncProcessing.Core\ObservableAsyncProcessor.cs" />
     <Compile Include="AsyncProcessing.Core\ObservableExtensions.cs" />
     <Compile Include="AsyncProcessing.TplDataflow\TplDataflowAsyncProcessor.cs" />
     <Compile Include="Railway.Linq\EitherExtensions.cs" />

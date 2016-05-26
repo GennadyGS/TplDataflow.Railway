@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
 using log4net;
 using LanguageExt;
@@ -152,6 +153,32 @@ namespace TplDataflow.Extensions.Example.Implementation
                     .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
                     .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
                     .SelectMany(logic.TransformResult);
+            }
+        }
+
+        public class ObservableFactory : IFactory
+        {
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                var logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+
+                return new ObservableAsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+            }
+            private static IObservable<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
+                IObservable<EventDetails> input)
+            {
+                return input
+                    .Select(logic.LogEvent)
+                    .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
+                    .SelectMany(logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(logic.CheckNeedSkipEventGroup)
+                    .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
+                    .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => logic.TransformResult(res));
             }
         }
 
