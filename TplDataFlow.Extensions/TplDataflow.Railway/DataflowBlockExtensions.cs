@@ -22,6 +22,18 @@ namespace TplDataFlow.Extensions.TplDataflow.Railway
         }
 
         public static ISourceBlock<Either<TLeft, IList<TSuccess>>> BufferSafe<TLeft, TSuccess>(this ISourceBlock<Either<TLeft, TSuccess>> source,
+            int batchMaxSize)
+        {
+            var outputBlock = new BufferBlock<Either<TLeft, IList<TSuccess>>>();
+
+            source.AsObservable()
+                .BufferSafe(batchMaxSize)
+                .Subscribe(outputBlock.AsObserver());
+
+            return outputBlock;
+        }
+
+        public static ISourceBlock<Either<TLeft, IList<TSuccess>>> BufferSafe<TLeft, TSuccess>(this ISourceBlock<Either<TLeft, TSuccess>> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {
             var outputBlock = new BufferBlock<Either<TLeft, IList<TSuccess>>>();
