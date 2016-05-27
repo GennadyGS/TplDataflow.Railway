@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reactive.Concurrency;
+﻿using System.Collections.Generic;
 using System.Reactive.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace TplDataFlow.Extensions.AsyncProcessing.Core

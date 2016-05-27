@@ -137,7 +137,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                     case ResultCode.EventSetCreated:
                         return transformEventSetCreated(EventSetCreated);
                     case ResultCode.EventSetUpdated:
-                        return transformEventSetUpdated(EventSetCreated);
+                        return transformEventSetUpdated(EventSetUpdated);
                     case ResultCode.EventSkipped:
                         return transformEventSkipped(EventSkipped);
                     case ResultCode.EventFailed:

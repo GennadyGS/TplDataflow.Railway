@@ -39,6 +39,7 @@
   <ItemGroup>
     <Compile Include="EventDetailsExtensions.cs" />
     <Compile Include="EventSetProcessingResultExtensions.cs" />
+    <Compile Include="EventSetProcessorTest.cs" />
     <Compile Include="EventSetStorageProcessorTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

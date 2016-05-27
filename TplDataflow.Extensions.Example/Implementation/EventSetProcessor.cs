@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using log4net;
 using TplDataflow.Extensions.Example.BusinessObjects;
 using TplDataflow.Extensions.Example.Interfaces;
 using TplDataFlow.Extensions.AsyncProcessing.Core;
@@ -16,8 +14,6 @@ namespace TplDataflow.Extensions.Example.Implementation
     /// </summary>
     internal sealed class EventSetProcessor : IAsyncProcessor<EventDetails, Tuple<bool, EventDetails>>
     {
-        private readonly ILog _logger = LogManager.GetLogger(typeof(EventSetProcessor));
-
         private readonly IEventSetNotificationService _notificationService;
         private readonly IObservable<Tuple<bool, EventDetails>> _output;
         private readonly IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> _storageProcessor;

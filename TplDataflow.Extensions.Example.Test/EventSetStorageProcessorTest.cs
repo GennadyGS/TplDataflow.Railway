@@ -18,16 +18,19 @@ namespace TplDataflow.Extensions.Example.Test
 
         private const int EventGroupBatchSize = 25;
         private const string EventGroupBatchTimeout = "00:00:05";
-        private readonly Mock<IEventSetConfiguration> _configurationMock;
 
         private readonly EventDetails _criticalEvent;
-
-        private readonly DateTime _currentTime = DateTime.UtcNow;
-        private readonly Mock<IIdentityManagementService> _identityManagementServiceMock;
         private readonly EventDetails _informationalEvent;
-        private readonly Mock<IEventSetProcessTypeManager> _processTypeManagerMock;
+        private readonly DateTime _currentTime = DateTime.UtcNow;
 
-        private readonly Mock<IEventSetRepository> _repositoryMock;
+        private readonly Mock<IIdentityManagementService> _identityManagementServiceMock 
+            = new Mock<IIdentityManagementService>();
+        private readonly Mock<IEventSetProcessTypeManager> _processTypeManagerMock 
+            = new Mock<IEventSetProcessTypeManager>();
+        private readonly Mock<IEventSetRepository> _repositoryMock 
+            = new Mock<IEventSetRepository>();
+        private readonly Mock<IEventSetConfiguration> _configurationMock 
+            = new Mock<IEventSetConfiguration>();
 
         private readonly IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> _storageProcessor;
 
@@ -52,11 +55,6 @@ namespace TplDataflow.Extensions.Example.Test
                 ReadTime = _currentTime,
                 SiteId = 12
             };
-
-            _repositoryMock = new Mock<IEventSetRepository>();
-            _identityManagementServiceMock = new Mock<IIdentityManagementService>();
-            _processTypeManagerMock = new Mock<IEventSetProcessTypeManager>();
-            _configurationMock = new Mock<IEventSetConfiguration>();
 
             SetupConfigurationMock();
 
