@@ -50,7 +50,6 @@
     <Compile Include="BusinessObjects\EventSet.cs" />
     <Compile Include="BusinessObjects\EventSetAppearingNotification.cs" />
     <Compile Include="BusinessObjects\EventSetProcessType.cs" />
-    <Compile Include="BusinessObjects\EventSetProcessTypeUpdateCriteria.cs" />
     <Compile Include="BusinessObjects\EventSetStatus.cs" />
     <Compile Include="BusinessObjects\EventSetType.cs" />
     <Compile Include="BusinessObjects\EventSetUpdateNotification.cs" />
@@ -63,7 +62,6 @@
     <Compile Include="Interfaces\IEventSetNotificationService.cs" />
     <Compile Include="Interfaces\IEventSetProcessTypeManager.cs" />
     <Compile Include="Interfaces\IEventSetRepository.cs" />
-    <Compile Include="Interfaces\IEventSetStorageProcessorFactory.cs" />
     <Compile Include="Interfaces\IIdentityManagementService.cs" />
     <Compile Include="BusinessObjects\Metadata.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
