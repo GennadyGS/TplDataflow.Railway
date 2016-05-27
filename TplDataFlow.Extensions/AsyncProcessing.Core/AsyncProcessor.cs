@@ -5,15 +5,20 @@ using System.Reactive.Subjects;
 
 namespace TplDataFlow.Extensions.AsyncProcessing.Core
 {
-    public class EnumerableAsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
+    public class AsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
     {
         private readonly Subject<TInput> _input = new Subject<TInput>();
         private readonly Subject<TOutput> _output = new Subject<TOutput>();
 
-        public EnumerableAsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflow)
+        public AsyncProcessor(Func<IObservable<TInput>, IObservable<TOutput>> dataflow)
+        {
+            dataflow(_input).Subscribe(_output);
+        }
+
+        public AsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflow)
         {
             _input.ToListAsync()
-                .ContinueWith(task => 
+                .ContinueWith(task =>
                     dataflow(task.Result).Subscribe(_output));
         }
 

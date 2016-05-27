@@ -25,7 +25,7 @@ namespace TplDataflow.Extensions.Example.Test
 
         public EventSetProcessorTest()
         {
-            _storageProcessor = new EnumerableAsyncProcessor<EventDetails, EventSetStorageProcessor.Result>(_storageProcessorDataflowMock.Object);
+            _storageProcessor = new AsyncProcessor<EventDetails, EventSetStorageProcessor.Result>(_storageProcessorDataflowMock.Object);
 
             _processor = new EventSetProcessor(_storageProcessor, _notificationServiceMock.Object);
         }

@@ -186,7 +186,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 var logic = new Logic(repositoryResolver, identityService,
                     processTypeManager, currentTimeProvider);
 
-                return new ObservableAsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+                return new AsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
             }
             private static IObservable<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
                 IObservable<EventDetails> input)
@@ -212,7 +212,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                 var logic = new Logic(repositoryResolver, identityService,
                     processTypeManager, currentTimeProvider);
 
-                return new EnumerableAsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+                return new AsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
             }
 
             private static IEnumerable<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
