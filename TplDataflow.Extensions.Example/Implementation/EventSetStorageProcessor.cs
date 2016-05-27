@@ -37,10 +37,10 @@ namespace TplDataflow.Extensions.Example.Implementation
 
         public class Result
         {
-            private readonly EventDetails _eventFailed;
             private readonly EventSetWithEvents _eventSetCreated;
             private readonly EventSetWithEvents _eventSetUpdated;
             private readonly EventDetails _eventSkipped;
+            private readonly EventDetails _eventFailed;
 
             private Result(ResultCode resultCode,
                 EventSetWithEvents eventSetCreated, EventSetWithEvents eventSetUpdated,
@@ -125,6 +125,26 @@ namespace TplDataflow.Extensions.Example.Implementation
             public static Result CreateEventFailed(EventDetails @event)
             {
                 return new Result(ResultCode.EventFailed, null, null, null, @event);
+            }
+
+            public T Match<T>(Func<EventSetWithEvents, T> transformEventSetCreated,
+                Func<EventSetWithEvents, T> transformEventSetUpdated,
+                Func<EventDetails, T> transformEventSkipped,
+                Func<EventDetails, T> transformEventFailed)
+            {
+                switch (ResultCode)
+                {
+                    case ResultCode.EventSetCreated:
+                        return transformEventSetCreated(EventSetCreated);
+                    case ResultCode.EventSetUpdated:
+                        return transformEventSetUpdated(EventSetCreated);
+                    case ResultCode.EventSkipped:
+                        return transformEventSkipped(EventSkipped);
+                    case ResultCode.EventFailed:
+                        return transformEventFailed(EventFailed);
+                    default:
+                        throw new InvalidOperationException("Invalid state");
+                }
             }
         }
 
@@ -293,33 +313,33 @@ namespace TplDataflow.Extensions.Example.Implementation
             {
                 return events
                     .GroupBy(@event => new
-                        {
-                            EventTypeId = @event.EventTypeId,
-                            EventCategory = @event.Category
-                        })
+                    {
+                        EventTypeId = @event.EventTypeId,
+                        EventCategory = @event.Category
+                    })
                     .Select(
                         eventGroup =>
                             GetProcessTypeSafe(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory, eventGroup.ToList())
                                 .Select(processType => new
-                                    {
-                                        EventSetProcessType = processType,
-                                        Events = eventGroup
-                                    }))
-                    .SelectMany(processType => processType.Events, 
+                                {
+                                    EventSetProcessType = processType,
+                                    Events = eventGroup
+                                }))
+                    .SelectMany(processType => processType.Events,
                         (processType, @event) => new
-                            {
-                                Event = @event,
-                                EventSetProcessType = processType.EventSetProcessType,
-                                EventSetType = EventSetType.CreateFromEventAndLevel(@event,
+                        {
+                            Event = @event,
+                            EventSetProcessType = processType.EventSetProcessType,
+                            EventSetType = EventSetType.CreateFromEventAndLevel(@event,
                                     (EventLevel)processType.EventSetProcessType.Level)
-                            })
+                        })
                     .GroupBy(eventInfo => eventInfo.EventSetType)
                     .Select(eventGroup => new EventGroup
-                        {
-                            EventSetType = eventGroup.Key,
-                            EventSetProcessType = eventGroup.First().EventSetProcessType,
-                            Events = eventGroup.Select(arg => arg.Event).ToList()
-                        })
+                    {
+                        EventSetType = eventGroup.Key,
+                        EventSetProcessType = eventGroup.First().EventSetProcessType,
+                        Events = eventGroup.Select(arg => arg.Event).ToList()
+                    })
                     .SelectMany(SplitEventGroupByThreshold);
             }
 
