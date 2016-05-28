@@ -169,7 +169,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                     .Select(logic.LogEvent)
                     .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
                     .SelectMany(logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(logic.CheckNeedSkipEventGroup)
+                    .SelectSafe(logic.FilterSkippedEventGroup)
                     .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
                     .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
                     .SelectMany(logic.TransformResult);
@@ -195,7 +195,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                     .Select(logic.LogEvent)
                     .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
                     .SelectMany(logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(logic.CheckNeedSkipEventGroup)
+                    .SelectSafe(logic.FilterSkippedEventGroup)
                     .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
                     .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => logic.TransformResult(res));
@@ -222,9 +222,35 @@ namespace TplDataflow.Extensions.Example.Implementation
                     .Select(logic.LogEvent)
                     .Buffer(configuration.EventBatchSize)
                     .SelectMany(logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(logic.CheckNeedSkipEventGroup)
+                    .SelectSafe(logic.FilterSkippedEventGroup)
                     .BufferSafe(configuration.EventGroupBatchSize)
                     .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => logic.TransformResult(res));
+            }
+        }
+
+        public class EnumerableFactory2 : IFactory
+        {
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                var logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+
+                return new AsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+            }
+
+            private static IEnumerable<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
+                IEnumerable<EventDetails> input)
+            {
+                return input
+                    .Select(logic.LogEvent)
+                    .Buffer(configuration.EventBatchSize)
+                    .SelectMany(logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(logic.FilterSkippedEventGroup)
+                    .SelectManySafe(logic.ProcessEventGroupSafe)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => logic.TransformResult(res));
             }
         }
@@ -343,7 +369,7 @@ namespace TplDataflow.Extensions.Example.Implementation
                     .SelectMany(SplitEventGroupByThreshold);
             }
 
-            public Either<UnsuccessResult, EventGroup> CheckNeedSkipEventGroup(EventGroup eventGroup)
+            public Either<UnsuccessResult, EventGroup> FilterSkippedEventGroup(EventGroup eventGroup)
             {
                 if (NeedSkipEventGroup(eventGroup))
                 {
@@ -360,12 +386,30 @@ namespace TplDataflow.Extensions.Example.Implementation
                     var events = eventGroupsBatch
                         .SelectMany(eventGroup => eventGroup.Events)
                         .ToList();
-                    return FindLastEventSetsSafe(repository, eventGroupsBatch, events)
+                    var typeCodes = eventGroupsBatch
+                        .Select(eventGroup => eventGroup.EventSetType.GetCode())
+                        .Distinct()
+                        .ToArray();
+                    return FindLastEventSetsSafe(repository, typeCodes, events)
                         .SelectManySafe(
                             lastEventSets =>
-                                InternalProcessEventGroupsBatchSafe(repository, eventGroupsBatch, lastEventSets))
+                                InternalProcessEventGroupsBatchSafe(eventGroupsBatch, lastEventSets))
                         .BufferSafe(int.MaxValue)
                         .SelectSafe(resultList => ApplyChangesSafe(repository, resultList, events))
+                        .SelectMany(result => result);
+                });
+            }
+
+            public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafe(
+                EventGroup eventGroup)
+            {
+                return use(_repositoryResolver(), repository =>
+                {
+                    var typeCodes = new[] { eventGroup.EventSetType.GetCode() };
+                    return FindLastEventSetsSafe(repository, typeCodes, eventGroup.Events)
+                        .SelectSafe(lastEventSets =>
+                                InternalProcessEventGroupSafe(eventGroup, lastEventSets))
+                        .SelectSafe(result => ApplyChangesSafe(repository, new[] { result } , eventGroup.Events))
                         .SelectMany(result => result);
                 });
             }
@@ -416,24 +460,25 @@ namespace TplDataflow.Extensions.Example.Implementation
             }
 
             private static Either<UnsuccessResult, IList<EventSet>> FindLastEventSetsSafe(
-                IEventSetRepository repository,
-                IList<EventGroup> eventGroupsBatch, IList<EventDetails> events)
+                IEventSetRepository repository, long[] typeCodes, IList<EventDetails> events)
             {
-                long[] typeCodes = eventGroupsBatch
-                    .Select(eventGroup => eventGroup.EventSetType.GetCode())
-                    .Distinct()
-                    .ToArray();
                 return InvokeSafe(events, () => repository.FindLastEventSetsByTypeCodes(typeCodes));
             }
 
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> InternalProcessEventGroupsBatchSafe(
-                IEventSetRepository repository, IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
+            private IEnumerable<Either<UnsuccessResult, SuccessResult>> InternalProcessEventGroupsBatchSafe(IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
             {
                 return eventGroupsBatch
                     .GroupBy(eventGroup => NeedToCreateEventSet(eventGroup, lastEventSets))
                     .SelectMany(eventGroup => eventGroup.Key
-                        ? CreateEventSets(eventGroup.ToList())
-                        : UpdateEventSets(eventGroup.ToList(), lastEventSets));
+                        ? CreateEventSetsForEventGroupBatch(eventGroup.ToList())
+                        : UpdateEventSetsForEventGroupBatch(eventGroup.ToList(), lastEventSets));
+            }
+
+            private Either<UnsuccessResult, SuccessResult> InternalProcessEventGroupSafe(EventGroup eventGroup, IList<EventSet> lastEventSets)
+            {
+                return NeedToCreateEventSet(eventGroup, lastEventSets)
+                    ? CreateEventSetForEventGroup(eventGroup)
+                    : UpdateEventSetForEventGroup(eventGroup, lastEventSets);
             }
 
             private static Either<UnsuccessResult, IList<SuccessResult>> ApplyChangesSafe(
@@ -508,9 +553,12 @@ namespace TplDataflow.Extensions.Example.Implementation
                            );
             }
 
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> CreateEventSets(IList<EventGroup> eventGroups)
+            private IEnumerable<Either<UnsuccessResult, SuccessResult>> CreateEventSetsForEventGroupBatch(IList<EventGroup> eventGroups)
             {
-                return GenerateEventSetIdsSafe(eventGroups)
+                var events = eventGroups
+                    .SelectMany(group => group.Events)
+                    .ToList();
+                return GenerateEventSetIdsSafe(eventGroups.Count, events)
                     .SelectMany(eventSetIds =>
                         eventGroups
                             .Zip(eventSetIds, (eventGroup, eventSetId) =>
@@ -518,20 +566,22 @@ namespace TplDataflow.Extensions.Example.Implementation
                             .Select(item => CreateEventSet(item.EventSetId, item.EventGroup)));
             }
 
-            private Either<UnsuccessResult, IList<long>> GenerateEventSetIdsSafe(IList<EventGroup> eventGroups)
+            private Either<UnsuccessResult, SuccessResult> CreateEventSetForEventGroup(EventGroup eventGroup)
             {
-                var events = eventGroups
-                    .SelectMany(group => group.Events)
-                    .ToList();
-
-                return InvokeSafe(events, () => GenerateEventSetIds(eventGroups));
+                return GenerateEventSetIdsSafe(1, eventGroup.Events)
+                    .Select(eventSetIds => CreateEventSet(eventSetIds.Single(), eventGroup));
             }
 
-            private IList<long> GenerateEventSetIds(IList<EventGroup> eventGroups)
+            private Either<UnsuccessResult, IList<long>> GenerateEventSetIdsSafe(int amount, List<EventDetails> events)
             {
-                IList<long> ids = _identityService.GetNextLongIds(EventSetSequenceName, eventGroups.Count);
+                return InvokeSafe(events, () => GenerateEventSetIds(amount));
+            }
 
-                if (ids.Count < eventGroups.Count)
+            private IList<long> GenerateEventSetIds(int amount)
+            {
+                IList<long> ids = _identityService.GetNextLongIds(EventSetSequenceName, amount);
+
+                if (ids.Count < amount)
                 {
                     throw new InvalidOperationException(
                         "Not all event set identifiers are generated by identity service.");
@@ -569,12 +619,19 @@ namespace TplDataflow.Extensions.Example.Implementation
                 return new SuccessResult(isCreated: true, eventSet: eventSet, events: eventGroup.Events);
             }
 
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> UpdateEventSets(IList<EventGroup> eventGroups,
+            private IEnumerable<Either<UnsuccessResult, SuccessResult>> UpdateEventSetsForEventGroupBatch(IList<EventGroup> eventGroups,
                 IList<EventSet> lastEventSets)
             {
                 return eventGroups
                     .Select(eventGroup => UpdateEventSet(eventGroup, lastEventSets))
                     .Select(Right<UnsuccessResult, SuccessResult>);
+            }
+
+            private Either<UnsuccessResult, SuccessResult> UpdateEventSetForEventGroup(EventGroup eventGroup,
+                IList<EventSet> lastEventSets)
+            {
+                return Right<UnsuccessResult, SuccessResult>(
+                    UpdateEventSet(eventGroup, lastEventSets));
             }
 
             private SuccessResult UpdateEventSet(EventGroup eventGroup, IList<EventSet> lastEventSets)
