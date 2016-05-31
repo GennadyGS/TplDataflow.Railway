@@ -7,9 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataFlow.Extensions", "T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataFlow.Extensions.Tests", "TplDataFlow.Extensions.Tests\TplDataFlow.Extensions.Tests.csproj", "{FF4C7BA8-A386-45D7-8970-6EE894F78AD6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataflow.Extensions.Example", "TplDataflow.Extensions.Example\TplDataflow.Extensions.Example.csproj", "{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventProcessing", "Samples\EventProcessing\EventProcessing.csproj", "{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataflow.Extensions.Example.Test", "TplDataflow.Extensions.Example.Test\TplDataflow.Extensions.Example.Test.csproj", "{B6F3AE23-5A35-406D-AA0C-FC91785E69CC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventProcessing.Tests", "Samples\EventProcessing.Tests\EventProcessing.Tests.csproj", "{B6F3AE23-5A35-406D-AA0C-FC91785E69CC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{540D61D2-1DAD-476B-A505-43E434D36F0E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,5 +38,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3} = {540D61D2-1DAD-476B-A505-43E434D36F0E}
+		{B6F3AE23-5A35-406D-AA0C-FC91785E69CC} = {540D61D2-1DAD-476B-A505-43E434D36F0E}
 	EndGlobalSection
 EndGlobal
