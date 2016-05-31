@@ -2,7 +2,7 @@
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 
-namespace TplDataFlow.Extensions.AsyncProcessing.Core
+namespace AsyncProcessing.Core
 {
     public static class AsyncProcessorExtensions
     {

@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("EventProcessing.Tests")]
+[assembly: AssemblyTitle("AsyncProcessing.Core")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("EventProcessing.Tests")]
-[assembly: AssemblyCopyright("")]
+[assembly: AssemblyCompany("EPAM Systems")]
+[assembly: AssemblyProduct("AsyncProcessing.Core")]
+[assembly: AssemblyCopyright("Copyright © EPAM Systems 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("b6f3ae23-5a35-406d-aa0c-fc91785e69cc")]
+[assembly: Guid("7145b448-a3eb-4f44-9560-dd0e3cc147ab")]
 
 // Version information for an assembly consists of the following four values:
 //

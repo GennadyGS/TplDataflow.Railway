@@ -48,6 +48,10 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\AsyncProcessing.Core\AsyncProcessing.Core.csproj">
+      <Project>{7145B448-A3EB-4F44-9560-DD0E3CC147AB}</Project>
+      <Name>AsyncProcessing.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EventProcessing\EventProcessing.csproj">
       <Project>{2a6c3b20-c6b1-4aec-b14a-ea163e70abc3}</Project>
       <Name>EventProcessing</Name>

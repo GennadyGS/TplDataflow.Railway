@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace TplDataFlow.Extensions.AsyncProcessing.Core
+namespace AsyncProcessing.Core
 {
     public static class ObservableExtensions
     {

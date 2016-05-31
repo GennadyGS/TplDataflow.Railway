@@ -34,13 +34,9 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Remoting" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +63,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\AsyncProcessing.Core\AsyncProcessing.Core.csproj">
+      <Project>{7145B448-A3EB-4F44-9560-DD0E3CC147AB}</Project>
+      <Name>AsyncProcessing.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\TplDataFlow.Extensions\TplDataFlow.Extensions.csproj">
       <Project>{6c3df27a-610c-48b9-a815-cf1496cb5663}</Project>
       <Name>TplDataFlow.Extensions</Name>

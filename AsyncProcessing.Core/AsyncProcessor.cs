@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
-namespace TplDataFlow.Extensions.AsyncProcessing.Core
+namespace AsyncProcessing.Core
 {
     public class AsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
     {

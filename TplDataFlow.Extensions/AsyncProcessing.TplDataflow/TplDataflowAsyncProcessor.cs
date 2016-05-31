@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks.Dataflow;
-using TplDataFlow.Extensions.AsyncProcessing.Core;
+using AsyncProcessing.Core;
 using TplDataFlow.Extensions.TplDataflow.Extensions;
 
 namespace TplDataFlow.Extensions.AsyncProcessing.TplDataflow
