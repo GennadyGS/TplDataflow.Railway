@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
-using TplDataFlow.Extensions.TplDataflow.Extensions;
+using TplDataFlow.Extensions;
 
-namespace TplDataFlow.Extensions.TplDataflow.Linq
+namespace TplDataflow.Linq
 {
     public static class DataflowBlockExtensions
     {

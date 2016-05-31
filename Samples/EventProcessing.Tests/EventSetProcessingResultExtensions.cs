@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using EventProcessing.BusinessObjects;
+﻿using EventProcessing.BusinessObjects;
 using EventProcessing.Implementation;
 using FluentAssertions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace EventProcessing.Tests
 {

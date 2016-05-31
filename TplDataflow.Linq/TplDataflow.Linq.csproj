@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{FF4C7BA8-A386-45D7-8970-6EE894F78AD6}</ProjectGuid>
+    <ProjectGuid>{7E939908-2AD2-4587-BAA5-3390DEB1C52D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TplDataFlow.Extensions.UnitTests</RootNamespace>
-    <AssemblyName>TplDataFlow.Extensions.UnitTests</AssemblyName>
+    <RootNamespace>TplDataflow.Linq</RootNamespace>
+    <AssemblyName>TplDataflow.Linq</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -33,25 +33,19 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataflowBlockExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="DataFlowBlockExtensionsTests.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TplDataFlow.Extensions\TplDataFlow.Extensions.csproj">
-      <Project>{6c3df27a-610c-48b9-a815-cf1496cb5663}</Project>
-      <Name>TplDataFlow.Extensions</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TplDataflow.Linq\TplDataflow.Linq.csproj">
-      <Project>{7E939908-2AD2-4587-BAA5-3390DEB1C52D}</Project>
-      <Name>TplDataflow.Linq</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TplDataFlow.Extensions\TplDataFlow.Extensions.csproj">
+      <Project>{6C3DF27A-610C-48B9-A815-CF1496CB5663}</Project>
+      <Name>TplDataFlow.Extensions</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

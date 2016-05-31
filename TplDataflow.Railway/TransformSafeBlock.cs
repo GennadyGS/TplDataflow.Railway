@@ -1,11 +1,10 @@
+using LanguageExt;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using LanguageExt;
-using static LanguageExt.Prelude;
 
-namespace TplDataFlow.Extensions.TplDataflow.Railway
+namespace TplDataflow.Railway
 {
     public class TransformSafeBlock<TLeft, TRightInput, TRightOutput> :
         IPropagatorBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>,
@@ -126,12 +125,12 @@ namespace TplDataFlow.Extensions.TplDataflow.Railway
 
         private static TRightInput GetRight(Either<TLeft, TRightInput> input)
         {
-            return input.IfLeft(() => failwith<TRightInput>("Not in right state"));
+            return input.IfLeft(() => Prelude.failwith<TRightInput>("Not in right state"));
         }
 
         private static TLeft GetLeft(Either<TLeft, TRightInput> input)
         {
-            return input.IfRight(() => failwith<TLeft>("Not in left state"));
+            return input.IfRight(() => Prelude.failwith<TLeft>("Not in left state"));
         }
     }
 }

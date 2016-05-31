@@ -1,6 +1,6 @@
-﻿using System;
+﻿using EventProcessing.BusinessObjects;
+using System;
 using System.Collections.Generic;
-using EventProcessing.BusinessObjects;
 
 namespace EventProcessing.Interfaces
 {

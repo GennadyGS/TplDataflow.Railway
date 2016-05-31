@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using AsyncProcessing.Core;
+﻿using AsyncProcessing.Core;
 using EventProcessing.BusinessObjects;
 using EventProcessing.Implementation;
 using EventProcessing.Interfaces;
 using FluentAssertions;
 using LanguageExt;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace EventProcessing.Tests

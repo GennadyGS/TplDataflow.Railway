@@ -1,6 +1,6 @@
-﻿using System;
+﻿using EventProcessing.BusinessObjects;
+using System;
 using System.Globalization;
-using EventProcessing.BusinessObjects;
 
 namespace EventProcessing.Exceptions
 {

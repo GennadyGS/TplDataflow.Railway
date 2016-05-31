@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reactive.Linq;
-using AsyncProcessing.Core;
+﻿using AsyncProcessing.Core;
 using EventProcessing.BusinessObjects;
 using EventProcessing.Interfaces;
 using LanguageExt;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reactive.Linq;
 
 namespace EventProcessing.Implementation
 {

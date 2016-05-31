@@ -1,11 +1,10 @@
-﻿using System;
+﻿using LanguageExt;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using LanguageExt;
-using static LanguageExt.Prelude;
 
-namespace TplDataFlow.Extensions.Railway.Linq
+namespace Railway.Linq
 {
     public static class ObservableExtensions
     {
@@ -74,10 +73,10 @@ namespace TplDataFlow.Extensions.Railway.Linq
                         ? group
                             .SelectMany(item => item.RightAsEnumerable())
                             .GroupBy(keySelector)
-                            .Select(Right<TLeft, IGroupedObservable<TKey, TRight>>)
+                            .Select(Prelude.Right<TLeft, IGroupedObservable<TKey, TRight>>)
                         : group
                             .SelectMany(item => item.LeftAsEnumerable())
-                            .Select(Left<TLeft, IGroupedObservable<TKey, TRight>>));
+                            .Select(Prelude.Left<TLeft, IGroupedObservable<TKey, TRight>>));
         }
 
         public static IObservable<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(
@@ -88,12 +87,12 @@ namespace TplDataFlow.Extensions.Railway.Linq
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsRight)
                     .SelectMany(group => group.Key
-                        ? List(
-                            Right<TLeft, IList<TRight>>(
+                        ? Prelude.List(
+                            Prelude.Right<TLeft, IList<TRight>>(
                                 group.Rights().ToList()))
                         : group
                             .Lefts()
-                            .Select(Left<TLeft, IList<TRight>>)));
+                            .Select(Prelude.Left<TLeft, IList<TRight>>)));
         }
 
         public static IObservable<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(
@@ -104,12 +103,12 @@ namespace TplDataFlow.Extensions.Railway.Linq
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsRight)
                     .SelectMany(group => group.Key
-                        ? List(
-                            Right<TLeft, IList<TRight>>(
+                        ? Prelude.List(
+                            Prelude.Right<TLeft, IList<TRight>>(
                                 group.Rights().ToList()))
                         : group
                             .Lefts()
-                            .Select(Left<TLeft, IList<TRight>>)));
+                            .Select(Prelude.Left<TLeft, IList<TRight>>)));
         }
     }
 }

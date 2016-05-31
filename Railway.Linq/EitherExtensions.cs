@@ -1,10 +1,9 @@
-﻿using System;
+﻿using LanguageExt;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using LanguageExt;
-using static LanguageExt.Prelude;
 
-namespace TplDataFlow.Extensions.Railway.Linq
+namespace Railway.Linq
 {
     public static class EitherExtensions
     {
@@ -28,8 +27,8 @@ namespace TplDataFlow.Extensions.Railway.Linq
             this Either<TLeft, TRightInput> source, Func<TRightInput, IEnumerable<TRightOutput>> selector)
         {
             return source.Match(
-                right => selector(right).Select(Right<TLeft, TRightOutput>),
-                left => List(Left<TLeft, TRightOutput>(left)));
+                right => selector(right).Select(Prelude.Right<TLeft, TRightOutput>),
+                left => Prelude.List(Prelude.Left<TLeft, TRightOutput>(left)));
         }
 
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectMany<TLeft, TRightInput, TRightMedium, TRightOutput>(
@@ -40,8 +39,8 @@ namespace TplDataFlow.Extensions.Railway.Linq
             return source.Match(
                 right => mediumSelector(right)
                     .Select(medium => resultSelector(right, medium))
-                    .Select(Right<TLeft, TRightOutput>),
-                left => List(Left<TLeft, TRightOutput>(left)));
+                    .Select(Prelude.Right<TLeft, TRightOutput>),
+                left => Prelude.List(Prelude.Left<TLeft, TRightOutput>(left)));
         }
 
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightOutput>(
@@ -49,7 +48,7 @@ namespace TplDataFlow.Extensions.Railway.Linq
         {
             return source.Match(
                 selector,
-                left => List(Left<TLeft, TRightOutput>(left)));
+                left => Prelude.List(Prelude.Left<TLeft, TRightOutput>(left)));
         }
 
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightMedium, TRightOutput>(
@@ -59,7 +58,7 @@ namespace TplDataFlow.Extensions.Railway.Linq
         {
             return source.Match(
                 right => mediumSelector(right).Select(medium => resultSelector(right, medium)),
-                left => List(Left<TLeft, TRightOutput>(left)));
+                left => Prelude.List(Prelude.Left<TLeft, TRightOutput>(left)));
         }
     }
 }

@@ -1,5 +1,5 @@
-using System;
 using EventProcessing.BusinessObjects;
+using System;
 
 namespace EventProcessing.Tests
 {

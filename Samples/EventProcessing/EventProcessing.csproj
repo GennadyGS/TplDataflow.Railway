@@ -67,9 +67,25 @@
       <Project>{7145B448-A3EB-4F44-9560-DD0E3CC147AB}</Project>
       <Name>AsyncProcessing.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\AsyncProcessing.TplDataflow\AsyncProcessing.TplDataflow.csproj">
+      <Project>{DE68DBFA-7C32-4B76-A8E2-DE78C406E179}</Project>
+      <Name>AsyncProcessing.TplDataflow</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Railway.Linq\Railway.Linq.csproj">
+      <Project>{A90AFA32-26F3-4E80-B8E8-CEA8C6B61D9C}</Project>
+      <Name>Railway.Linq</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\TplDataFlow.Extensions\TplDataFlow.Extensions.csproj">
       <Project>{6c3df27a-610c-48b9-a815-cf1496cb5663}</Project>
       <Name>TplDataFlow.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\TplDataflow.Linq\TplDataflow.Linq.csproj">
+      <Project>{7E939908-2AD2-4587-BAA5-3390DEB1C52D}</Project>
+      <Name>TplDataflow.Linq</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\TplDataflow.Railway\TplDataflow.Railway.csproj">
+      <Project>{1ECBCB18-E9DD-42D8-BE49-37DDA28761B4}</Project>
+      <Name>TplDataflow.Railway</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

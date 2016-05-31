@@ -1,11 +1,11 @@
+using LanguageExt;
+using Railway.Linq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks.Dataflow;
-using LanguageExt;
-using TplDataFlow.Extensions.Railway.Linq;
-using TplDataFlow.Extensions.TplDataflow.Extensions;
+using TplDataFlow.Extensions;
 
-namespace TplDataFlow.Extensions.TplDataflow.Railway
+namespace TplDataflow.Railway
 {
     public static class DataflowBlockExtensions
     {

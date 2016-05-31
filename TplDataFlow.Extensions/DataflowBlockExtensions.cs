@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks.Dataflow;
 
-namespace TplDataFlow.Extensions.TplDataflow.Extensions
+namespace TplDataFlow.Extensions
 {
     public static class DataflowBlockExtensions
     {

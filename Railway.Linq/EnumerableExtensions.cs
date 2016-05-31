@@ -1,11 +1,10 @@
-﻿using System;
+﻿using LanguageExt;
+using LanguageExt.Trans;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using LanguageExt;
-using LanguageExt.Trans;
-using static LanguageExt.Prelude;
 
-namespace TplDataFlow.Extensions.Railway.Linq
+namespace Railway.Linq
 {
     public static class EnumerableExtensions
     {
@@ -74,10 +73,10 @@ namespace TplDataFlow.Extensions.Railway.Linq
                         ? group
                             .Rights()
                             .GroupBy(keySelector)
-                            .Select(Right<TLeft, IGrouping<TKey, TRight>>)
+                            .Select(Prelude.Right<TLeft, IGrouping<TKey, TRight>>)
                         : group
                             .Lefts()
-                            .Select(Left<TLeft, IGrouping<TKey, TRight>>));
+                            .Select(Prelude.Left<TLeft, IGrouping<TKey, TRight>>));
         }
 
         public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source, int count)
@@ -96,12 +95,12 @@ namespace TplDataFlow.Extensions.Railway.Linq
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsRight)
                     .SelectMany(group => group.Key
-                        ? List(
-                            Right<TLeft, IList<TRight>>(
+                        ? Prelude.List(
+                            Prelude.Right<TLeft, IList<TRight>>(
                                 group.Rights().ToList()))
                         : group
                             .Lefts()
-                            .Select(Left<TLeft, IList<TRight>>)));
+                            .Select(Prelude.Left<TLeft, IList<TRight>>)));
         }
     }
 }
