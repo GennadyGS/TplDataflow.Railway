@@ -230,7 +230,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableFactory2 : IFactory
+        public class EnumerableFactoryOneByOne : IFactory
         {
             public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
                 Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
@@ -399,9 +399,11 @@ namespace EventProcessing.Implementation
             {
                 return use(_repositoryResolver(), repository =>
                 {
-                    return FindLastEventSetsSafe(repository, new[] {eventGroup})
-                        .SelectSafe(lastEventSets =>
-                                InternalProcessEventGroupSafe(eventGroup, lastEventSets))
+                    return List(eventGroup)
+                        .Select(group =>
+                            FindLastEventSetsSafe(repository, new[] { group })
+                                .Select(lastEventSets => new { group, lastEventSets }))
+                        .SelectSafe(item => InternalProcessEventGroupSafe(item.group, item.lastEventSets))
                         .SelectSafe(result => ApplyChangesSafe(repository, new[] { result }))
                         .SelectMany(result => result);
                 });
