@@ -102,5 +102,16 @@ namespace Railway.Linq
                             .Lefts()
                             .Select(Prelude.Left<TLeft, IList<TRight>>)));
         }
+
+        public static IEnumerable<Either<TLeftOutput, TRightOutput>> Use<TInput, TLeftOutput, TRightOutput>(TInput disposable,
+            Func<TInput, IEnumerable<Either<TLeftOutput, TRightOutput>>> selector) where TInput : IDisposable
+        {
+            return selector(disposable)
+                .Select(item =>
+                    {
+                        disposable.Dispose();
+                        return item;
+                    });
+        }
     }
 }

@@ -382,7 +382,7 @@ namespace EventProcessing.Implementation
             public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupsBatchSafe(
                 IList<EventGroup> eventGroupsBatch)
             {
-                return use(_repositoryResolver(), repository =>
+                return EnumerableExtensions.Use(_repositoryResolver(), repository =>
                 {
                     return FindLastEventSetsSafe(repository, eventGroupsBatch)
                         .SelectManySafe(
@@ -397,7 +397,7 @@ namespace EventProcessing.Implementation
             public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafe(
                 EventGroup eventGroup)
             {
-                return use(_repositoryResolver(), repository =>
+                return EnumerableExtensions.Use(_repositoryResolver(), repository =>
                 {
                     return List(eventGroup)
                         .Select(group =>
