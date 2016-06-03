@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataflow.Linq", "TplData
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataflow.Railway", "TplDataflow.Railway\TplDataflow.Railway.csproj", "{1ECBCB18-E9DD-42D8-BE49-37DDA28761B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow", "Dataflow\Dataflow.csproj", "{79C5A0F9-E9EC-4B45-8F84-6859C6E07522}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Core", "Dataflow\Dataflow.Core.csproj", "{79C5A0F9-E9EC-4B45-8F84-6859C6E07522}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
