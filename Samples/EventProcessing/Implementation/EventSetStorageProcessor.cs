@@ -1,19 +1,21 @@
-﻿using AsyncProcessing.Core;
-using AsyncProcessing.TplDataflow;
-using EventProcessing.BusinessObjects;
-using EventProcessing.Exceptions;
-using EventProcessing.Interfaces;
-using LanguageExt;
-using log4net;
-using Railway.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
+using AsyncProcessing.Core;
+using AsyncProcessing.TplDataflow;
+using EventProcessing.BusinessObjects;
+using EventProcessing.Exceptions;
+using EventProcessing.Interfaces;
+using log4net;
+using LanguageExt;
+using Railway.Linq;
 using TplDataflow.Linq;
 using TplDataflow.Railway;
+using static LanguageExt.Prelude;
+
 
 namespace EventProcessing.Implementation
 {
@@ -380,21 +382,14 @@ namespace EventProcessing.Implementation
             public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupsBatchSafe(
                 IList<EventGroup> eventGroupsBatch)
             {
-                return Prelude.use(_repositoryResolver(), repository =>
+                return use(_repositoryResolver(), repository =>
                 {
-                    var events = eventGroupsBatch
-                        .SelectMany(eventGroup => eventGroup.Events)
-                        .ToList();
-                    var typeCodes = eventGroupsBatch
-                        .Select(eventGroup => eventGroup.EventSetType.GetCode())
-                        .Distinct()
-                        .ToArray();
-                    return FindLastEventSetsSafe(repository, typeCodes, events)
+                    return FindLastEventSetsSafe(repository, eventGroupsBatch)
                         .SelectManySafe(
                             lastEventSets =>
                                 InternalProcessEventGroupsBatchSafe(eventGroupsBatch, lastEventSets))
                         .BufferSafe(int.MaxValue)
-                        .SelectSafe(resultList => ApplyChangesSafe(repository, resultList, events))
+                        .SelectSafe(resultList => ApplyChangesSafe(repository, resultList))
                         .SelectMany(result => result);
                 });
             }
@@ -402,13 +397,12 @@ namespace EventProcessing.Implementation
             public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafe(
                 EventGroup eventGroup)
             {
-                return Prelude.use(_repositoryResolver(), repository =>
+                return use(_repositoryResolver(), repository =>
                 {
-                    var typeCodes = new[] { eventGroup.EventSetType.GetCode() };
-                    return FindLastEventSetsSafe(repository, typeCodes, eventGroup.Events)
+                    return FindLastEventSetsSafe(repository, new[] {eventGroup})
                         .SelectSafe(lastEventSets =>
                                 InternalProcessEventGroupSafe(eventGroup, lastEventSets))
-                        .SelectSafe(result => ApplyChangesSafe(repository, new[] { result } , eventGroup.Events))
+                        .SelectSafe(result => ApplyChangesSafe(repository, new[] { result }))
                         .SelectMany(result => result);
                 });
             }
@@ -417,8 +411,8 @@ namespace EventProcessing.Implementation
             {
                 return result.Match(
                     successResult => successResult.IsCreated
-                        ? Prelude.List(Result.CreateEventSetCreated(successResult.EventSetWithEvents))
-                        : Prelude.List(Result.CreateEventSetUpdated(successResult.EventSetWithEvents)),
+                        ? List(Result.CreateEventSetCreated(successResult.EventSetWithEvents))
+                        : List(Result.CreateEventSetUpdated(successResult.EventSetWithEvents)),
                     unsuccessResult => unsuccessResult.IsSkipped
                         ? unsuccessResult.Events.Select(Result.CreateEventSkipped)
                         : unsuccessResult.Events.Select(Result.CreateEventFailed));
@@ -459,8 +453,15 @@ namespace EventProcessing.Implementation
             }
 
             private static Either<UnsuccessResult, IList<EventSet>> FindLastEventSetsSafe(
-                IEventSetRepository repository, long[] typeCodes, IList<EventDetails> events)
+                IEventSetRepository repository, IList<EventGroup> eventGroups)
             {
+                var events = eventGroups
+                    .SelectMany(group => group.Events)
+                    .ToList();
+                var typeCodes = eventGroups
+                    .Select(group => group.EventSetType.GetCode())
+                    .Distinct()
+                    .ToList();
                 return InvokeSafe(events, () => repository.FindLastEventSetsByTypeCodes(typeCodes));
             }
 
@@ -481,8 +482,11 @@ namespace EventProcessing.Implementation
             }
 
             private static Either<UnsuccessResult, IList<SuccessResult>> ApplyChangesSafe(
-                IEventSetRepository repository, IList<SuccessResult> results, IList<EventDetails> events)
+                IEventSetRepository repository, IList<SuccessResult> results)
             {
+                var events = results
+                    .SelectMany(result => result.EventSetWithEvents.Events)
+                    .ToList();
                 return InvokeSafe(events, () => ApplyChanges(repository, results));
             }
 
@@ -623,13 +627,13 @@ namespace EventProcessing.Implementation
             {
                 return eventGroups
                     .Select(eventGroup => UpdateEventSet(eventGroup, lastEventSets))
-                    .Select(Prelude.Right<UnsuccessResult, SuccessResult>);
+                    .Select(Right<UnsuccessResult, SuccessResult>);
             }
 
             private Either<UnsuccessResult, SuccessResult> UpdateEventSetForEventGroup(EventGroup eventGroup,
                 IList<EventSet> lastEventSets)
             {
-                return Prelude.Right<UnsuccessResult, SuccessResult>(
+                return Right<UnsuccessResult, SuccessResult>(
                     UpdateEventSet(eventGroup, lastEventSets));
             }
 
@@ -701,7 +705,7 @@ namespace EventProcessing.Implementation
             {
                 return InvokeSafe(events, () =>
                     _processTypeManager.GetProcessType(eventTypeId, category) ??
-                        Prelude.Left<UnsuccessResult, EventSetProcessType>(
+                        Left<UnsuccessResult, EventSetProcessType>(
                             UnsuccessResult.CreateFailed(events,
                                 Metadata.ExceptionHandling.NotFoundException.Code,
                                 "EventSetProcessingType was not found for [EventTypeId = {0}, Category = {1}]", eventTypeId,
