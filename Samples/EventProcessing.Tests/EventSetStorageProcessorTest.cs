@@ -137,7 +137,7 @@ namespace EventProcessing.Tests
                 .Verifiable();
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => 
+                    It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] {GetCriticalEventsetTypeCode()}))))
                 .Throws<Exception>()
                 .Verifiable();
@@ -169,7 +169,7 @@ namespace EventProcessing.Tests
                 .Verifiable();
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => 
+                    It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] {GetCriticalEventsetTypeCode()}))))
                 .Returns(new List<EventSet>())
                 .Verifiable();
@@ -203,7 +203,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
+                    It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new List<EventSet>())
                 .Verifiable();
 
@@ -267,7 +267,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
+                    It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new List<EventSet>())
                 .Verifiable();
 
@@ -312,7 +312,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => 
+                    It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
@@ -354,7 +354,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
+                    It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
             _repositoryMock.Setup(obj => 
@@ -401,7 +401,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
+                    It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
             _repositoryMock.Setup(obj => 
@@ -449,7 +449,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
+                    It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
             _repositoryMock.Setup(obj => 
@@ -500,7 +500,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => 
+                    It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
@@ -552,7 +552,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => 
+                    It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
@@ -604,7 +604,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => 
+                    It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
@@ -660,7 +660,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => 
+                    It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
@@ -714,7 +714,7 @@ namespace EventProcessing.Tests
 
             _repositoryMock.Setup(obj => 
                 obj.FindLastEventSetsByTypeCodes(
-                    It.Is<long[]>(typeCodes => 
+                    It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
@@ -772,6 +772,13 @@ namespace EventProcessing.Tests
         public class EnumerableImpl : EventSetStorageProcessorTest
         {
             public EnumerableImpl() : base(new EventSetStorageProcessor.EnumerableFactory())
+            {
+            }
+        }
+
+        public class EnumerableOneByOneImpl : EventSetStorageProcessorTest
+        {
+            public EnumerableOneByOneImpl() : base(new EventSetStorageProcessor.EnumerableFactoryOneByOne())
             {
             }
         }
