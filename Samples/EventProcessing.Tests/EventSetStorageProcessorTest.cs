@@ -664,17 +664,27 @@ namespace EventProcessing.Tests
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
                 .Returns(new[] { eventSet }.ToList())
                 .Verifiable();
-            _repositoryMock.Setup(obj => 
+            _repositoryMock.Setup(obj =>
                 obj.ApplyChanges(
-                    It.Is<IList<EventSet>>(sets => sets.Count == events.Length),
-                    It.Is<IList<EventSet>>(sets => sets.Count == 0)))
-                .Verifiable();
+                    It.IsAny<IList<EventSet>>(),
+                    It.IsAny<IList<EventSet>>()));
 
+            // TODO: Refactoring
             var eventSetIds = new long[] { 15345, 15346 };
+            int currentEventSetIdIndex = 0;
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), eventSetIds.Length))
-                .Returns(eventSetIds.ToList())
-                .Verifiable();
+                obj.GetNextLongIds(
+                    It.IsAny<string>(), 
+                    It.Is<int>(i => i > 0 && i <= eventSetIds.Length)))
+                .Returns((string sequenceName, int amount) =>
+                {
+                    var res = eventSetIds
+                        .Skip(currentEventSetIdIndex)
+                        .Take(amount)
+                        .ToList();
+                    currentEventSetIdIndex += amount;
+                    return res;
+                });
 
             var result = _storageProcessor.InvokeSync(events);
 
@@ -720,8 +730,8 @@ namespace EventProcessing.Tests
                 .Verifiable();
             _repositoryMock.Setup(obj => 
                 obj.ApplyChanges(
-                    It.Is<IList<EventSet>>(sets => sets.Count == 1),
-                    It.Is<IList<EventSet>>(sets => sets.Count == 1)))
+                    It.IsAny<IList<EventSet>>(),
+                    It.IsAny<IList<EventSet>>()))
                 .Verifiable();
 
             long newEventSetId = 15345;
