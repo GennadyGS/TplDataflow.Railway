@@ -151,82 +151,91 @@ namespace EventProcessing.Implementation
 
         public class TplDataflowFactory : IFactory
         {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
             public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
                 Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
                 IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
                 Func<DateTime> currentTimeProvider)
             {
-                var logic = new Logic(repositoryResolver,
+                _logic = new Logic(repositoryResolver,
                     identityService, processTypeManager, currentTimeProvider);
+                _configuration = configuration;
 
-                return
-                    new TplDataflowAsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(Dataflow);
             }
 
-            private static ISourceBlock<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
-                ISourceBlock<EventDetails> input)
+            private ISourceBlock<Result> Dataflow(ISourceBlock<EventDetails> input)
             {
                 return input
-                    .Select(logic.LogEvent)
-                    .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
-                    .SelectMany(logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(logic.FilterSkippedEventGroup)
-                    .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
-                    .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany(logic.TransformResult);
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany(_logic.TransformResult);
             }
         }
 
         public class ObservableFactory : IFactory
         {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
             public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
                 Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
                 IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
                 Func<DateTime> currentTimeProvider)
             {
-                var logic = new Logic(repositoryResolver, identityService,
+                _logic = new Logic(repositoryResolver, identityService,
                     processTypeManager, currentTimeProvider);
+                _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+                return new AsyncProcessor<EventDetails, Result>(Dataflow);
             }
-            private static IObservable<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
-                IObservable<EventDetails> input)
+
+            private IObservable<Result> Dataflow(IObservable<EventDetails> input)
             {
                 return input
-                    .Select(logic.LogEvent)
-                    .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
-                    .SelectMany(logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(logic.FilterSkippedEventGroup)
-                    .BufferSafe(configuration.EventGroupBatchTimeout, configuration.EventGroupBatchSize)
-                    .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => logic.TransformResult(res));
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => _logic.TransformResult(res));
             }
         }
 
         public class EnumerableFactory : IFactory
         {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
             public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
                 Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
                 IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
                 Func<DateTime> currentTimeProvider)
             {
-                var logic = new Logic(repositoryResolver, identityService,
+                _logic = new Logic(repositoryResolver, identityService,
                     processTypeManager, currentTimeProvider);
+                _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+                return new AsyncProcessor<EventDetails, Result>(Dataflow);
             }
 
-            private static IEnumerable<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
-                IEnumerable<EventDetails> input)
+            private IEnumerable<Result> Dataflow(IEnumerable<EventDetails> input)
             {
                 return input
-                    .Select(logic.LogEvent)
-                    .Buffer(configuration.EventBatchSize)
-                    .SelectMany(logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(logic.FilterSkippedEventGroup)
-                    .BufferSafe(configuration.EventGroupBatchSize)
-                    .SelectManySafe(logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => logic.TransformResult(res));
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchSize)
+                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => _logic.TransformResult(res));
             }
         }
 
