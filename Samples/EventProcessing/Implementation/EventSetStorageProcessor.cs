@@ -15,7 +15,7 @@ using Railway.Linq;
 using TplDataflow.Linq;
 using TplDataflow.Railway;
 using static LanguageExt.Prelude;
-
+using EventProcessing.Utils;
 
 namespace EventProcessing.Implementation
 {
@@ -251,8 +251,9 @@ namespace EventProcessing.Implementation
                     .Buffer(configuration.EventBatchSize)
                     .SelectMany(logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(logic.FilterSkippedEventGroup)
-                    .SelectManySafe(logic.ProcessEventGroupSafe)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => logic.TransformResult(res));
+                    .Apply(logic.ProcessEventGroupSafeDataflow)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => 
+                        logic.TransformResult(res));
             }
         }
 
@@ -394,13 +395,13 @@ namespace EventProcessing.Implementation
                 });
             }
 
-            public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafe(
-                EventGroup eventGroup)
+            public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafeDataflow(
+                IEnumerable<Either<UnsuccessResult, EventGroup>> eventGroups)
             {
                 return EnumerableExtensions.Use(_repositoryResolver(), repository =>
                 {
-                    return List(eventGroup)
-                        .Select(group =>
+                    return eventGroups
+                        .SelectSafe(group =>
                             FindLastEventSetsSafe(repository, new[] { group })
                                 .Select(lastEventSets => new { group, lastEventSets }))
                         .SelectSafe(item => InternalProcessEventGroupSafe(item.group, item.lastEventSets))
