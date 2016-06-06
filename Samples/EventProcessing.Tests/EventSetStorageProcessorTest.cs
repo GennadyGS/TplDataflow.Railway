@@ -813,5 +813,12 @@ namespace EventProcessing.Tests
             {
             }
         }
+
+        public class TplDataflowOneByOneImpl : EventSetStorageProcessorTest
+        {
+            public TplDataflowOneByOneImpl() : base(new EventSetStorageProcessor.TplDataflowFactoryOneByOne())
+            {
+            }
+        }
     }
 }

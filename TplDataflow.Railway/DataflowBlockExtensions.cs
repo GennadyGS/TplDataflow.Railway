@@ -3,12 +3,20 @@ using Railway.Linq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks.Dataflow;
+using TplDataflow.Linq;
 using TplDataFlow.Extensions;
 
 namespace TplDataflow.Railway
 {
     public static class DataflowBlockExtensions
     {
+        public static ISourceBlock<Either<TLeft, TRightOutput>> SelectMany<TLeft, TRightInput, TRightOutput>(
+            this ISourceBlock<Either<TLeft, TRightInput>> source,
+            Func<TRightInput, IEnumerable<TRightOutput>> selector)
+        {
+            return source.SelectMany(item => item.SelectMany(selector));
+        }
+
         public static ISourceBlock<Either<TLeft, TRightOutput>> SelectSafe<TLeft, TRightInput, TRightOutput>(
             this ISourceBlock<Either<TLeft, TRightInput>> source, Func<TRightInput, Either<TLeft, TRightOutput>> selector)
         {
@@ -44,5 +52,17 @@ namespace TplDataflow.Railway
 
             return outputBlock;
         }
+
+        public static ISourceBlock<Either<TLeftOutput, TRightOutput>> Use<TInput, TLeftOutput, TRightOutput>(TInput disposable,
+            Func<TInput, ISourceBlock<Either<TLeftOutput, TRightOutput>>> selector) where TInput : IDisposable
+        {
+            return selector(disposable)
+                .Select(item =>
+                {
+                    disposable.Dispose();
+                    return item;
+                });
+        }
+
     }
 }

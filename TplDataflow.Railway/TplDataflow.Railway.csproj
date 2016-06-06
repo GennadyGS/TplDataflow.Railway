@@ -51,6 +51,10 @@
       <Project>{6C3DF27A-610C-48B9-A815-CF1496CB5663}</Project>
       <Name>TplDataFlow.Extensions</Name>
     </ProjectReference>
+    <ProjectReference Include="..\TplDataflow.Linq\TplDataflow.Linq.csproj">
+      <Project>{7E939908-2AD2-4587-BAA5-3390DEB1C52D}</Project>
+      <Name>TplDataflow.Linq</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
