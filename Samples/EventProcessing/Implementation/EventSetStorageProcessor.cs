@@ -232,29 +232,48 @@ namespace EventProcessing.Implementation
 
         public class EnumerableFactoryOneByOne : IFactory
         {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
             public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
                 Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
                 IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
                 Func<DateTime> currentTimeProvider)
             {
-                var logic = new Logic(repositoryResolver, identityService,
+                _logic = new Logic(repositoryResolver, identityService,
                     processTypeManager, currentTimeProvider);
+                _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(input => Dataflow(logic, configuration, input));
+                return new AsyncProcessor<EventDetails, Result>(Dataflow);
             }
 
-            private static IEnumerable<Result> Dataflow(Logic logic, IEventSetConfiguration configuration,
-                IEnumerable<EventDetails> input)
+            private IEnumerable<Result> Dataflow(IEnumerable<EventDetails> input)
             {
                 return input
-                    .Select(logic.LogEvent)
-                    .Buffer(configuration.EventBatchSize)
-                    .SelectMany(logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(logic.FilterSkippedEventGroup)
-                    .Apply(logic.ProcessEventGroupSafeDataflow)
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .Apply(ProcessEventGroupSafeDataflow)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => 
-                        logic.TransformResult(res));
+                        _logic.TransformResult(res));
             }
+
+            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafeDataflow(
+                IEnumerable<Either<UnsuccessResult, EventGroup>> eventGroups)
+            {
+                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
+                {
+                    return eventGroups
+                        .SelectSafe(group =>
+                            _logic.FindLastEventSetsSafe(repository, new[] { group })
+                                .Select(lastEventSets => new { group, lastEventSets }))
+                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
+                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
+                        .SelectMany(result => result);
+                });
+            }
+
         }
 
         private class SuccessResult
@@ -395,19 +414,9 @@ namespace EventProcessing.Implementation
                 });
             }
 
-            public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafeDataflow(
-                IEnumerable<Either<UnsuccessResult, EventGroup>> eventGroups)
+            public IEventSetRepository CreateRepository()
             {
-                return EnumerableExtensions.Use(_repositoryResolver(), repository =>
-                {
-                    return eventGroups
-                        .SelectSafe(group =>
-                            FindLastEventSetsSafe(repository, new[] { group })
-                                .Select(lastEventSets => new { group, lastEventSets }))
-                        .SelectSafe(item => InternalProcessEventGroupSafe(item.group, item.lastEventSets))
-                        .SelectSafe(result => ApplyChangesSafe(repository, new[] { result }))
-                        .SelectMany(result => result);
-                });
+                return _repositoryResolver();
             }
 
             public IEnumerable<Result> TransformResult(Either<UnsuccessResult, SuccessResult> result)
@@ -419,6 +428,35 @@ namespace EventProcessing.Implementation
                     unsuccessResult => unsuccessResult.IsSkipped
                         ? unsuccessResult.Events.Select(Result.CreateEventSkipped)
                         : unsuccessResult.Events.Select(Result.CreateEventFailed));
+            }
+
+            public Either<UnsuccessResult, IList<EventSet>> FindLastEventSetsSafe(
+                IEventSetRepository repository, IList<EventGroup> eventGroups)
+            {
+                var events = eventGroups
+                    .SelectMany(group => @group.Events)
+                    .ToList();
+                var typeCodes = eventGroups
+                    .Select(group => @group.EventSetType.GetCode())
+                    .Distinct()
+                    .ToList();
+                return InvokeSafe(events, () => repository.FindLastEventSetsByTypeCodes(typeCodes));
+            }
+
+            public Either<UnsuccessResult, SuccessResult> InternalProcessEventGroupSafe(EventGroup eventGroup, IList<EventSet> lastEventSets)
+            {
+                return NeedToCreateEventSet(eventGroup, lastEventSets)
+                    ? CreateEventSetForEventGroup(eventGroup)
+                    : UpdateEventSetForEventGroup(eventGroup, lastEventSets);
+            }
+
+            public Either<UnsuccessResult, IList<SuccessResult>> ApplyChangesSafe(
+                IEventSetRepository repository, IList<SuccessResult> results)
+            {
+                var events = results
+                    .SelectMany(result => result.EventSetWithEvents.Events)
+                    .ToList();
+                return InvokeSafe(events, () => ApplyChanges(repository, results));
             }
 
             private static Either<UnsuccessResult, T> InvokeSafe<T>(
@@ -455,19 +493,6 @@ namespace EventProcessing.Implementation
                 return eventGroup.EventSetType.Level == EventLevel.Information;
             }
 
-            private static Either<UnsuccessResult, IList<EventSet>> FindLastEventSetsSafe(
-                IEventSetRepository repository, IList<EventGroup> eventGroups)
-            {
-                var events = eventGroups
-                    .SelectMany(group => group.Events)
-                    .ToList();
-                var typeCodes = eventGroups
-                    .Select(group => group.EventSetType.GetCode())
-                    .Distinct()
-                    .ToList();
-                return InvokeSafe(events, () => repository.FindLastEventSetsByTypeCodes(typeCodes));
-            }
-
             private IEnumerable<Either<UnsuccessResult, SuccessResult>> InternalProcessEventGroupsBatchSafe(IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
             {
                 return eventGroupsBatch
@@ -475,22 +500,6 @@ namespace EventProcessing.Implementation
                     .SelectMany(eventGroup => eventGroup.Key
                         ? CreateEventSetsForEventGroupBatch(eventGroup.ToList())
                         : UpdateEventSetsForEventGroupBatch(eventGroup.ToList(), lastEventSets));
-            }
-
-            private Either<UnsuccessResult, SuccessResult> InternalProcessEventGroupSafe(EventGroup eventGroup, IList<EventSet> lastEventSets)
-            {
-                return NeedToCreateEventSet(eventGroup, lastEventSets)
-                    ? CreateEventSetForEventGroup(eventGroup)
-                    : UpdateEventSetForEventGroup(eventGroup, lastEventSets);
-            }
-
-            private static Either<UnsuccessResult, IList<SuccessResult>> ApplyChangesSafe(
-                IEventSetRepository repository, IList<SuccessResult> results)
-            {
-                var events = results
-                    .SelectMany(result => result.EventSetWithEvents.Events)
-                    .ToList();
-                return InvokeSafe(events, () => ApplyChanges(repository, results));
             }
 
             private static IList<SuccessResult> ApplyChanges(IEventSetRepository repository, IList<SuccessResult> results)
