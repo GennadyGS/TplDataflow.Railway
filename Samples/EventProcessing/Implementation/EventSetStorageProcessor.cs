@@ -16,6 +16,7 @@ using TplDataflow.Linq;
 using TplDataflow.Railway;
 using static LanguageExt.Prelude;
 using EventProcessing.Utils;
+using ObservableExtensions = Railway.Linq.ObservableExtensions;
 
 namespace EventProcessing.Implementation
 {
@@ -282,7 +283,51 @@ namespace EventProcessing.Implementation
                         .SelectMany(result => result);
                 });
             }
+        }
 
+        public class ObservableFactoryOneByOne : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new AsyncProcessor<EventDetails, Result>(Dataflow);
+            }
+
+            private IObservable<Result> Dataflow(IObservable<EventDetails> input)
+            {
+                return input
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .Apply(ProcessEventGroupSafeDataflow)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        _logic.TransformResult(res));
+            }
+
+            private IObservable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafeDataflow(
+                IObservable<Either<UnsuccessResult, EventGroup>> eventGroups)
+            {
+                return ObservableExtensions.Use(_logic.CreateRepository(), repository =>
+                {
+                    return eventGroups
+                        .SelectSafe(group =>
+                            _logic.FindLastEventSetsSafe(repository, new[] { group })
+                                .Select(lastEventSets => new { group, lastEventSets }))
+                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
+                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
+                        .SelectMany(result => result);
+                });
+            }
         }
 
         private class SuccessResult

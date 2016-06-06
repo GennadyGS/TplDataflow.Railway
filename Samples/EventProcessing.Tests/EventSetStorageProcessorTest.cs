@@ -800,6 +800,13 @@ namespace EventProcessing.Tests
             }
         }
 
+        public class ObservableOneByOneImpl : EventSetStorageProcessorTest
+        {
+            public ObservableOneByOneImpl() : base(new EventSetStorageProcessor.ObservableFactoryOneByOne())
+            {
+            }
+        }
+
         public class TplDataflowImpl : EventSetStorageProcessorTest
         {
             public TplDataflowImpl() : base(new EventSetStorageProcessor.TplDataflowFactory())
