@@ -20,9 +20,9 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
-        public void ReturnDataflowProjectedToEnumerable_ShouldReturnValue()
+        public void BindReturnDataflowToEnumerable_ShouldReturnTheSameList()
         {
-            int[] input = { 1 };
+            int[] input = { 1, 2, 3 };
 
             IEnumerable<int> result = input.BindDataflow(Dataflow.Return<int, int>);
 
