@@ -39,5 +39,17 @@ namespace Dataflow.Core.Tests
 
             result.ShouldAllBeEquivalentTo(input.Select(i => i * 2));
         }
+
+        [Fact]
+        public void BindSelectDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            IEnumerable<int> result = input.BindDataflow(i => 
+                Dataflow.Return<int, int>(i)
+                    .Select(item => item * 2));
+
+            result.ShouldAllBeEquivalentTo(input.Select(i => i * 2));
+        }
     }
 }
