@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace Dataflow.Core
 {
@@ -16,14 +17,17 @@ namespace Dataflow.Core
         public TOutput Result { get; }
     }
 
-    public class Continuation<TInput, TOutput> : Dataflow<TInput, TOutput>
+    public class Continuation<TInput, TMedium, TOutput> : Dataflow<TInput, TOutput>
     {
-        public Continuation(Func<TInput, Dataflow<TInput, TOutput>> continuationFunc)
+        public Dataflow<TInput, TMedium> Dataflow { get; }
+
+        public Func<TMedium, Dataflow<TMedium, TOutput>> ContinuationFunc { get; }
+
+        public Continuation(Dataflow<TInput, TMedium> dataflow, Func<TMedium, Dataflow<TMedium, TOutput>> continuationFunc)
         {
+            Dataflow = dataflow;
             ContinuationFunc = continuationFunc;
         }
-
-        public Func<TInput, Dataflow<TInput, TOutput>> ContinuationFunc { get; }
     }
 
     public static class Dataflow
@@ -33,26 +37,26 @@ namespace Dataflow.Core
             return new Return<TInput, TOutput>(value);
         }
 
-        public static Dataflow<TInput, TOutput> Continuation<TInput, TOutput>(Func<TInput, Dataflow<TInput, TOutput>> continuationFunc)
+        public static Dataflow<TInput, TOutput> Continuation<TInput, TMedium, TOutput>(Dataflow<TInput, TMedium> dataflow, Func<TMedium, Dataflow<TMedium, TOutput>> continuationFunc)
         {
-            return new Continuation<TInput, TOutput>(continuationFunc);
+            return new Continuation<TInput, TMedium, TOutput>(dataflow, continuationFunc);
         }
 
-        public static Dataflow<TInput, TOutput2> Bind<TInput, TOutput1, TOutput2>(this Dataflow<TInput, TOutput1> dataflow, 
-            Func<TOutput1, Dataflow<TInput, TOutput2>> transform)
+        public static Dataflow<TInput, TOutput> Bind<TInput, TMedium, TOutput>(this Dataflow<TInput, TMedium> dataflow, 
+            Func<TMedium, Dataflow<TInput, TOutput>> transform)
         {
-            if (dataflow is Return<TInput, TOutput1>)
+            if (dataflow is Return<TInput, TMedium>)
             {
-                var resultDataflow = (Return<TInput, TOutput1>)dataflow;
+                var resultDataflow = (Return<TInput, TMedium>)dataflow;
                 return transform(resultDataflow.Result);
             }
-            if (dataflow is Continuation<TInput, TOutput1>)
-            {
-                var continuationDataflow = (Continuation<TInput, TOutput1>)dataflow;
-                return Continuation((TInput input) =>
-                    Bind(continuationDataflow.ContinuationFunc(input), transform));
-            }
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
+        }
+
+        public static Dataflow<TInput, TOutput> Select<TInput, TMedium, TOutput>(this Dataflow<TInput, TMedium> source,
+            Func<TMedium, TOutput> selector)
+        {
+            return Continuation(source, item => Return<TMedium, TOutput>(selector(item)));
         }
 
         public static Dataflow<TInput, TOutput2> SelectMany<TInput, TOutput1, TMedium, TOutput2>(this Dataflow<TInput, TOutput1> dataflow,
@@ -66,14 +70,6 @@ namespace Dataflow.Core
                     .Bind(medium => 
                         Return<TInput, TOutput2>(resultSelector(resultDataflow.Result, medium)));
             }
-            //if (dataflow is Continuation<TInput, TOutput1>)
-            //{
-            //    var continuationDataflow = (Continuation<TInput, TOutput1>)dataflow;
-            //    return Continuation((TInput input) =>
-            //        Bind(continuationDataflow.ContinuationFunc(input), mediumSelector))
-            //            .Bind(medium =>
-            //                Return<TInput, TOutput2>(resultSelector(input, medium))));
-            //}
             throw new InvalidOperationException();
         }
     }

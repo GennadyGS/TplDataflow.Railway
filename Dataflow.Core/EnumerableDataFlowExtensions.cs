@@ -12,12 +12,17 @@ namespace Dataflow.Core
                 .Select(bindFunc)
                 .Select(dataflow =>
                 {
-                    var returnDataflow = dataflow as Return<int, int>;
-                    if (returnDataflow == null)
+                    if (dataflow is Return<int, int>)
                     {
-                        throw new NotImplementedException();
+                        var returnDataflow = (Return<int, int>) dataflow;
+                        return returnDataflow.Result;
                     }
-                    return returnDataflow.Result;
+                    if (dataflow is Continuation<int, int, int>)
+                    {
+                        var continuationDataflow = (Continuation<int, int, int>)dataflow;
+
+                    }
+                    throw new NotImplementedException();
                 });
         }
     }
