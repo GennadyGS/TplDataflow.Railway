@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{79C5A0F9-E9EC-4B45-8F84-6859C6E07522}</ProjectGuid>
+    <ProjectGuid>{54E4902A-C90A-4507-A41C-E709B476477D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Dataflow.Core</RootNamespace>
-    <AssemblyName>Dataflow.Core</AssemblyName>
+    <RootNamespace>Dataflow.Core.Tests</RootNamespace>
+    <AssemblyName>Dataflow.Core.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -41,12 +41,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Dataflow.cs" />
-    <Compile Include="EnumerableDataFlowExtensions.cs" />
+    <Compile Include="DataflowTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dataflow.Core\Dataflow.Core.csproj">
+      <Project>{79c5a0f9-e9ec-4b45-8f84-6859c6e07522}</Project>
+      <Name>Dataflow.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
