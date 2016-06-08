@@ -1,6 +1,6 @@
 ﻿{
   "dependencies": {
-    "FluentAssertions": "4.6.3",
+    "FluentAssertions": "4.8.0",
     "LanguageExt.Core": "1.7.38",
     "Microsoft.Tpl.Dataflow": "4.5.24",
     "Rx-Linq": "2.2.5",
