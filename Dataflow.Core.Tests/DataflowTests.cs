@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,6 +28,16 @@ namespace Dataflow.Core.Tests
             IEnumerable<int> result = input.BindDataflow(Dataflow.Return<int, int>);
 
             result.ShouldAllBeEquivalentTo(input);
+        }
+
+        [Fact]
+        public void BindReturnDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            IEnumerable<int> result = input.BindDataflow(i => Dataflow.Return<int, int>(i * 2));
+
+            result.ShouldAllBeEquivalentTo(input.Select(i => i * 2));
         }
     }
 }
