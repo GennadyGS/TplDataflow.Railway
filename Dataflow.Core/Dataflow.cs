@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace Dataflow.Core
 {
@@ -41,12 +42,13 @@ namespace Dataflow.Core
         public static Dataflow<TOutput> Bind<TInput, TOutput>(this Dataflow<TInput> dataflow, 
             Func<TInput, Dataflow<TOutput>> transform)
         {
-            if (dataflow is Return<TInput>)
+            if (dataflow.IsReturn)
             {
-                var resultDataflow = (Return<TInput>)dataflow;
-                return Continuation(() => transform(resultDataflow.Result));
+                var result = ((Return<TInput>)dataflow).Result;
+                return Continuation(() => transform(result));
             }
-            throw new NotImplementedException();
+            var func = ((Continuation<TInput>) dataflow).Func;
+            return Continuation(() => func().Bind(transform));
         }
 
         public static Dataflow<TOutput> Select<TInput, TOutput>(this Dataflow<TInput> source,
