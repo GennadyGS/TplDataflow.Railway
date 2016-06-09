@@ -2,8 +2,9 @@
 
 namespace Dataflow.Core
 {
-    public class Dataflow<T>
+    public abstract class Dataflow<T>
     {
+        public abstract bool IsReturn { get; }
     }
 
     public class Return<T> : Dataflow<T>
@@ -14,6 +15,8 @@ namespace Dataflow.Core
         }
 
         public T Result { get; }
+
+        public override bool IsReturn => true;
     }
 
     public class Continuation<TOutput> : Dataflow<TOutput>
@@ -24,6 +27,8 @@ namespace Dataflow.Core
         {
             Func = func;
         }
+
+        public override bool IsReturn => false;
     }
 
     public static class Dataflow
