@@ -17,11 +17,6 @@ namespace Dataflow.Core
                         var returnDataflow = (Return<int, int>) dataflow;
                         return returnDataflow.Result;
                     }
-                    if (dataflow is Continuation<int, int, int>)
-                    {
-                        var continuationDataflow = (Continuation<int, int, int>)dataflow;
-
-                    }
                     throw new NotImplementedException();
                 });
         }

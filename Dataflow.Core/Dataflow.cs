@@ -17,16 +17,13 @@ namespace Dataflow.Core
         public TOutput Result { get; }
     }
 
-    public class Continuation<TInput, TMedium, TOutput> : Dataflow<TInput, TOutput>
+    public class Continuation<TInput, TOutput> : Dataflow<TInput, TOutput>
     {
-        public Dataflow<TInput, TMedium> Dataflow { get; }
+        public Func<TInput, Dataflow<TInput, TOutput>> Func { get; }
 
-        public Func<TMedium, Dataflow<TMedium, TOutput>> ContinuationFunc { get; }
-
-        public Continuation(Dataflow<TInput, TMedium> dataflow, Func<TMedium, Dataflow<TMedium, TOutput>> continuationFunc)
+        public Continuation(Func<TInput, Dataflow<TInput, TOutput>> func)
         {
-            Dataflow = dataflow;
-            ContinuationFunc = continuationFunc;
+            Func = func;
         }
     }
 
