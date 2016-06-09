@@ -6,15 +6,15 @@ namespace Dataflow.Core
 {
     public static class EnumerableDataFlowExtensions
     {
-        public static IEnumerable<int> BindDataflow(this IEnumerable<int> input, Func<int, Dataflow<int, int>> bindFunc)
+        public static IEnumerable<int> BindDataflow(this IEnumerable<int> input, Func<int, Dataflow<int>> bindFunc)
         {
             return input
                 .Select(bindFunc)
                 .Select(dataflow =>
                 {
-                    if (dataflow is Return<int, int>)
+                    if (dataflow is Return<int>)
                     {
-                        var returnDataflow = (Return<int, int>) dataflow;
+                        var returnDataflow = (Return<int>) dataflow;
                         return returnDataflow.Result;
                     }
                     throw new NotImplementedException();

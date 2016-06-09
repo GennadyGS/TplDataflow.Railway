@@ -15,7 +15,7 @@ namespace Dataflow.Core.Tests
         {
             int input = 1;
 
-            var result = Dataflow.Return<int, int>(input);
+            var result = Dataflow.Return(input);
 
             result.Should().NotBeNull();
         }
@@ -25,7 +25,7 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(Dataflow.Return<int, int>);
+            IEnumerable<int> result = input.BindDataflow(Dataflow.Return);
 
             result.ShouldAllBeEquivalentTo(input);
         }
@@ -35,7 +35,7 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i => Dataflow.Return<int, int>(i * 2));
+            IEnumerable<int> result = input.BindDataflow(i => Dataflow.Return(i * 2));
 
             result.ShouldAllBeEquivalentTo(input.Select(i => i * 2));
         }
@@ -46,7 +46,7 @@ namespace Dataflow.Core.Tests
             int[] input = { 1, 2, 3 };
 
             IEnumerable<int> result = input.BindDataflow(i => 
-                Dataflow.Return<int, int>(i)
+                Dataflow.Return(i)
                     .Select(item => item * 2));
 
             result.ShouldAllBeEquivalentTo(input.Select(i => i * 2));
@@ -58,7 +58,7 @@ namespace Dataflow.Core.Tests
             int[] input = { 1, 2, 3 };
 
             IEnumerable<int> result = input.BindDataflow(i =>
-                Dataflow.Return<int, int>(i)
+                Dataflow.Return(i)
                     .Select(item => item * 2)
                     .Select(item => item + 1));
 
