@@ -37,11 +37,6 @@ namespace Dataflow.Core
             return new Return<TInput, TOutput>(value);
         }
 
-        public static Dataflow<TInput, TOutput> Continuation<TInput, TMedium, TOutput>(Dataflow<TInput, TMedium> dataflow, Func<TMedium, Dataflow<TMedium, TOutput>> continuationFunc)
-        {
-            return new Continuation<TInput, TMedium, TOutput>(dataflow, continuationFunc);
-        }
-
         public static Dataflow<TInput, TOutput> Bind<TInput, TMedium, TOutput>(this Dataflow<TInput, TMedium> dataflow, 
             Func<TMedium, Dataflow<TInput, TOutput>> transform)
         {
@@ -56,7 +51,7 @@ namespace Dataflow.Core
         public static Dataflow<TInput, TOutput> Select<TInput, TMedium, TOutput>(this Dataflow<TInput, TMedium> source,
             Func<TMedium, TOutput> selector)
         {
-            return Continuation(source, item => Return<TMedium, TOutput>(selector(item)));
+            return Bind(source, item => Return<TInput, TOutput>(selector(item)));
         }
 
         public static Dataflow<TInput, TOutput2> SelectMany<TInput, TOutput1, TMedium, TOutput2>(this Dataflow<TInput, TOutput1> dataflow,
