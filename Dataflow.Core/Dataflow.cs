@@ -40,7 +40,7 @@ namespace Dataflow.Core
             if (dataflow is Return<TInput, TMedium>)
             {
                 var resultDataflow = (Return<TInput, TMedium>)dataflow;
-                return transform(resultDataflow.Result);
+                return Continuation<TInput, TOutput>(input => transform(resultDataflow.Result));
             }
             throw new NotImplementedException();
         }
@@ -63,6 +63,11 @@ namespace Dataflow.Core
                         Return<TInput, TOutput2>(resultSelector(resultDataflow.Result, medium)));
             }
             throw new InvalidOperationException();
+        }
+
+        private static Dataflow<TInput, TOutput> Continuation<TInput, TOutput>(Func<TInput, Dataflow<TInput, TOutput>> func)
+        {
+            return new Continuation<TInput, TOutput>(func);
         }
     }
 
