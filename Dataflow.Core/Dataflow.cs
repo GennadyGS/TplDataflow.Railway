@@ -33,6 +33,36 @@ namespace Dataflow.Core
         public override bool IsReturn => false;
     }
 
+    public class SelectContinuation<TInput, TOutput> : Dataflow<TOutput>
+    {
+        public TInput Input { get; set; }
+
+        public Func<TInput, TOutput> Selector { get; set; }
+
+        public SelectContinuation(TInput input, Func<TInput, TOutput> selector)
+        {
+            Input = input;
+            Selector = selector;
+        }
+
+        public override bool IsReturn => false;
+    }
+
+    public class SelectManyContinuation<TInput, TOutput>: Dataflow<TOutput>
+    {
+        public TInput Input { get; set; }
+
+        public Func<TInput, IEnumerable<TOutput>> Selector { get; set; }
+
+        public SelectManyContinuation(TInput input, Func<TInput, IEnumerable<TOutput>> selector)
+        {
+            Input = input;
+            Selector = selector;
+        }
+
+        public override bool IsReturn => false;
+    }
+
     public static class Dataflow
     {
         public static Dataflow<TOutput> Return<TOutput>(TOutput value)
@@ -55,13 +85,13 @@ namespace Dataflow.Core
         public static Dataflow<TOutput> Select<TInput, TOutput>(this Dataflow<TInput> source,
             Func<TInput, TOutput> selector)
         {
-            return Bind(source, item => Return(selector(item)));
+            return Bind(source, item => new SelectContinuation<TInput, TOutput>(item, selector));
         }
 
         public static Dataflow<TOutput> SelectMany<TInput, TOutput>(this Dataflow<TInput> source,
             Func<TInput, IEnumerable<TOutput>> selector)
         {
-            throw new NotImplementedException();
+            return Bind(source, input => new SelectManyContinuation<TInput, TOutput>(input, selector));
         }
 
         public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> dataflow,

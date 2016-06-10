@@ -8,7 +8,8 @@ namespace Dataflow.Core
     {
         public static IEnumerable<TOutput> BindDataflow<TInput, TOutput>(this IEnumerable<TInput> input, Func<TInput, Dataflow<TOutput>> bindFunc)
         {
-            return TransformDataflow(input.Select(bindFunc));
+            var enumerable = input.Select(bindFunc);
+            return TransformDataflow(enumerable);
         }
 
         private static IEnumerable<TOutput> TransformDataflow<TOutput>(IEnumerable<Dataflow<TOutput>> dataflows)
@@ -17,7 +18,18 @@ namespace Dataflow.Core
                 .GroupBy(dataflow => dataflow.IsReturn)
                 .SelectMany(group => group.Key
                     ? group.Select(dataflow => ((Return<TOutput>) dataflow).Result)
-                    : TransformDataflow(group.Select(dataflow => ((Continuation<TOutput>) dataflow).Func())));
+                    : group.GroupBy(dataflow => dataflow.GetType())
+                        .SelectMany(TransformContinuation));
+
+        }
+
+        private static IEnumerable<TOutput> TransformContinuation<TOutput>(IGrouping<Type, Dataflow<TOutput>> group)
+        {
+            if (group.Key == typeof (Continuation<TOutput>))
+            {
+                return TransformDataflow(group.Select(dataflow => ((Continuation<TOutput>)dataflow).Func()));
+            }
+            throw new NotImplementedException();
         }
     }
 }

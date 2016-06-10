@@ -55,12 +55,15 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i =>
+            Func<int, Dataflow<int>> bindFunc = i =>
                 Dataflow.Return(i)
                     .Select(item => item * 2)
-                    .Select(item => item + 1));
+                    .Select(item => item + 1)
+                    .Select(item => item * 2);
 
-            result.ShouldAllBeEquivalentTo(input.Select(i => i * 2 + 1));
+            IEnumerable<int> result = input.BindDataflow(bindFunc);
+
+            result.ShouldAllBeEquivalentTo(input.Select(i => (i * 2 + 1) * 2));
         }
 
         [Fact]
