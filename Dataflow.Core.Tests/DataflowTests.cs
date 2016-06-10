@@ -75,5 +75,17 @@ namespace Dataflow.Core.Tests
 
             result.ShouldAllBeEquivalentTo(input.Select(i => $"{2000+i}-01-01T00:00:00.0000000"));
         }
+
+        [Fact]
+        public void BindSelectManyDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            IEnumerable<int> result = input.BindDataflow(i =>
+                Dataflow.Return(i)
+                    .SelectMany(item => Enumerable.Repeat(item * 2, 2)));
+
+            result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2, 2)));
+        }
     }
 }

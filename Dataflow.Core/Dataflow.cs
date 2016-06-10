@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace Dataflow.Core
@@ -55,6 +56,12 @@ namespace Dataflow.Core
             Func<TInput, TOutput> selector)
         {
             return Bind(source, item => Return(selector(item)));
+        }
+
+        public static Dataflow<TOutput> SelectMany<TInput, TOutput>(this Dataflow<TInput> source,
+            Func<TInput, IEnumerable<TOutput>> selector)
+        {
+            throw new NotImplementedException();
         }
 
         public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> dataflow,
