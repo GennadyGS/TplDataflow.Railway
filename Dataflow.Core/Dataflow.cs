@@ -112,14 +112,9 @@ namespace Dataflow.Core
             Func<TInput, Dataflow<TMedium>> mediumSelector,
             Func<TInput, TMedium, TOutput> resultSelector)
         {
-            if (dataflow is Return<TInput>)
-            {
-                var resultDataflow = (Return<TInput>)dataflow;
-                return mediumSelector(resultDataflow.Result)
-                    .Bind(medium =>
-                        Return(resultSelector(resultDataflow.Result, medium)));
-            }
-            throw new InvalidOperationException();
+            return dataflow.Bind(input => 
+                mediumSelector(input)
+                    .Select(medium => resultSelector(input, medium)));
         }
     }
 
