@@ -43,7 +43,7 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i => 
+            IEnumerable<int> result = input.BindDataflow(i =>
                 Dataflow.Return(i)
                     .Select(item => item * 2));
 
@@ -76,7 +76,7 @@ namespace Dataflow.Core.Tests
                     .Select(item => new DateTime(2000 + item, 1, 1))
                     .Select(item => item.ToString("O")));
 
-            result.ShouldAllBeEquivalentTo(input.Select(i => $"{2000+i}-01-01T00:00:00.0000000"));
+            result.ShouldAllBeEquivalentTo(input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000"));
         }
 
         [Fact]
@@ -89,6 +89,35 @@ namespace Dataflow.Core.Tests
                     .SelectMany(item => Enumerable.Repeat(item * 2, 2)));
 
             result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2, 2)));
+        }
+
+        [Fact]
+        public void BindBindDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            IEnumerable<int> result = input.BindDataflow(i =>
+                Dataflow.Return(i)
+                    .Bind(x =>
+                    {
+                        return Dataflow.Return(1)
+                            .Bind(y => Dataflow.Return(x + y));
+                    }));
+
+            result.ShouldAllBeEquivalentTo(input.Select(item => item + 1));
+        }
+
+        [Fact]
+        public void BindLinqDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            IEnumerable<int> result = input.BindDataflow(i =>
+                from x in Dataflow.Return(i)
+                from y in Dataflow.Return(1)
+                select x + y);
+
+            result.ShouldAllBeEquivalentTo(input.Select(item => item + 1));
         }
     }
 }

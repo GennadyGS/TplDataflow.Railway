@@ -132,25 +132,4 @@ namespace Dataflow.Core
                     .Select(medium => resultSelector(input, medium)));
         }
     }
-
-    public class DataflowTests
-    {
-        public void Test1()
-        {
-            var dataflow1 = Dataflow.Return(1)
-                .Bind(x =>
-                    {
-                        return Dataflow.Return(2)
-                            .Bind(y =>
-                                {
-                                    var r = x + y;
-                                    return Dataflow.Return(r);
-                                });
-                    });
-
-            var dataFlow2 = from x in Dataflow.Return(1)
-                            from y in Dataflow.Return(2)
-                            select x + y;
-        }
-    }
 }
