@@ -109,10 +109,25 @@ namespace Dataflow.Core
         }
 
         public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> dataflow,
+            Func<TInput, IEnumerable<TMedium>> mediumSelector,
+            Func<TInput, TMedium, TOutput> resultSelector)
+        {
+            return dataflow.SelectMany(input =>
+                mediumSelector(input)
+                    .Select(medium => resultSelector(input, medium)));
+        }
+
+        public static Dataflow<TOutput> SelectMany<TInput, TOutput>(this Dataflow<TInput> source,
+            Func<TInput, Dataflow<TOutput>> selector)
+        {
+            return source.Bind(selector);
+        }
+
+        public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> dataflow,
             Func<TInput, Dataflow<TMedium>> mediumSelector,
             Func<TInput, TMedium, TOutput> resultSelector)
         {
-            return dataflow.Bind(input => 
+            return dataflow.SelectMany(input => 
                 mediumSelector(input)
                     .Select(medium => resultSelector(input, medium)));
         }
