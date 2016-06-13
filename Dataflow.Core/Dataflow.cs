@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Linq;
 
 namespace Dataflow.Core
 {
     public abstract class Dataflow<T>
     {
-        public abstract bool IsReturn { get; }
     }
 
     public class Return<T> : Dataflow<T>
@@ -17,8 +16,16 @@ namespace Dataflow.Core
         }
 
         public T Result { get; }
+    }
 
-        public override bool IsReturn => true;
+    public class ReturnMany<T> : Dataflow<T>
+    {
+        public ReturnMany(IEnumerable<T> result)
+        {
+            Result = result;
+        }
+
+        public IEnumerable<T> Result { get; }
     }
 
     public class Continuation<TOutput> : Dataflow<TOutput>
@@ -29,38 +36,16 @@ namespace Dataflow.Core
         {
             Func = func;
         }
-
-        public override bool IsReturn => false;
     }
 
-    public class SelectContinuation<TInput, TOutput> : Dataflow<TOutput>
+    public class ContinuationMany<TOutput> : Dataflow<TOutput>
     {
-        public TInput Input { get; set; }
+        public Func<IEnumerable<Dataflow<TOutput>>> Func { get; }
 
-        public Func<TInput, TOutput> Selector { get; set; }
-
-        public SelectContinuation(TInput input, Func<TInput, TOutput> selector)
+        public ContinuationMany(Func<IEnumerable<Dataflow<TOutput>>> func)
         {
-            Input = input;
-            Selector = selector;
+            Func = func;
         }
-
-        public override bool IsReturn => false;
-    }
-
-    public class SelectManyContinuation<TInput, TOutput>: Dataflow<TOutput>
-    {
-        public TInput Input { get; set; }
-
-        public Func<TInput, IEnumerable<TOutput>> Selector { get; set; }
-
-        public SelectManyContinuation(TInput input, Func<TInput, IEnumerable<TOutput>> selector)
-        {
-            Input = input;
-            Selector = selector;
-        }
-
-        public override bool IsReturn => false;
     }
 
     public static class Dataflow
@@ -70,47 +55,71 @@ namespace Dataflow.Core
             return new Return<TOutput>(value);
         }
 
-        public static Dataflow<TOutput> Bind<TInput, TOutput>(this Dataflow<TInput> dataflow, 
+        public static Dataflow<TOutput> ReturnMany<TOutput>(IEnumerable<TOutput> value)
+        {
+            return new ReturnMany<TOutput>(value);
+        }
+
+        private static Dataflow<T> Continuation<T>(Func<Dataflow<T>> func)
+        {
+            return new Continuation<T>(func);
+        }
+
+        private static Dataflow<T> ContinuationMany<T>(Func<IEnumerable<Dataflow<T>>> func)
+        {
+            return new ContinuationMany<T>(func);
+        }
+
+        public static Dataflow<TOutput> Bind<TInput, TOutput>(this Dataflow<TInput> dataflow,
             Func<TInput, Dataflow<TOutput>> transform)
         {
-            if (dataflow.IsReturn)
+            if (dataflow is Return<TInput>)
             {
                 var result = ((Return<TInput>)dataflow).Result;
                 return Continuation(() => transform(result));
             }
-            var func = ((Continuation<TInput>) dataflow).Func;
-            return Continuation(() => func().Bind(transform));
+            if (dataflow is ReturnMany<TInput>)
+            {
+                var result = ((ReturnMany<TInput>)dataflow).Result;
+                return ContinuationMany(() => result.Select(transform));
+            }
+            if (dataflow is Continuation<TInput>)
+            {
+                var func = ((Continuation<TInput>)dataflow).Func;
+                return Continuation(() => func().Bind(transform));
+            }
+            if (dataflow is ContinuationMany<TInput>)
+            {
+                var func = ((ContinuationMany<TInput>)dataflow).Func;
+                return ContinuationMany(() => func().Select(item => item.Bind(transform)));
+            }
+            throw new InvalidOperationException();
         }
 
         public static Dataflow<TOutput> Select<TInput, TOutput>(this Dataflow<TInput> source,
             Func<TInput, TOutput> selector)
         {
-            return Bind(source, item => new SelectContinuation<TInput, TOutput>(item, selector));
+            return source.Bind(item => Return(selector(item)));
         }
 
         public static Dataflow<TOutput> SelectMany<TInput, TOutput>(this Dataflow<TInput> source,
             Func<TInput, IEnumerable<TOutput>> selector)
         {
-            return Bind(source, input => new SelectManyContinuation<TInput, TOutput>(input, selector));
+            return source.Bind(input => ReturnMany(selector(input)));
         }
 
         public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> dataflow,
-            Func<TInput, Dataflow<TMedium>> mediumSelector, 
+            Func<TInput, Dataflow<TMedium>> mediumSelector,
             Func<TInput, TMedium, TOutput> resultSelector)
         {
             if (dataflow is Return<TInput>)
             {
                 var resultDataflow = (Return<TInput>)dataflow;
                 return mediumSelector(resultDataflow.Result)
-                    .Bind(medium => 
+                    .Bind(medium =>
                         Return(resultSelector(resultDataflow.Result, medium)));
             }
             throw new InvalidOperationException();
-        }
-
-        private static Dataflow<T> Continuation<T>(Func<Dataflow<T>> func)
-        {
-            return new Continuation<T>(func);
         }
     }
 
