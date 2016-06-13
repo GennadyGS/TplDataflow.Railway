@@ -267,7 +267,8 @@ namespace EventProcessing.Implementation
                     .Buffer(_configuration.EventBatchSize)
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .Apply(ProcessEventGroupSafeDataflow)
+                    .GroupBy(group => group.EventSetType.GetCode())
+                    .SelectManySafe(group => group.ToList().SelectMany(ProcessEventGroupSafeDataflow2))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => 
                         _logic.TransformResult(res));
             }
@@ -279,6 +280,20 @@ namespace EventProcessing.Implementation
                 {
                     return eventGroups
                         .SelectSafe(group =>
+                            _logic.FindLastEventSetsSafe(repository, new[] { group })
+                                .Select(lastEventSets => new { group, lastEventSets }))
+                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
+                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
+                        .SelectMany(result => result);
+                });
+            }
+
+            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafeDataflow2(EventGroup eventGroup)
+            {
+                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
+                {
+                    return List(eventGroup)
+                        .Select(group =>
                             _logic.FindLastEventSetsSafe(repository, new[] { group })
                                 .Select(lastEventSets => new { group, lastEventSets }))
                         .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
