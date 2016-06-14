@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using Railway.Linq;
 
 namespace Dataflow.Core
 {
@@ -38,7 +40,25 @@ namespace Dataflow.Core
             {
                 return TransformDataflow(group.SelectMany(dataflow => ((ContinuationMany<TOutput>)dataflow).Func()));
             }
+            if (group.Key == typeof(Buffer<TOutput>))
+            {
+                Debug.Assert(typeof(TOutput).IsGenericType && typeof(TOutput).GetGenericTypeDefinition() == typeof(IList<>));
+                var baseType = typeof(TOutput).GenericTypeArguments[0];
+                var buffer = (Buffer<TOutput>)group.First();
+                var items = group
+                    .Buffer(buffer.BatchMaxSize)
+                    .SelectMany(item => item.Cast<Buffer<TOutput>>().Select(bf => bf.Item));
+                var res = typeof(EnumerableDataFlowExtensions)
+                    .GetMethod("ConcatLists")
+                    .MakeGenericMethod(baseType)
+                    .Invoke(null, new object[] {items});
+            }
             throw new InvalidOperationException();
+        }
+
+        private static IList<T> ConcatLists<T>(IEnumerable<IList<T>> lists)
+        {
+            return lists.SelectMany(item => item).ToList();
         }
     }
 }
