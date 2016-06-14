@@ -131,5 +131,11 @@ namespace Dataflow.Core
                 mediumSelector(input)
                     .Select(medium => resultSelector(input, medium)));
         }
+
+        public static Dataflow<IList<T>> Buffer<T>(this Dataflow<T> dataflow,
+            TimeSpan batchTimeout, int batchMaxSize)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

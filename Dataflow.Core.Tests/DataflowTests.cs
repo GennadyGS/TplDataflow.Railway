@@ -120,5 +120,15 @@ namespace Dataflow.Core.Tests
 
             result.ShouldAllBeEquivalentTo(input.Select(item => item + 1));
         }
+
+        [Fact]
+        public void BindBufferDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            var input = Enumerable.Range(0, 10).ToList();
+
+            IEnumerable<IList<int>> result = input.BindDataflow(i => Dataflow.Return(i)
+                .Buffer(TimeSpan.MaxValue, 2));
+            result.ShouldAllBeEquivalentTo(input.GroupBy(i => i / 2));
+        }
     }
 }
