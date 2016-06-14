@@ -86,9 +86,10 @@ namespace Dataflow.Core.Tests
 
             IEnumerable<int> result = input.BindDataflow(i =>
                 Dataflow.Return(i)
-                    .SelectMany(item => Enumerable.Repeat(item * 2, 2)));
+                    .SelectMany(item => Enumerable.Repeat(item * 2, 2))
+                    .Select(item => item + 1));
 
-            result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2, 2)));
+            result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2)));
         }
 
         [Fact]
