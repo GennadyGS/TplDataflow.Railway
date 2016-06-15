@@ -134,5 +134,19 @@ namespace Dataflow.Core.Tests
 
             result.ShouldAllBeEquivalentTo(input.Buffer(batchSize));
         }
+
+        [Fact]
+        public void BindBufferAndSelectDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            const int batchSize = 3;
+
+            var input = Enumerable.Range(0, 100).ToList();
+
+            IEnumerable<int> result = input.BindDataflow(i => Dataflow.Return(i)
+                .Buffer(TimeSpan.MaxValue, batchSize)
+                .Select(item => item.Count));
+
+            result.ShouldAllBeEquivalentTo(input.Buffer(batchSize).Select(i => i.Count));
+        }
     }
 }
