@@ -130,9 +130,10 @@ namespace Dataflow.Core.Tests
             var input = Enumerable.Range(0, 100).ToList();
 
             IEnumerable<IList<int>> result = input.BindDataflow(i => Dataflow.Return(i)
+                .Select(item => item + 1)
                 .Buffer(TimeSpan.MaxValue, batchSize));
 
-            result.ShouldAllBeEquivalentTo(input.Buffer(batchSize));
+            result.ShouldAllBeEquivalentTo(input.Select(item => item + 1).Buffer(batchSize));
         }
 
         [Fact]

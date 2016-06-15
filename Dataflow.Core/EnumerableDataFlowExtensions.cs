@@ -46,7 +46,7 @@ namespace Dataflow.Core
                 Debug.Assert(typeof(TOutput).IsGenericType && typeof(TOutput).GetGenericTypeDefinition() == typeof(IList<>));
                 var baseType = typeof(TOutput).GenericTypeArguments[0];
                 var buffer = (Buffer<TOutput>)group.First();
-                var dataflows = @group
+                var dataflows = group
                     .Buffer(buffer.BatchMaxSize)
                     .Select(item =>
                     {

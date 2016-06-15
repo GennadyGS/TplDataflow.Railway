@@ -49,6 +49,16 @@ namespace Dataflow.Core
         }
     }
 
+    public class BufferContinuation<TOutput>: Dataflow<TOutput>
+    {
+        public Func<Dataflow<TOutput>> Func { get; }
+
+        public BufferContinuation(Func<Dataflow<TOutput>> func)
+        {
+            Func = func;
+        }
+    }
+
     public class Buffer<T> : Dataflow<T>
     {
         public Buffer(T item, TimeSpan batchTimeout, int batchMaxSize)
@@ -113,7 +123,7 @@ namespace Dataflow.Core
             if (dataflow is Buffer<TInput>)
             {
                 var bufferDataflow = (Buffer<TInput>)dataflow;
-                return Continuation(() => transform(bufferDataflow.Item));
+                return new BufferContinuation<TOutput>(() => transform(bufferDataflow.Item));
             }
             throw new InvalidOperationException();
         }
