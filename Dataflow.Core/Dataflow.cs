@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using static LanguageExt.Prelude;
 
 namespace Dataflow.Core
 {
@@ -48,6 +49,22 @@ namespace Dataflow.Core
         }
     }
 
+    public class Buffer<T> : Dataflow<T>
+    {
+        public Buffer(T item, TimeSpan batchTimeout, int batchMaxSize)
+        {
+            Item = item;
+            BatchTimeout = batchTimeout;
+            BatchMaxSize = batchMaxSize;
+        }
+
+        public T Item { get; }
+
+        public int BatchMaxSize { get; }
+
+        public TimeSpan BatchTimeout { get; }
+    }
+
     public static class Dataflow
     {
         public static Dataflow<TOutput> Return<TOutput>(TOutput value)
@@ -93,6 +110,11 @@ namespace Dataflow.Core
                 var func = ((ContinuationMany<TInput>)dataflow).Func;
                 return ContinuationMany(() => func().Select(item => item.Bind(transform)));
             }
+            if (dataflow is Buffer<TInput>)
+            {
+                var bufferDataflow = (Buffer<TInput>)dataflow;
+                return Continuation(() => transform(bufferDataflow.Item));
+            }
             throw new InvalidOperationException();
         }
 
@@ -123,19 +145,19 @@ namespace Dataflow.Core
             return source.Bind(selector);
         }
 
-        public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> dataflow,
+        public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> source,
             Func<TInput, Dataflow<TMedium>> mediumSelector,
             Func<TInput, TMedium, TOutput> resultSelector)
         {
-            return dataflow.SelectMany(input => 
+            return source.SelectMany(input =>
                 mediumSelector(input)
                     .Select(medium => resultSelector(input, medium)));
         }
 
-        public static Dataflow<IList<T>> Buffer<T>(this Dataflow<T> dataflow,
+        public static Dataflow<IList<T>> Buffer<T>(this Dataflow<T> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {
-            throw new NotImplementedException();
+            return source.Bind(item => new Buffer<IList<T>>(List(item).ToList(), batchTimeout, batchMaxSize));
         }
     }
 }

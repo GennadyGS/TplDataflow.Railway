@@ -48,6 +48,12 @@
   <ItemGroup>
     <None Include="project.json" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Railway.Linq\Railway.Linq.csproj">
+      <Project>{a90afa32-26f3-4e80-b8e8-cea8c6b61d9c}</Project>
+      <Name>Railway.Linq</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

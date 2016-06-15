@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using Railway.Linq;
 
 namespace Dataflow.Core
@@ -45,13 +46,19 @@ namespace Dataflow.Core
                 Debug.Assert(typeof(TOutput).IsGenericType && typeof(TOutput).GetGenericTypeDefinition() == typeof(IList<>));
                 var baseType = typeof(TOutput).GenericTypeArguments[0];
                 var buffer = (Buffer<TOutput>)group.First();
-                var items = group
+                var dataflows = @group
                     .Buffer(buffer.BatchMaxSize)
-                    .SelectMany(item => item.Cast<Buffer<TOutput>>().Select(bf => bf.Item));
-                var res = typeof(EnumerableDataFlowExtensions)
-                    .GetMethod("ConcatLists")
-                    .MakeGenericMethod(baseType)
-                    .Invoke(null, new object[] {items});
+                    .Select(item =>
+                    {
+                        var items = item.Cast<Buffer<TOutput>>()
+                            .Select(bf => bf.Item);
+                        var res = typeof(EnumerableDataFlowExtensions)
+                            .GetMethod("ConcatLists", BindingFlags.Static | BindingFlags.NonPublic)
+                            .MakeGenericMethod(baseType)
+                            .Invoke(null, new object[] { items });
+                        return Dataflow.Return((TOutput)res);
+                    });
+                return TransformDataflow(dataflows);
             }
             throw new InvalidOperationException();
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
+using Railway.Linq;
 using Xunit;
 
 namespace Dataflow.Core.Tests
@@ -124,11 +125,14 @@ namespace Dataflow.Core.Tests
         [Fact]
         public void BindBufferDataflowToEnumerable_ShouldReturnTheProjectedList()
         {
-            var input = Enumerable.Range(0, 10).ToList();
+            const int batchSize = 3;
+
+            var input = Enumerable.Range(0, 100).ToList();
 
             IEnumerable<IList<int>> result = input.BindDataflow(i => Dataflow.Return(i)
-                .Buffer(TimeSpan.MaxValue, 2));
-            result.ShouldAllBeEquivalentTo(input.GroupBy(i => i / 2));
+                .Buffer(TimeSpan.MaxValue, batchSize));
+
+            result.ShouldAllBeEquivalentTo(input.Buffer(batchSize));
         }
     }
 }
