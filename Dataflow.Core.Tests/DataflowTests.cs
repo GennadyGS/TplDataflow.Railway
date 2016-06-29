@@ -40,20 +40,6 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
-        public void BindMultipleNestedDataflowsToEnumerable_ShouldReturnTheProjectedListCrossType()
-        {
-            int[] input = { 1, 2, 3 };
-
-            IEnumerable<string> result = input.BindDataflow(i =>
-                Dataflow.Return(i)
-                    .Bind(item =>
-                        Dataflow.Return(new DateTime(2000 + item, 1, 1))
-                            .Bind(item2 => Dataflow.Return(item2.ToString("O")))));
-
-            result.ShouldAllBeEquivalentTo(input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000"));
-        }
-
-        [Fact]
         public void BindSelectDataflowToEnumerable_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
@@ -95,6 +81,21 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
+        public void BindMultipleNestedDataflowsToEnumerable_ShouldReturnTheProjectedListCrossType()
+        {
+            int[] input = { 1, 2, 3 };
+
+            IEnumerable<string> result = input.BindDataflow(i =>
+                Dataflow.Return(i)
+                    .Bind(item =>
+                        Dataflow.Return(new DateTime(2000 + item, 1, 1))
+                            .Bind(item2 => 
+                                Dataflow.Return(item2.ToString("O")))));
+
+            result.ShouldAllBeEquivalentTo(input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000"));
+        }
+
+        [Fact]
         public void BindSelectManyDataflowToEnumerable_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
@@ -103,6 +104,21 @@ namespace Dataflow.Core.Tests
                 Dataflow.Return(i)
                     .SelectMany(item => Enumerable.Repeat(item * 2, 2))
                     .Select(item => item + 1));
+
+            result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2)));
+        }
+
+        [Fact]
+        public void BinNestedSelectManyDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            IEnumerable<int> result = input.BindDataflow(i =>
+                Dataflow.Return(i)
+                    .Bind(item => 
+                        Dataflow.ReturnMany(Enumerable.Repeat(item * 2, 2))
+                            .Bind(item2 => 
+                                Dataflow.Return(item2 + 1))));
 
             result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2)));
         }
