@@ -89,7 +89,7 @@ namespace Dataflow.Core.Tests
                 Dataflow.Return(i)
                     .Bind(item =>
                         Dataflow.Return(new DateTime(2000 + item, 1, 1))
-                            .Bind(item2 => 
+                            .Bind(item2 =>
                                 Dataflow.Return(item2.ToString("O")))));
 
             result.ShouldAllBeEquivalentTo(input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000"));
@@ -115,16 +115,31 @@ namespace Dataflow.Core.Tests
 
             IEnumerable<int> result = input.BindDataflow(i =>
                 Dataflow.Return(i)
-                    .Bind(item => 
+                    .Bind(item =>
                         Dataflow.ReturnMany(Enumerable.Repeat(item * 2, 2))
-                            .Bind(item2 => 
+                            .Bind(item2 =>
                                 Dataflow.Return(item2 + 1))));
 
             result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2)));
         }
 
         [Fact]
-        public void BindBindDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindDataflowToEnumerable_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            IEnumerable<int> result = input.BindDataflow(x =>
+                {
+                    return Dataflow.Return(1)
+                        .Bind(y => Dataflow.Return(x + y));
+                });
+
+            var expectation = input.Select(item => item + 1);
+            result.ShouldAllBeEquivalentTo(expectation);
+        }
+
+        [Fact]
+        public void BindComplexDataflowToEnumerable_ShouldReturnTheProjectedList2()
         {
             int[] input = { 1, 2, 3 };
 
@@ -136,7 +151,8 @@ namespace Dataflow.Core.Tests
                             .Bind(y => Dataflow.Return(x + y));
                     }));
 
-            result.ShouldAllBeEquivalentTo(input.Select(item => item + 1));
+            var expectation = input.Select(item => item + 1);
+            result.ShouldAllBeEquivalentTo(expectation);
         }
 
         [Fact]

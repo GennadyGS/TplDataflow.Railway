@@ -1,52 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Railway.Linq;
 using static LanguageExt.Prelude;
 
 namespace Dataflow.Core
 {
     public abstract class Dataflow<T>
     {
+        public abstract Dataflow<TOutput> Bind<TOutput>(Func<T, Dataflow<TOutput>> bindFunc);
+
+        public abstract IEnumerable<T> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows);
     }
 
     public abstract class DataflowOperator<T> : Dataflow<T>
     {
-    }
-
-    public class Return<T> : DataflowOperator<T>
-    {
-        public Return(T result)
+        public override Dataflow<TOutput> Bind<TOutput>(Func<T, Dataflow<TOutput>> bindFunc)
         {
-            Result = result;
+            return Dataflow.Calculation(this, bindFunc);
         }
-
-        public T Result { get; }
-    }
-
-    public class ReturnMany<T> : DataflowOperator<T>
-    {
-        public ReturnMany(IEnumerable<T> result)
-        {
-            Result = result;
-        }
-
-        public IEnumerable<T> Result { get; }
-    }
-
-    public class Buffer<T> : DataflowOperator<T>
-    {
-        public Buffer(T item, TimeSpan batchTimeout, int batchMaxSize)
-        {
-            Item = item;
-            BatchTimeout = batchTimeout;
-            BatchMaxSize = batchMaxSize;
-        }
-
-        public T Item { get; }
-
-        public int BatchMaxSize { get; }
-
-        public TimeSpan BatchTimeout { get; }
     }
 
     public class DataflowCalculation<TInput, TOutput> : Dataflow<TOutput>
@@ -60,40 +32,87 @@ namespace Dataflow.Core
         public DataflowOperator<TInput> Operator { get; }
 
         public Func<TInput, Dataflow<TOutput>> Continuation { get; }
-    }
 
-    public class Continuation<TOutput> : Dataflow<TOutput>
-    {
-        public Func<Dataflow<TOutput>> Func { get; }
-
-        public Continuation(Func<Dataflow<TOutput>> func)
+        public override Dataflow<TOutput2> Bind<TOutput2>(Func<TOutput, Dataflow<TOutput2>> bindFunc)
         {
-            Func = func;
+            return Dataflow.Calculation(Operator, item => Continuation(item).Bind(bindFunc));
+        }
+
+        public override IEnumerable<TOutput> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<TOutput>> dataflows)
+        {
+            var calculationDataflows = dataflows.Cast<DataflowCalculation<TInput, TOutput>>();
+            var inputDataflows = Operator.TansformEnumerableOfDataFlow(calculationDataflows.Select(dataflow => dataflow.Operator));
+            var outputDataflows = inputDataflows.Select(Continuation);
+            if (!outputDataflows.Any())
+            {
+                return Enumerable.Empty<TOutput>();
+            }
+            return outputDataflows.First().TansformEnumerableOfDataFlow(outputDataflows);
         }
     }
 
-    public class ContinuationMany<TOutput> : Dataflow<TOutput>
+    public class Return<T> : DataflowOperator<T>
     {
-        public Func<IEnumerable<Dataflow<TOutput>>> Func { get; }
-
-        public ContinuationMany(Func<IEnumerable<Dataflow<TOutput>>> func)
+        public Return(T result)
         {
-            Func = func;
+            Result = result;
+        }
+
+        public T Result { get; }
+
+        public override IEnumerable<T> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
+        {
+            return dataflows.Cast<Return<T>>().Select(dataflow => dataflow.Result);
         }
     }
 
-    public class BufferContinuation<TOutput>: Dataflow<TOutput>
+    public class ReturnMany<T> : DataflowOperator<T>
     {
-        public Func<Dataflow<TOutput>> Func { get; }
-
-        public BufferContinuation(Func<Dataflow<TOutput>> func)
+        public ReturnMany(IEnumerable<T> result)
         {
-            Func = func;
+            Result = result;
+        }
+
+        public IEnumerable<T> Result { get; }
+
+        public override IEnumerable<T> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
+        {
+            return dataflows.Cast<ReturnMany<T>>().SelectMany(dataflow => dataflow.Result);
+        }
+    }
+
+    public class Buffer<T> : DataflowOperator<IList<T>>
+    {
+        public Buffer(T item, TimeSpan batchTimeout, int batchMaxSize)
+        {
+            Item = item;
+            BatchTimeout = batchTimeout;
+            BatchMaxSize = batchMaxSize;
+        }
+
+        public T Item { get; }
+
+        public int BatchMaxSize { get; }
+
+        public TimeSpan BatchTimeout { get; }
+
+        public override IEnumerable<IList<T>> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<IList<T>>> dataflows)
+        {
+            return dataflows
+                .Cast<Buffer<T>>()
+                .Select(item => item.Item)
+                .Buffer(BatchMaxSize);
         }
     }
 
     public static class Dataflow
     {
+        public static Dataflow<TOutput> Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator,
+            Func<TInput, Dataflow<TOutput>> continuation)
+        {
+            return new DataflowCalculation<TInput, TOutput>(@operator, continuation);
+        }
+
         public static Dataflow<T> Return<T>(T value)
         {
             return new Return<T>(value);
@@ -102,53 +121,6 @@ namespace Dataflow.Core
         public static Dataflow<T> ReturnMany<T>(IEnumerable<T> value)
         {
             return new ReturnMany<T>(value);
-        }
-
-        public static Dataflow<TOutput> Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator,
-            Func<TInput, Dataflow<TOutput>> continuation)
-        {
-            return new DataflowCalculation<TInput, TOutput>(@operator, continuation);
-        }
-
-        private static Dataflow<T> Continuation<T>(Func<Dataflow<T>> func)
-        {
-            return new Continuation<T>(func);
-        }
-
-        private static Dataflow<T> ContinuationMany<T>(Func<IEnumerable<Dataflow<T>>> func)
-        {
-            return new ContinuationMany<T>(func);
-        }
-
-        public static Dataflow<TOutput> Bind<TInput, TOutput>(this Dataflow<TInput> dataflow,
-            Func<TInput, Dataflow<TOutput>> transform)
-        {
-            if (dataflow is Return<TInput>)
-            {
-                var result = ((Return<TInput>)dataflow).Result;
-                return Continuation(() => transform(result));
-            }
-            if (dataflow is ReturnMany<TInput>)
-            {
-                var result = ((ReturnMany<TInput>)dataflow).Result;
-                return ContinuationMany(() => result.Select(transform));
-            }
-            if (dataflow is Continuation<TInput>)
-            {
-                var func = ((Continuation<TInput>)dataflow).Func;
-                return Continuation(() => func().Bind(transform));
-            }
-            if (dataflow is ContinuationMany<TInput>)
-            {
-                var func = ((ContinuationMany<TInput>)dataflow).Func;
-                return ContinuationMany(() => func().Select(item => item.Bind(transform)));
-            }
-            if (dataflow is Buffer<TInput>)
-            {
-                var bufferDataflow = (Buffer<TInput>)dataflow;
-                return new BufferContinuation<TOutput>(() => transform(bufferDataflow.Item));
-            }
-            throw new InvalidOperationException();
         }
 
         public static Dataflow<TOutput> Select<TInput, TOutput>(this Dataflow<TInput> source,
@@ -190,7 +162,7 @@ namespace Dataflow.Core
         public static Dataflow<IList<T>> Buffer<T>(this Dataflow<T> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {
-            return source.Bind(item => new Buffer<IList<T>>(List(item).ToList(), batchTimeout, batchMaxSize));
+            return source.Bind(item => new Buffer<T>(item, batchTimeout, batchMaxSize));
         }
     }
 }
