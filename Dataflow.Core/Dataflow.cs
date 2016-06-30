@@ -9,7 +9,11 @@ namespace Dataflow.Core
     {
     }
 
-    public class Return<T> : Dataflow<T>
+    public abstract class DataflowOperator<T> : Dataflow<T>
+    {
+    }
+
+    public class Return<T> : DataflowOperator<T>
     {
         public Return(T result)
         {
@@ -19,7 +23,7 @@ namespace Dataflow.Core
         public T Result { get; }
     }
 
-    public class ReturnMany<T> : Dataflow<T>
+    public class ReturnMany<T> : DataflowOperator<T>
     {
         public ReturnMany(IEnumerable<T> result)
         {
@@ -27,6 +31,35 @@ namespace Dataflow.Core
         }
 
         public IEnumerable<T> Result { get; }
+    }
+
+    public class Buffer<T> : DataflowOperator<T>
+    {
+        public Buffer(T item, TimeSpan batchTimeout, int batchMaxSize)
+        {
+            Item = item;
+            BatchTimeout = batchTimeout;
+            BatchMaxSize = batchMaxSize;
+        }
+
+        public T Item { get; }
+
+        public int BatchMaxSize { get; }
+
+        public TimeSpan BatchTimeout { get; }
+    }
+
+    public class DataflowCalculation<TInput, TOutput> : Dataflow<TOutput>
+    {
+        public DataflowCalculation(DataflowOperator<TInput> @operator, Func<TInput, Dataflow<TOutput>> continuation)
+        {
+            Operator = @operator;
+            Continuation = continuation;
+        }
+
+        public DataflowOperator<TInput> Operator { get; }
+
+        public Func<TInput, Dataflow<TOutput>> Continuation { get; }
     }
 
     public class Continuation<TOutput> : Dataflow<TOutput>
@@ -59,32 +92,22 @@ namespace Dataflow.Core
         }
     }
 
-    public class Buffer<T> : Dataflow<T>
-    {
-        public Buffer(T item, TimeSpan batchTimeout, int batchMaxSize)
-        {
-            Item = item;
-            BatchTimeout = batchTimeout;
-            BatchMaxSize = batchMaxSize;
-        }
-
-        public T Item { get; }
-
-        public int BatchMaxSize { get; }
-
-        public TimeSpan BatchTimeout { get; }
-    }
-
     public static class Dataflow
     {
-        public static Dataflow<TOutput> Return<TOutput>(TOutput value)
+        public static Dataflow<T> Return<T>(T value)
         {
-            return new Return<TOutput>(value);
+            return new Return<T>(value);
         }
 
-        public static Dataflow<TOutput> ReturnMany<TOutput>(IEnumerable<TOutput> value)
+        public static Dataflow<T> ReturnMany<T>(IEnumerable<T> value)
         {
-            return new ReturnMany<TOutput>(value);
+            return new ReturnMany<T>(value);
+        }
+
+        public static Dataflow<TOutput> Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator,
+            Func<TInput, Dataflow<TOutput>> continuation)
+        {
+            return new DataflowCalculation<TInput, TOutput>(@operator, continuation);
         }
 
         private static Dataflow<T> Continuation<T>(Func<Dataflow<T>> func)
