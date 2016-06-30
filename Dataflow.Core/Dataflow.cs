@@ -74,8 +74,6 @@ namespace Dataflow.Core
 
     public class ReturnMany<T> : DataflowOperator<T>
     {
-        private DataflowOperator<T> _dataflowOperatorImplementation;
-
         public ReturnMany(IEnumerable<T> result)
         {
             Result = result;
