@@ -139,12 +139,12 @@ namespace Dataflow.Core
             return new DataflowCalculation<TInput, TOutput>(@operator, continuation);
         }
 
-        public static Dataflow<T> Return<T>(T value)
+        public static Return<T> Return<T>(T value)
         {
             return new Return<T>(value);
         }
 
-        public static Dataflow<T> ReturnMany<T>(IEnumerable<T> value)
+        public static ReturnMany<T> ReturnMany<T>(IEnumerable<T> value)
         {
             return new ReturnMany<T>(value);
         }
