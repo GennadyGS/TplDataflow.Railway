@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Railway.Linq;
-using static LanguageExt.Prelude;
 
 namespace Dataflow.Core
 {
@@ -10,7 +9,7 @@ namespace Dataflow.Core
     {
         public abstract Dataflow<TOutput> Bind<TOutput>(Func<T, Dataflow<TOutput>> bindFunc);
 
-        public abstract IEnumerable<T> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows);
+        public abstract IEnumerable<T> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows);
     }
 
     public abstract class DataflowOperator<T> : Dataflow<T>
@@ -19,6 +18,8 @@ namespace Dataflow.Core
         {
             return Dataflow.Calculation(this, bindFunc);
         }
+
+        public abstract IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows);
     }
 
     public class DataflowCalculation<TInput, TOutput> : Dataflow<TOutput>
@@ -38,16 +39,15 @@ namespace Dataflow.Core
             return Dataflow.Calculation(Operator, item => Continuation(item).Bind(bindFunc));
         }
 
-        public override IEnumerable<TOutput> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<TOutput>> dataflows)
+        public override IEnumerable<TOutput> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<TOutput>> dataflows)
         {
             var calculationDataflows = dataflows.Cast<DataflowCalculation<TInput, TOutput>>();
-            var inputDataflows = Operator.TansformEnumerableOfDataFlow(calculationDataflows.Select(dataflow => dataflow.Operator));
-            var outputDataflows = inputDataflows.Select(Continuation);
+            var outputDataflows = Operator.TransformEnumerableOfCalculationDataFlow(calculationDataflows);
             if (!outputDataflows.Any())
             {
                 return Enumerable.Empty<TOutput>();
             }
-            return outputDataflows.First().TansformEnumerableOfDataFlow(outputDataflows);
+            return outputDataflows.First().TransformEnumerableOfDataFlow(outputDataflows);
         }
     }
 
@@ -60,14 +60,22 @@ namespace Dataflow.Core
 
         public T Result { get; }
 
-        public override IEnumerable<T> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
+        public override IEnumerable<T> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
         {
             return dataflows.Cast<Return<T>>().Select(dataflow => dataflow.Result);
+        }
+
+        public override IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
+        {
+            return calculationDataflows.Select(dataflow =>
+                dataflow.Continuation(((Return<T>)dataflow.Operator).Result));
         }
     }
 
     public class ReturnMany<T> : DataflowOperator<T>
     {
+        private DataflowOperator<T> _dataflowOperatorImplementation;
+
         public ReturnMany(IEnumerable<T> result)
         {
             Result = result;
@@ -75,9 +83,15 @@ namespace Dataflow.Core
 
         public IEnumerable<T> Result { get; }
 
-        public override IEnumerable<T> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
+        public override IEnumerable<T> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
         {
             return dataflows.Cast<ReturnMany<T>>().SelectMany(dataflow => dataflow.Result);
+        }
+
+        public override IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
+        {
+            return calculationDataflows.SelectMany(dataflow =>
+                ((ReturnMany<T>)dataflow.Operator).Result.Select(dataflow.Continuation));
         }
     }
 
@@ -96,12 +110,26 @@ namespace Dataflow.Core
 
         public TimeSpan BatchTimeout { get; }
 
-        public override IEnumerable<IList<T>> TansformEnumerableOfDataFlow(IEnumerable<Dataflow<IList<T>>> dataflows)
+        public override IEnumerable<IList<T>> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<IList<T>>> dataflows)
         {
             return dataflows
                 .Cast<Buffer<T>>()
                 .Select(item => item.Item)
                 .Buffer(BatchMaxSize);
+        }
+
+        public override IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(IEnumerable<DataflowCalculation<IList<T>, TOutput>> calculationDataflows)
+        {
+            return calculationDataflows
+                .Buffer(BatchMaxSize)
+                .Where(batch => batch.Count > 0)
+                .Select(batch =>
+                    {
+                        List<T> items = batch
+                            .Select(item => ((Buffer<T>)item.Operator).Item)
+                            .ToList();
+                        return batch.First().Continuation(items);
+                    });
         }
     }
 

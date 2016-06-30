@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Railway.Linq;
 
 namespace Dataflow.Core
 {
@@ -15,7 +14,7 @@ namespace Dataflow.Core
                 return Enumerable.Empty<TOutput>();
             }
             var dataflows = input.Select(bindFunc);
-            return dataflows.First().TansformEnumerableOfDataFlow(dataflows);
+            return dataflows.First().TransformEnumerableOfDataFlow(dataflows);
         }
     }
 }
