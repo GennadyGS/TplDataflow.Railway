@@ -17,41 +17,41 @@ namespace Dataflow.Core
         {
             return dataflows
                 .GroupBy(dataflow => dataflow.GetDataflowType())
-                .SelectMany(group => group.Key.TransformEnumerableOfDataFlow(group));
+                .SelectMany(group => group.Key.TransformDataFlows(group));
         }
     }
 
     public abstract partial class DataflowType<T>
     {
-        public abstract IEnumerable<T> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows);
+        public abstract IEnumerable<T> TransformDataFlows(IEnumerable<Dataflow<T>> dataflows);
     }
 
     public abstract partial class DataflowOperatorType<T> : DataflowType<T>
     {
-        public abstract IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(
+        public abstract IEnumerable<Dataflow<TOutput>> PerformOperator<TOutput>(
             IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows);
     }
 
     public partial class DataflowCalculationType<TInput, TOutput>
     {
-        public override IEnumerable<TOutput> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<TOutput>> dataflows)
+        public override IEnumerable<TOutput> TransformDataFlows(IEnumerable<Dataflow<TOutput>> dataflows)
         {
             return dataflows
                 .Cast<DataflowCalculation<TInput, TOutput>>()
                 .GroupBy(dataflow => dataflow.Operator.GetDataflowOperatorType())
-                .SelectMany(group => group.Key.TransformEnumerableOfCalculationDataFlow(group))
+                .SelectMany(group => group.Key.PerformOperator(group))
                 .TransformDataflows();
         }
     }
 
     public partial class ReturnType<T>
     {
-        public override IEnumerable<T> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
+        public override IEnumerable<T> TransformDataFlows(IEnumerable<Dataflow<T>> dataflows)
         {
             return dataflows.Cast<Return<T>>().Select(dataflow => dataflow.Result);
         }
 
-        public override IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
+        public override IEnumerable<Dataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
         {
             return calculationDataflows.Select(dataflow =>
                 dataflow.Continuation(((Return<T>)dataflow.Operator).Result));
@@ -60,12 +60,12 @@ namespace Dataflow.Core
 
     public partial class ReturnManyType<T>
     {
-        public override IEnumerable<T> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
+        public override IEnumerable<T> TransformDataFlows(IEnumerable<Dataflow<T>> dataflows)
         {
             return dataflows.Cast<ReturnMany<T>>().SelectMany(dataflow => dataflow.Result);
         }
 
-        public override IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
+        public override IEnumerable<Dataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
         {
             return calculationDataflows.SelectMany(dataflow =>
                 ((ReturnMany<T>)dataflow.Operator).Result.Select(dataflow.Continuation));
@@ -74,7 +74,7 @@ namespace Dataflow.Core
 
     public partial class BufferType<T>
     {
-        public override IEnumerable<IList<T>> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<IList<T>>> dataflows)
+        public override IEnumerable<IList<T>> TransformDataFlows(IEnumerable<Dataflow<IList<T>>> dataflows)
         {
             return dataflows
                 .Cast<Buffer<T>>()
@@ -84,7 +84,7 @@ namespace Dataflow.Core
                     .Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize));
         }
 
-        public override IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(
+        public override IEnumerable<Dataflow<TOutput>> PerformOperator<TOutput>(
             IEnumerable<DataflowCalculation<IList<T>, TOutput>> calculationDataflows)
         {
             return calculationDataflows
