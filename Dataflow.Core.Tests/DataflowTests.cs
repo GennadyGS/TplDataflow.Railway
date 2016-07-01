@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using FluentAssertions;
 using Railway.Linq;
 using Xunit;
@@ -24,9 +25,9 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(Dataflow.Return);
-
-            result.ShouldAllBeEquivalentTo(input);
+            var expectedOutput = input;
+            
+            TestDataflow(input, expectedOutput, Dataflow.Return);
         }
 
         [Fact]
@@ -34,9 +35,9 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i => Dataflow.Return(i * 2));
+            var expectedOutput = input.Select(i => i * 2);
 
-            result.ShouldAllBeEquivalentTo(input.Select(i => i * 2));
+            TestDataflow(expectedOutput, input, i => Dataflow.Return(i * 2));
         }
 
         [Fact]
@@ -44,11 +45,11 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i =>
+            var expectedOutput = input.Select(i => i * 2);
+
+            TestDataflow(expectedOutput, input, i =>
                 Dataflow.Return(i)
                     .Select(item => item * 2));
-
-            result.ShouldAllBeEquivalentTo(input.Select(i => i * 2));
         }
 
         [Fact]
@@ -56,15 +57,13 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            Func<int, Dataflow<int>> bindFunc = i =>
+            var expectedOutput = input.Select(i => (i * 2 + 1) * 2);
+
+            TestDataflow(expectedOutput, input, i =>
                 Dataflow.Return(i)
                     .Select(item => item * 2)
                     .Select(item => item + 1)
-                    .Select(item => item * 2);
-
-            IEnumerable<int> result = input.BindDataflow(bindFunc);
-
-            result.ShouldAllBeEquivalentTo(input.Select(i => (i * 2 + 1) * 2));
+                    .Select(item => item * 2));
         }
 
         [Fact]
@@ -72,12 +71,12 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<string> result = input.BindDataflow(i =>
+            var expectedOutput = input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000");
+
+            TestDataflow(expectedOutput, input, i =>
                 Dataflow.Return(i)
                     .Select(item => new DateTime(2000 + item, 1, 1))
                     .Select(item => item.ToString("O")));
-
-            result.ShouldAllBeEquivalentTo(input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000"));
         }
 
         [Fact]
@@ -85,14 +84,14 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<string> result = input.BindDataflow(i =>
+            var expectedOutput = input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000");
+
+            TestDataflow(expectedOutput, input, i =>
                 Dataflow.Return(i)
                     .Bind(item =>
                         Dataflow.Return(new DateTime(2000 + item, 1, 1))
                             .Bind(item2 =>
                                 Dataflow.Return(item2.ToString("O")))));
-
-            result.ShouldAllBeEquivalentTo(input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000"));
         }
 
         [Fact]
@@ -100,12 +99,13 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow<int, int>(i =>
+            var expectedOutput = input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2));
+
+            TestDataflow(expectedOutput, input, i =>
                 Dataflow.Return(i)
                     .SelectMany(item => Enumerable.Repeat(item * 2, 2))
                     .Select(item => item + 1));
 
-            result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2)));
         }
 
         [Fact]
@@ -113,14 +113,14 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i =>
-                Dataflow.Return(i)
-                    .Bind(item =>
-                        Dataflow.ReturnMany(Enumerable.Repeat(item * 2, 2))
-                            .Bind(item2 =>
-                                Dataflow.Return(item2 + 1))));
+            var expectedOutput = input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2));
 
-            result.ShouldAllBeEquivalentTo(input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2)));
+            TestDataflow(expectedOutput, input, i =>
+                Dataflow.Return(i)
+                    .Bind(j =>
+                        Dataflow.ReturnMany(Enumerable.Repeat(j * 2, 2))
+                            .Bind(k =>
+                                Dataflow.Return(k + 1))));
         }
 
         [Fact]
@@ -128,14 +128,11 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(x =>
-                {
-                    return Dataflow.Return(1)
-                        .Bind(y => Dataflow.Return(x + y));
-                });
+            var expectedOutput = input.Select(i => i + 1);
 
-            var expectation = input.Select(item => item + 1);
-            result.ShouldAllBeEquivalentTo(expectation);
+            TestDataflow(expectedOutput, input, x =>
+                Dataflow.Return(1)
+                    .Bind(y => Dataflow.Return(x + y)));
         }
 
         [Fact]
@@ -143,16 +140,14 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i =>
+            var expectedOutput = input.Select(i => i + 1);
+
+            TestDataflow(expectedOutput, input, i =>
                 Dataflow.Return(i)
                     .Bind(x =>
-                    {
-                        return Dataflow.Return(1)
-                            .Bind(y => Dataflow.Return(x + y));
-                    }));
+                        Dataflow.Return(1)
+                            .Bind(y => Dataflow.Return(x + y))));
 
-            var expectation = input.Select(item => item + 1);
-            result.ShouldAllBeEquivalentTo(expectation);
         }
 
         [Fact]
@@ -160,12 +155,12 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i =>
+            var expectedOutput = input.Select(item => item + 1);
+
+            TestDataflow(expectedOutput, input, i =>
                 from x in Dataflow.Return(i)
                 from y in Dataflow.Return(1)
                 select x + y);
-
-            result.ShouldAllBeEquivalentTo(input.Select(item => item + 1));
         }
 
         [Fact]
@@ -175,11 +170,11 @@ namespace Dataflow.Core.Tests
 
             var input = Enumerable.Range(0, 100).ToList();
 
-            IEnumerable<IList<int>> result = input.BindDataflow(i => Dataflow.Return(i)
-                .Select(item => item + 1)
-                .Buffer(TimeSpan.MaxValue, batchSize));
+            var expectedOutput = input.Select(item => item + 1).Buffer(TimeSpan.FromDays(1), batchSize);
 
-            result.ShouldAllBeEquivalentTo(input.Select(item => item + 1).Buffer(TimeSpan.MaxValue, batchSize));
+            TestDataflow(expectedOutput, input, i => Dataflow.Return(i)
+                .Select(item => item + 1)
+                .Buffer(TimeSpan.FromDays(1), batchSize));
         }
 
         [Fact]
@@ -189,11 +184,28 @@ namespace Dataflow.Core.Tests
 
             var input = Enumerable.Range(0, 100).ToList();
 
-            IEnumerable<int> result = input.BindDataflow(i => Dataflow.Return(i)
-                .Buffer(TimeSpan.MaxValue, batchSize)
+            var expectedOutput = input.Buffer(TimeSpan.FromDays(1), batchSize).Select(i => i.Count);
+
+            TestDataflow(expectedOutput, input, i => Dataflow.Return(i)
+                .Buffer(TimeSpan.FromDays(1), batchSize)
                 .Select(item => item.Count));
 
-            result.ShouldAllBeEquivalentTo(input.Buffer(TimeSpan.MaxValue, batchSize).Select(i => i.Count));
+        }
+
+        private static void TestDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<TInput, Dataflow<TOutput>> dataflow)
+        {
+            var inputList = input.ToList();
+            var expectedOutputList = expectedOutput.ToList();
+
+            inputList
+                .BindDataflow(dataflow)
+                .ShouldAllBeEquivalentTo(expectedOutputList, "Enumerable result should be correct");
+
+            inputList
+                .ToObservable()
+                .BindDataflow(dataflow)
+                .ToEnumerable()
+                .ShouldAllBeEquivalentTo(expectedOutputList, "Observable result should be correct");
         }
     }
 }
