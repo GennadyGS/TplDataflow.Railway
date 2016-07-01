@@ -50,6 +50,7 @@
     <Compile Include="DataflowOperator.cs" />
     <Compile Include="DataflowType.cs" />
     <Compile Include="EnumerableDataFlowExtensions.cs" />
+    <Compile Include="ObservableDataflowExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Return.cs" />
     <Compile Include="ReturnMany.cs" />
