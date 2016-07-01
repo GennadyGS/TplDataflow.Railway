@@ -4,7 +4,7 @@ namespace Dataflow.Core
 {
     public class ReturnMany<T> : DataflowOperator<T>
     {
-        private static readonly DataflowType<T> DataflowType = new ReturnManyType<T>();
+        private static readonly DataflowOperatorType<T> DataflowType = new ReturnManyType<T>();
 
         public IEnumerable<T> Result { get; }
 
@@ -13,7 +13,7 @@ namespace Dataflow.Core
             Result = result;
         }
 
-        public override DataflowType<T> GetDataflowType()
+        public override DataflowOperatorType<T> GetDataflowOperatorType()
         {
             return DataflowType;
         }

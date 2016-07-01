@@ -4,7 +4,6 @@ namespace Dataflow.Core
 {
     public class DataflowCalculation<TInput, TOutput> : Dataflow<TOutput>
     {
-
         private static readonly DataflowType<TOutput> DataflowType = new DataflowCalculationType<TInput,TOutput>();
 
         public DataflowOperator<TInput> Operator { get; }

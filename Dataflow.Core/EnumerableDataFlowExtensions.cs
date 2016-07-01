@@ -38,9 +38,8 @@ namespace Dataflow.Core
         {
             return dataflows
                 .Cast<DataflowCalculation<TInput, TOutput>>()
-                .GroupBy(dataflow => dataflow.Operator.GetDataflowType())
-                // TODO: Get rid of type downcast
-                .SelectMany(group => ((DataflowOperatorType<TInput>)group.Key).TransformEnumerableOfCalculationDataFlow(group))
+                .GroupBy(dataflow => dataflow.Operator.GetDataflowOperatorType())
+                .SelectMany(group => group.Key.TransformEnumerableOfCalculationDataFlow(group))
                 .TransformDataflows();
         }
     }

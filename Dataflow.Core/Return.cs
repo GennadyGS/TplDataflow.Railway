@@ -2,7 +2,7 @@ namespace Dataflow.Core
 {
     public class Return<T> : DataflowOperator<T>
     {
-        private static readonly DataflowType<T> DataflowType = new ReturnType<T>();
+        private static readonly DataflowOperatorType<T> DataflowType = new ReturnType<T>();
 
         public T Result { get; }
 
@@ -11,7 +11,7 @@ namespace Dataflow.Core
             Result = result;
         }
 
-        public override DataflowType<T> GetDataflowType()
+        public override DataflowOperatorType<T> GetDataflowOperatorType()
         {
             return DataflowType;
         }

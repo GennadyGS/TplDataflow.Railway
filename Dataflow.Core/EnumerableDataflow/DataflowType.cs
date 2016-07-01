@@ -1,3 +1,0 @@
-﻿namespace Dataflow.Core.EnumerableDataflow
-{
-}
