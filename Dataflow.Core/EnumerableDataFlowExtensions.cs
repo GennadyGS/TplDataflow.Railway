@@ -48,12 +48,12 @@ namespace Dataflow.Core
     {
         public override IEnumerable<T> TransformDataFlows(IEnumerable<Dataflow<T>> dataflows)
         {
-            return dataflows.Cast<Return<T>>().Select(dataflow => dataflow.Result);
+            return dataflows.Select(dataflow => ((Return<T>)dataflow).Result);
         }
 
         public override IEnumerable<Dataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
         {
-            return calculationDataflows.Select(dataflow =>
+            return calculationDataflows.Select(dataflow => 
                 dataflow.Continuation(((Return<T>)dataflow.Operator).Result));
         }
     }
@@ -62,7 +62,7 @@ namespace Dataflow.Core
     {
         public override IEnumerable<T> TransformDataFlows(IEnumerable<Dataflow<T>> dataflows)
         {
-            return dataflows.Cast<ReturnMany<T>>().SelectMany(dataflow => dataflow.Result);
+            return dataflows.SelectMany(dataflow => ((ReturnMany<T>)dataflow).Result);
         }
 
         public override IEnumerable<Dataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
@@ -77,10 +77,9 @@ namespace Dataflow.Core
         public override IEnumerable<IList<T>> TransformDataFlows(IEnumerable<Dataflow<IList<T>>> dataflows)
         {
             return dataflows
-                .Cast<Buffer<T>>()
-                .GroupBy(item => new { item.BatchMaxSize, item.BatchTimeout })
+                .GroupBy(item => new { ((Buffer<T>)item).BatchMaxSize, ((Buffer<T>)item).BatchTimeout })
                 .SelectMany(group => group
-                    .Select(item => item.Item)
+                    .Select(item => ((Buffer<T>)item).Item)
                     .Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize));
         }
 
