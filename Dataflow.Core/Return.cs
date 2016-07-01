@@ -12,15 +12,9 @@ namespace Dataflow.Core
 
         public T Result { get; }
 
-        public override IEnumerable<T> TransformEnumerableOfDataFlow(IEnumerable<Dataflow<T>> dataflows)
+        public override DataflowType<T> GetDataflowType()
         {
-            return dataflows.Cast<Return<T>>().Select(dataflow => dataflow.Result);
-        }
-
-        public override IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
-        {
-            return calculationDataflows.Select(dataflow =>
-                dataflow.Continuation(((Return<T>)dataflow.Operator).Result));
+            return new ReturnType<T>();
         }
     }
 }

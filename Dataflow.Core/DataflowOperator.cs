@@ -9,7 +9,5 @@ namespace Dataflow.Core
         {
             return Dataflow.Calculation(this, bindFunc);
         }
-
-        public abstract IEnumerable<Dataflow<TOutput>> TransformEnumerableOfCalculationDataFlow<TOutput>(IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows);
     }
 }

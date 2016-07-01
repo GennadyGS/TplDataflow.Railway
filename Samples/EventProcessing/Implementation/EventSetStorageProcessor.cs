@@ -234,10 +234,10 @@ namespace EventProcessing.Implementation
             {
                 return input
                     .Select(_logic.LogEvent)
-                    .Buffer(_configuration.EventBatchSize)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .BufferSafe(_configuration.EventGroupBatchSize)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
                     .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => _logic.TransformResult(res));
             }
@@ -264,7 +264,7 @@ namespace EventProcessing.Implementation
             {
                 return input
                     .Select(_logic.LogEvent)
-                    .Buffer(_configuration.EventBatchSize)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .GroupBy(group => group.EventSetType.GetCode())
@@ -525,7 +525,7 @@ namespace EventProcessing.Implementation
                         .SelectManySafe(
                             lastEventSets =>
                                 InternalProcessEventGroupsBatchSafe(eventGroupsBatch, lastEventSets))
-                        .BufferSafe(int.MaxValue)
+                        .BufferSafe(TimeSpan.MaxValue, int.MaxValue)
                         .SelectSafe(resultList => ApplyChangesSafe(repository, resultList))
                         .SelectMany(result => result);
                 });

@@ -100,7 +100,7 @@ namespace Dataflow.Core.Tests
         {
             int[] input = { 1, 2, 3 };
 
-            IEnumerable<int> result = input.BindDataflow(i =>
+            IEnumerable<int> result = input.BindDataflow<int, int>(i =>
                 Dataflow.Return(i)
                     .SelectMany(item => Enumerable.Repeat(item * 2, 2))
                     .Select(item => item + 1));
@@ -179,7 +179,7 @@ namespace Dataflow.Core.Tests
                 .Select(item => item + 1)
                 .Buffer(TimeSpan.MaxValue, batchSize));
 
-            result.ShouldAllBeEquivalentTo(input.Select(item => item + 1).Buffer(batchSize));
+            result.ShouldAllBeEquivalentTo(input.Select(item => item + 1).Buffer(TimeSpan.MaxValue, batchSize));
         }
 
         [Fact]
@@ -193,7 +193,7 @@ namespace Dataflow.Core.Tests
                 .Buffer(TimeSpan.MaxValue, batchSize)
                 .Select(item => item.Count));
 
-            result.ShouldAllBeEquivalentTo(input.Buffer(batchSize).Select(i => i.Count));
+            result.ShouldAllBeEquivalentTo(input.Buffer(TimeSpan.MaxValue, batchSize).Select(i => i.Count));
         }
     }
 }

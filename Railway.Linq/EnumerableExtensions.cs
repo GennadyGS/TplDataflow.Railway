@@ -79,7 +79,7 @@ namespace Railway.Linq
                             .Select(Prelude.Left<TLeft, IGrouping<TKey, TRight>>));
         }
 
-        public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source, int count)
+        public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source, TimeSpan batchTimeout, int count)
         {
             return source
                 .Select((value, index) => new { value, index })
@@ -88,10 +88,10 @@ namespace Railway.Linq
         }
 
         public static IEnumerable<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(
-            this IEnumerable<Either<TLeft, TRight>> source, int count)
+            this IEnumerable<Either<TLeft, TRight>> source, TimeSpan batchTimeout, int count)
         {
             return source
-                .Buffer(count)
+                .Buffer(batchTimeout, count)
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsRight)
                     .SelectMany(group => group.Key
