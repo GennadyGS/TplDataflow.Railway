@@ -5,6 +5,8 @@ namespace Dataflow.Core
 {
     public class Buffer<T> : DataflowOperator<IList<T>>
     {
+        private static readonly DataflowType<IList<T>> DataflowType = new BufferType<T>();
+
         public T Item { get; }
 
         public int BatchMaxSize { get; }
@@ -20,7 +22,7 @@ namespace Dataflow.Core
 
         public override DataflowType<IList<T>> GetDataflowType()
         {
-            return new BufferType<T>();
+            return DataflowType;
         }
     }
 }
