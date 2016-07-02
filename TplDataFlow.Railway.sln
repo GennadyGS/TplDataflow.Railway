@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataFlow.Extensions", "TplDataFlow.Extensions\TplDataFlow.Extensions.csproj", "{6C3DF27A-610C-48B9-A815-CF1496CB5663}"
 EndProject
@@ -26,6 +26,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Core", "Dataflow.Core\Dataflow.Core.csproj", "{79C5A0F9-E9EC-4B45-8F84-6859C6E07522}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Core.Tests", "Dataflow.Core.Tests\Dataflow.Core.Tests.csproj", "{54E4902A-C90A-4507-A41C-E709B476477D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Railway", "Dataflow.Railway\Dataflow.Railway.csproj", "{1BCFCF79-6205-49A2-A213-62A97A1D10FF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -77,6 +79,10 @@ Global
 		{54E4902A-C90A-4507-A41C-E709B476477D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54E4902A-C90A-4507-A41C-E709B476477D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54E4902A-C90A-4507-A41C-E709B476477D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BCFCF79-6205-49A2-A213-62A97A1D10FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BCFCF79-6205-49A2-A213-62A97A1D10FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BCFCF79-6205-49A2-A213-62A97A1D10FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BCFCF79-6205-49A2-A213-62A97A1D10FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
