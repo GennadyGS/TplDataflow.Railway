@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using Dataflow.Common;
 using FluentAssertions;
 using Railway.Linq;
 using Xunit;

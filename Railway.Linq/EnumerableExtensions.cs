@@ -3,6 +3,7 @@ using LanguageExt.Trans;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dataflow.Common;
 
 namespace Railway.Linq
 {
@@ -77,14 +78,6 @@ namespace Railway.Linq
                         : group
                             .Lefts()
                             .Select(Prelude.Left<TLeft, IGrouping<TKey, TRight>>));
-        }
-
-        public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source, TimeSpan batchTimeout, int count)
-        {
-            return source
-                .Select((value, index) => new { value, index })
-                .GroupBy(item => item.index / count)
-                .Select(group => group.Select(item => item.value).ToList());
         }
 
         public static IEnumerable<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(

@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
 using AsyncProcessing.Core;
 using AsyncProcessing.TplDataflow;
+using Dataflow.Common;
 using EventProcessing.BusinessObjects;
 using EventProcessing.Exceptions;
 using EventProcessing.Interfaces;
@@ -17,6 +18,7 @@ using TplDataflow.Railway;
 using static LanguageExt.Prelude;
 using EventProcessing.Utils;
 using DataflowBlockExtensions = TplDataflow.Railway.DataflowBlockExtensions;
+using EnumerableExtensions = Railway.Linq.EnumerableExtensions;
 using ObservableExtensions = Railway.Linq.ObservableExtensions;
 
 namespace EventProcessing.Implementation
