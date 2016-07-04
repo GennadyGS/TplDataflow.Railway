@@ -249,6 +249,37 @@ namespace EventProcessing.Implementation
             }
         }
 
+        public class DataflowFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new DataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private Dataflow<Result> ProcessEventDataflow(EventDetails @event)
+            {
+                return global::Dataflow.Core.Dataflow.Return(@event)
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        _logic.TransformResult(res));
+            }
+        }
+
         public class EnumerableFactoryOneByOne : IFactory
         {
             private Logic _logic;
