@@ -1,0 +1,12 @@
+﻿{
+  "dependencies": {
+    "Microsoft.Tpl.Dataflow": "4.5.24"
+  },
+  "frameworks": {
+    "net461": {}
+  },
+  "runtimes": {
+    "win": {}
+  },
+  "supports": {}
+}
