@@ -41,6 +41,7 @@
     <Compile Include="DataflowCalculation.cs" />
     <Compile Include="DataflowCalculationType.cs" />
     <Compile Include="DataflowExtensions.cs" />
+    <Compile Include="IDataflowFactory.cs" />
     <Compile Include="DataflowOperator.cs" />
     <Compile Include="DataflowType.cs" />
     <Compile Include="EnumerableDataFlowExtensions.cs" />
