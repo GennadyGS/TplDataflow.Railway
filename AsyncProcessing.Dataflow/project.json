@@ -1,0 +1,12 @@
+﻿{
+  "dependencies": {
+    "Rx-Linq": "2.2.5"
+  },
+  "frameworks": {
+    "net461": {}
+  },
+  "runtimes": {
+    "win": {}
+  },
+  "supports": {}
+}

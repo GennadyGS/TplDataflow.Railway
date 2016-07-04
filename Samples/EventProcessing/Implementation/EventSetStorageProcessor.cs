@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
 using AsyncProcessing.Core;
+using AsyncProcessing.Dataflow;
 using AsyncProcessing.TplDataflow;
 using Dataflow.Common;
 using EventProcessing.BusinessObjects;
@@ -20,6 +21,9 @@ using EventProcessing.Utils;
 using DataflowBlockExtensions = TplDataflow.Railway.DataflowBlockExtensions;
 using EnumerableExtensions = Railway.Linq.EnumerableExtensions;
 using ObservableExtensions = Railway.Linq.ObservableExtensions;
+using Dataflow.Core;
+using Dataflow.Railway;
+using Dataflow = Dataflow.Core.Dataflow;
 
 namespace EventProcessing.Implementation
 {
@@ -395,6 +399,50 @@ namespace EventProcessing.Implementation
             }
         }
 
+        public class DataflowFactoryOneByOne : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new DataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private Dataflow<Result> ProcessEventDataflow(EventDetails @event)
+            {
+                return global::Dataflow.Core.Dataflow.Return(@event)
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .Bind(ProcessEventGroupDataflow)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        _logic.TransformResult(res));
+            }
+
+            private Dataflow<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(Either<UnsuccessResult, EventGroup> eventGroup)
+            {
+                return global::Dataflow.Railway.DataflowExtensions.Use(_logic.CreateRepository(), repository =>
+                {
+                    return global::Dataflow.Core.Dataflow.Return(eventGroup)
+                        .SelectSafe(group =>
+                            _logic.FindLastEventSetsSafe(repository, new[] { group })
+                                .Select(lastEventSets => new { group, lastEventSets }))
+                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
+                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
+                        .SelectMany(result => result);
+                });
+            }
+        }
+
         private class SuccessResult
         {
             public SuccessResult(bool isCreated, EventSet eventSet, IList<EventDetails> events)
@@ -553,10 +601,10 @@ namespace EventProcessing.Implementation
                 IEventSetRepository repository, IList<EventGroup> eventGroups)
             {
                 var events = eventGroups
-                    .SelectMany(group => @group.Events)
+                    .SelectMany(group => group.Events)
                     .ToList();
                 var typeCodes = eventGroups
-                    .Select(group => @group.EventSetType.GetCode())
+                    .Select(group => group.EventSetType.GetCode())
                     .Distinct()
                     .ToList();
                 return InvokeSafe(events, () => repository.FindLastEventSetsByTypeCodes(typeCodes));
