@@ -68,6 +68,10 @@
       <Project>{7145B448-A3EB-4F44-9560-DD0E3CC147AB}</Project>
       <Name>AsyncProcessing.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\AsyncProcessing.Dataflow.TplDataflow\AsyncProcessing.Dataflow.TplDataflow.csproj">
+      <Project>{DC295899-3E74-46F7-820E-E17E8564AAD6}</Project>
+      <Name>AsyncProcessing.Dataflow.TplDataflow</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\AsyncProcessing.Dataflow\AsyncProcessing.Dataflow.csproj">
       <Project>{EB5B2262-B1A7-4B36-9248-1A8D608BC6E7}</Project>
       <Name>AsyncProcessing.Dataflow</Name>

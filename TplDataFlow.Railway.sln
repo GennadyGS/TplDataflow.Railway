@@ -33,6 +33,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Common", "Dataflow
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncProcessing.Dataflow", "AsyncProcessing.Dataflow\AsyncProcessing.Dataflow.csproj", "{EB5B2262-B1A7-4B36-9248-1A8D608BC6E7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.TplDataflow", "Dataflow.TplDataflow\Dataflow.TplDataflow.csproj", "{32D18F4A-5FF9-4E18-B3A1-3FCEA6B5F716}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncProcessing.Dataflow.TplDataflow", "AsyncProcessing.Dataflow.TplDataflow\AsyncProcessing.Dataflow.TplDataflow.csproj", "{DC295899-3E74-46F7-820E-E17E8564AAD6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +99,14 @@ Global
 		{EB5B2262-B1A7-4B36-9248-1A8D608BC6E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB5B2262-B1A7-4B36-9248-1A8D608BC6E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB5B2262-B1A7-4B36-9248-1A8D608BC6E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32D18F4A-5FF9-4E18-B3A1-3FCEA6B5F716}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32D18F4A-5FF9-4E18-B3A1-3FCEA6B5F716}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32D18F4A-5FF9-4E18-B3A1-3FCEA6B5F716}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32D18F4A-5FF9-4E18-B3A1-3FCEA6B5F716}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC295899-3E74-46F7-820E-E17E8564AAD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC295899-3E74-46F7-820E-E17E8564AAD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC295899-3E74-46F7-820E-E17E8564AAD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC295899-3E74-46F7-820E-E17E8564AAD6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

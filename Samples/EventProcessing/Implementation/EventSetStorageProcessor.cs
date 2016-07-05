@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
 using AsyncProcessing.Core;
 using AsyncProcessing.Dataflow;
+using AsyncProcessing.Dataflow.TplDataflow;
 using AsyncProcessing.TplDataflow;
 using Dataflow.Common;
 using EventProcessing.BusinessObjects;
@@ -279,6 +280,37 @@ namespace EventProcessing.Implementation
             }
         }
 
+        public class TplDataflowDataflowFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new TplDataflowDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private Dataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            {
+                return dataflowFactory.Return(@event)
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        _logic.TransformResult(res));
+            }
+        }
+
         public class EnumerableFactoryOneByOne : IFactory
         {
             private Logic _logic;
@@ -444,6 +476,50 @@ namespace EventProcessing.Implementation
                 _configuration = configuration;
 
                 return new DataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private Dataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            {
+                return dataflowFactory.Return(@event)
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .Bind(item => ProcessEventGroupDataflow(dataflowFactory, item))
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        _logic.TransformResult(res));
+            }
+
+            private Dataflow<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IDataflowFactory dataflowFactory, Either<UnsuccessResult, EventGroup> eventGroup)
+            {
+                return global::Dataflow.Railway.DataflowExtensions.Use(_logic.CreateRepository(), repository =>
+                {
+                    return dataflowFactory.Return(eventGroup)
+                        .SelectSafe(group =>
+                            _logic.FindLastEventSetsSafe(repository, new[] { group })
+                                .Select(lastEventSets => new { group, lastEventSets }))
+                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
+                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
+                        .SelectMany(result => result);
+                });
+            }
+        }
+
+        public class TplDataflowDataflowFactoryOneByOne : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new TplDataflowDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
             }
 
             private Dataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
