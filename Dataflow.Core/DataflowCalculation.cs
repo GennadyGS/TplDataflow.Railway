@@ -10,7 +10,8 @@ namespace Dataflow.Core
 
         public Func<TInput, Dataflow<TOutput>> Continuation { get; }
 
-        public DataflowCalculation(DataflowOperator<TInput> @operator, Func<TInput, Dataflow<TOutput>> continuation)
+        public DataflowCalculation(IDataflowFactory factory, DataflowOperator<TInput> @operator, Func<TInput, Dataflow<TOutput>> continuation) 
+            : base(factory)
         {
             Operator = @operator;
             Continuation = continuation;
@@ -23,7 +24,7 @@ namespace Dataflow.Core
 
         public override Dataflow<TOutput2> Bind<TOutput2>(Func<TOutput, Dataflow<TOutput2>> bindFunc)
         {
-            return Dataflow.Calculation(Operator, item => Continuation(item).Bind(bindFunc));
+            return Factory.Calculation(Operator, item => Continuation(item).Bind(bindFunc));
         }
     }
 }

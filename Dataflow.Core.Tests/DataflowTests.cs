@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using Dataflow.Common;
 using FluentAssertions;
-using Railway.Linq;
 using Xunit;
 
 namespace Dataflow.Core.Tests
@@ -12,23 +11,13 @@ namespace Dataflow.Core.Tests
     public class DataflowTests
     {
         [Fact]
-        public void Return_ShouldReturnDataflow()
-        {
-            int input = 1;
-
-            var result = Dataflow.Return(input);
-
-            result.Should().NotBeNull();
-        }
-
-        [Fact]
         public void BindReturnDataflowToEnumerable_ShouldReturnTheSameList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input;
             
-            TestDataflow(input, expectedOutput, Dataflow.Return);
+            TestDataflow(input, expectedOutput, (dataflowFactory, i) => dataflowFactory.Return(i));
         }
 
         [Fact]
@@ -38,7 +27,7 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(i => i * 2);
 
-            TestDataflow(expectedOutput, input, i => Dataflow.Return(i * 2));
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i * 2));
         }
 
         [Fact]
@@ -48,8 +37,8 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(i => i * 2);
 
-            TestDataflow(expectedOutput, input, i =>
-                Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
                     .Select(item => item * 2));
         }
 
@@ -60,8 +49,8 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(i => (i * 2 + 1) * 2);
 
-            TestDataflow(expectedOutput, input, i =>
-                Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
                     .Select(item => item * 2)
                     .Select(item => item + 1)
                     .Select(item => item * 2));
@@ -74,8 +63,8 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000");
 
-            TestDataflow(expectedOutput, input, i =>
-                Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
                     .Select(item => new DateTime(2000 + item, 1, 1))
                     .Select(item => item.ToString("O")));
         }
@@ -87,12 +76,12 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000");
 
-            TestDataflow(expectedOutput, input, i =>
-                Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
                     .Bind(item =>
-                        Dataflow.Return(new DateTime(2000 + item, 1, 1))
+                        dataflowFactory.Return(new DateTime(2000 + item, 1, 1))
                             .Bind(item2 =>
-                                Dataflow.Return(item2.ToString("O")))));
+                                dataflowFactory.Return(item2.ToString("O")))));
         }
 
         [Fact]
@@ -102,8 +91,8 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2));
 
-            TestDataflow(expectedOutput, input, i =>
-                Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
                     .SelectMany(item => Enumerable.Repeat(item * 2, 2))
                     .Select(item => item + 1));
 
@@ -116,12 +105,12 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2));
 
-            TestDataflow(expectedOutput, input, i =>
-                Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
                     .Bind(j =>
-                        Dataflow.ReturnMany(Enumerable.Repeat(j * 2, 2))
+                        dataflowFactory.ReturnMany(Enumerable.Repeat(j * 2, 2))
                             .Bind(k =>
-                                Dataflow.Return(k + 1))));
+                                dataflowFactory.Return(k + 1))));
         }
 
         [Fact]
@@ -131,9 +120,9 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(i => i + 1);
 
-            TestDataflow(expectedOutput, input, x =>
-                Dataflow.Return(1)
-                    .Bind(y => Dataflow.Return(x + y)));
+            TestDataflow(expectedOutput, input, (dataflowFactory, x) =>
+                dataflowFactory.Return(1)
+                    .Bind(y => dataflowFactory.Return(x + y)));
         }
 
         [Fact]
@@ -143,11 +132,11 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(i => i + 1);
 
-            TestDataflow(expectedOutput, input, i =>
-                Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
                     .Bind(x =>
-                        Dataflow.Return(1)
-                            .Bind(y => Dataflow.Return(x + y))));
+                        dataflowFactory.Return(1)
+                            .Bind(y => dataflowFactory.Return(x + y))));
 
         }
 
@@ -158,9 +147,9 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(item => item + 1);
 
-            TestDataflow(expectedOutput, input, i =>
-                from x in Dataflow.Return(i)
-                from y in Dataflow.Return(1)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                from x in dataflowFactory.Return(i)
+                from y in dataflowFactory.Return(1)
                 select x + y);
         }
 
@@ -173,7 +162,7 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(item => item + 1).Buffer(TimeSpan.FromDays(1), batchSize);
 
-            TestDataflow(expectedOutput, input, i => Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i)
                 .Select(item => item + 1)
                 .Buffer(TimeSpan.FromDays(1), batchSize));
         }
@@ -187,13 +176,13 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Buffer(TimeSpan.FromDays(1), batchSize).Select(i => i.Count);
 
-            TestDataflow(expectedOutput, input, i => Dataflow.Return(i)
+            TestDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i)
                 .Buffer(TimeSpan.FromDays(1), batchSize)
                 .Select(item => item.Count));
 
         }
 
-        private static void TestDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<TInput, Dataflow<TOutput>> dataflow)
+        private static void TestDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, Dataflow<TOutput>> dataflow)
         {
             var inputList = input.ToList();
             var expectedOutputList = expectedOutput.ToList();

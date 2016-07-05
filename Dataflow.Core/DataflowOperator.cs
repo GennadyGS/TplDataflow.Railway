@@ -4,6 +4,10 @@ namespace Dataflow.Core
 {
     public abstract class DataflowOperator<T> : Dataflow<T>
     {
+        protected DataflowOperator(IDataflowFactory factory) : base(factory)
+        {
+        }
+
         public override DataflowType<T> GetDataflowType()
         {
             return GetDataflowOperatorType();
@@ -13,7 +17,7 @@ namespace Dataflow.Core
 
         public override Dataflow<TOutput> Bind<TOutput>(Func<T, Dataflow<TOutput>> bindFunc)
         {
-            return Dataflow.Calculation(this, bindFunc);
+            return Factory.Calculation(this, bindFunc);
         }
     }
 }

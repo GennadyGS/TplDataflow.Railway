@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Dataflow.Core
 {
-    interface IDataflowFactory
+    public interface IDataflowFactory
     {
         Dataflow<TOutput> Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator,
             Func<TInput, Dataflow<TOutput>> continuation);

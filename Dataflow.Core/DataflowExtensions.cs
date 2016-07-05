@@ -9,13 +9,13 @@ namespace Dataflow.Core
         public static Dataflow<TOutput> Select<TInput, TOutput>(this Dataflow<TInput> source,
             Func<TInput, TOutput> selector)
         {
-            return source.Bind(item => Dataflow.Return(selector(item)));
+            return source.Bind(item => source.Factory.Return(selector(item)));
         }
 
         public static Dataflow<TOutput> SelectMany<TInput, TOutput>(this Dataflow<TInput> source,
             Func<TInput, IEnumerable<TOutput>> selector)
         {
-            return source.Bind(input => Dataflow.ReturnMany(selector(input)));
+            return source.Bind(input => source.Factory.ReturnMany(selector(input)));
         }
 
         public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> dataflow,
@@ -45,7 +45,7 @@ namespace Dataflow.Core
         public static Dataflow<IList<T>> Buffer<T>(this Dataflow<T> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {
-            return source.Bind(item => Dataflow.Buffer<T>(item, batchTimeout, batchMaxSize));
+            return source.Bind(item => source.Factory.Buffer(item, batchTimeout, batchMaxSize));
         }
     }
 }

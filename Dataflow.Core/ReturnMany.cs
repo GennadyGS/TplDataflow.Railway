@@ -8,7 +8,8 @@ namespace Dataflow.Core
 
         public IEnumerable<T> Result { get; }
 
-        public ReturnMany(IEnumerable<T> result)
+        public ReturnMany(IDataflowFactory dataflowFactory, IEnumerable<T> result) 
+            : base(dataflowFactory)
         {
             Result = result;
         }

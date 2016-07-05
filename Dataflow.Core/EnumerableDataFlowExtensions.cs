@@ -8,9 +8,10 @@ namespace Dataflow.Core
     public static class EnumerableDataFlowExtensions
     {
         public static IEnumerable<TOutput> BindDataflow<TInput, TOutput>(this IEnumerable<TInput> input,
-            Func<TInput, Dataflow<TOutput>> bindFunc)
+            Func<IDataflowFactory, TInput, Dataflow<TOutput>> bindFunc)
         {
-            return input.Select(bindFunc).TransformDataflows();
+            var factory = new EnumerableDataflowFactory();
+            return input.Select(item => bindFunc(factory, item)).TransformDataflows();
         }
 
         public static IEnumerable<TOutput> TransformDataflows<TOutput>(this IEnumerable<Dataflow<TOutput>> dataflows)

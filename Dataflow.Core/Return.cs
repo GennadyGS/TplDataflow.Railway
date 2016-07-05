@@ -6,7 +6,8 @@ namespace Dataflow.Core
 
         public T Result { get; }
 
-        public Return(T result)
+        public Return(IDataflowFactory dataflowFactory, T result) 
+            : base(dataflowFactory)
         {
             Result = result;
         }

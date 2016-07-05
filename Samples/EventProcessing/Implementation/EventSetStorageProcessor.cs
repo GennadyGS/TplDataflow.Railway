@@ -23,7 +23,6 @@ using EnumerableExtensions = Railway.Linq.EnumerableExtensions;
 using ObservableExtensions = Railway.Linq.ObservableExtensions;
 using Dataflow.Core;
 using Dataflow.Railway;
-using Dataflow = Dataflow.Core.Dataflow;
 
 namespace EventProcessing.Implementation
 {
@@ -266,9 +265,9 @@ namespace EventProcessing.Implementation
                 return new DataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
             }
 
-            private Dataflow<Result> ProcessEventDataflow(EventDetails @event)
+            private Dataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
             {
-                return global::Dataflow.Core.Dataflow.Return(@event)
+                return dataflowFactory.Return(@event)
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
@@ -447,23 +446,23 @@ namespace EventProcessing.Implementation
                 return new DataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
             }
 
-            private Dataflow<Result> ProcessEventDataflow(EventDetails @event)
+            private Dataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
             {
-                return global::Dataflow.Core.Dataflow.Return(@event)
+                return dataflowFactory.Return(@event)
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .Bind(ProcessEventGroupDataflow)
+                    .Bind(item => ProcessEventGroupDataflow(dataflowFactory, item))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         _logic.TransformResult(res));
             }
 
-            private Dataflow<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(Either<UnsuccessResult, EventGroup> eventGroup)
+            private Dataflow<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IDataflowFactory dataflowFactory, Either<UnsuccessResult, EventGroup> eventGroup)
             {
                 return global::Dataflow.Railway.DataflowExtensions.Use(_logic.CreateRepository(), repository =>
                 {
-                    return global::Dataflow.Core.Dataflow.Return(eventGroup)
+                    return dataflowFactory.Return(eventGroup)
                         .SelectSafe(group =>
                             _logic.FindLastEventSetsSafe(repository, new[] { group })
                                 .Select(lastEventSets => new { group, lastEventSets }))

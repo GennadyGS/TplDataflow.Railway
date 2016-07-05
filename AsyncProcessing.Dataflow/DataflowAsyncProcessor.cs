@@ -10,7 +10,7 @@ namespace AsyncProcessing.Dataflow
         private readonly Subject<TInput> _input = new Subject<TInput>();
         private readonly Subject<TOutput> _output = new Subject<TOutput>();
 
-        public DataflowAsyncProcessor(Func<TInput, Dataflow<TOutput>> dataflow)
+        public DataflowAsyncProcessor(Func<IDataflowFactory, TInput, Dataflow<TOutput>> dataflow)
         {
             _input.BindDataflow(dataflow).Subscribe(_output);
         }

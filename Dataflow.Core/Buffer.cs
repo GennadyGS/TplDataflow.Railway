@@ -13,7 +13,8 @@ namespace Dataflow.Core
 
         public TimeSpan BatchTimeout { get; }
 
-        public Buffer(T item, TimeSpan batchTimeout, int batchMaxSize)
+        public Buffer(IDataflowFactory dataflowFactory, T item, TimeSpan batchTimeout, int batchMaxSize) 
+            : base(dataflowFactory)
         {
             Item = item;
             BatchTimeout = batchTimeout;

@@ -8,9 +8,10 @@ namespace Dataflow.Core
     public static class ObservableDataFlowExtensions
     {
         public static IObservable<TOutput> BindDataflow<TInput, TOutput>(this IObservable<TInput> input,
-            Func<TInput, Dataflow<TOutput>> bindFunc)
+            Func<IDataflowFactory, TInput, Dataflow<TOutput>> bindFunc)
         {
-            return input.Select(bindFunc).TransformDataflows();
+            var factory = new ObservableDataflowFactory();
+            return input.Select(item => bindFunc(factory, item)).TransformDataflows();
         }
 
         public static IObservable<TOutput> TransformDataflows<TOutput>(this IObservable<Dataflow<TOutput>> dataflows)
