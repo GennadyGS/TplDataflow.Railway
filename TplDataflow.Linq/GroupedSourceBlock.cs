@@ -6,51 +6,51 @@ namespace TplDataflow.Linq
 {
     public class GroupedSourceBlock<TKey, TElement> : ISourceBlock<TElement>
     {
-        private ISourceBlock<TElement> _sourceBlock;
+        private readonly IPropagatorBlock<TElement, TElement> _bufferBlock;
 
-        public GroupedSourceBlock(TKey key, ISourceBlock<TElement> sourceBlock)
+        public GroupedSourceBlock(TKey key)
         {
             Key = key;
-            _sourceBlock = sourceBlock;
+            _bufferBlock = new BufferBlock<TElement>();
         }
 
         public TKey Key { get; }
+
+        internal void Post(TElement value)
+        {
+            _bufferBlock.Post(value);
+        }
+
         void IDataflowBlock.Complete()
         {
-            _sourceBlock.Complete();
+            _bufferBlock.Complete();
         }
 
         void IDataflowBlock.Fault(Exception exception)
         {
-            _sourceBlock.Fault(exception);
+            _bufferBlock.Fault(exception);
         }
 
-        Task IDataflowBlock.Completion
-        {
-            get
-            {
-                return _sourceBlock.Completion;
-            }
-        }
+        Task IDataflowBlock.Completion => _bufferBlock.Completion;
 
         IDisposable ISourceBlock<TElement>.LinkTo(ITargetBlock<TElement> target, DataflowLinkOptions linkOptions)
         {
-            return _sourceBlock.LinkTo(target, linkOptions);
+            return _bufferBlock.LinkTo(target, linkOptions);
         }
 
         TElement ISourceBlock<TElement>.ConsumeMessage(DataflowMessageHeader messageHeader, ITargetBlock<TElement> target, out bool messageConsumed)
         {
-            return _sourceBlock.ConsumeMessage(messageHeader, target, out messageConsumed);
+            return _bufferBlock.ConsumeMessage(messageHeader, target, out messageConsumed);
         }
 
         bool ISourceBlock<TElement>.ReserveMessage(DataflowMessageHeader messageHeader, ITargetBlock<TElement> target)
         {
-            return _sourceBlock.ReserveMessage(messageHeader, target);
+            return _bufferBlock.ReserveMessage(messageHeader, target);
         }
 
         void ISourceBlock<TElement>.ReleaseReservation(DataflowMessageHeader messageHeader, ITargetBlock<TElement> target)
         {
-            _sourceBlock.ReleaseReservation(messageHeader, target);
+            _bufferBlock.ReleaseReservation(messageHeader, target);
         }
     }
 }

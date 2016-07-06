@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
@@ -29,7 +30,7 @@ namespace TplDataflow.Linq
         public static ISourceBlock<GroupedSourceBlock<TKey, TElement>> GroupBy<TElement, TKey>(
             this ISourceBlock<TElement> source, Func<TElement, TKey> keySelector)
         {
-            throw new NotImplementedException();
+            return source.LinkWith(CreateGroupByBlock(keySelector));
         }
 
         public static ISourceBlock<TOutput> Cast<TInput, TOutput>(this ISourceBlock<TInput> source)
@@ -48,6 +49,27 @@ namespace TplDataflow.Linq
                 .Subscribe(outputBlock.AsObserver());
 
             return outputBlock;
+        }
+
+        private static IPropagatorBlock<TElement, GroupedSourceBlock<TKey, TElement>> CreateGroupByBlock<TKey, TElement>(
+            Func<TElement, TKey> keySelector)
+        {
+            var groups = new ConcurrentDictionary<TKey, GroupedSourceBlock<TKey, TElement>>();
+            var sourceBlock = new BufferBlock<GroupedSourceBlock<TKey, TElement>>();
+            var targetBlock = new ActionBlock<TElement>(item =>
+            {
+                var groupedSourceBlock = groups.AddOrUpdate(keySelector(item),
+                    key =>
+                    {
+                        var result = new GroupedSourceBlock<TKey, TElement>(key);
+                        sourceBlock.Post(result);
+                        return result;
+                    }, 
+                    (key, block) => block);
+                groupedSourceBlock.Post(item);
+            });
+            targetBlock.PropagateCompletionTo(sourceBlock);
+        return DataflowBlock.Encapsulate(targetBlock, sourceBlock);
         }
     }
 }

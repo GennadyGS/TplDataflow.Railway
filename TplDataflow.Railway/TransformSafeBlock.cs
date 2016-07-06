@@ -6,7 +6,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace TplDataflow.Railway
 {
-    public class TransformSafeBlock<TLeft, TRightInput, TRightOutput> :
+    public class TransformSafeBlock<TLeft, TRightInput, TRightOutput> : 
         IPropagatorBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>,
         IReceivableSourceBlock<Either<TLeft, TRightOutput>>
     {
@@ -44,7 +44,7 @@ namespace TplDataflow.Railway
             _transformLeftBlock.LinkTo(_outputBufferBlock);
 
             Task.WhenAll(_transformRightBlock.Completion, _transformLeftBlock.Completion)
-                .ContinueWith(task => PropagateCompletion(task, _outputBufferBlock));
+                .ContinueWith(task => TplDataFlow.Extensions.DataflowBlockExtensions.SetCompletionFromTask(_outputBufferBlock, task));
         }
 
         DataflowMessageStatus ITargetBlock<Either<TLeft, TRightInput>>.OfferMessage(DataflowMessageHeader messageHeader,
@@ -113,14 +113,6 @@ namespace TplDataflow.Railway
         bool IReceivableSourceBlock<Either<TLeft, TRightOutput>>.TryReceiveAll(out IList<Either<TLeft, TRightOutput>> items)
         {
             return ((IReceivableSourceBlock<Either<TLeft, TRightOutput>>)_outputBufferBlock).TryReceiveAll(out items);
-        }
-
-        public static void PropagateCompletion(Task task, IDataflowBlock targetBlock)
-        {
-            if (task.IsFaulted)
-                targetBlock.Fault(task.Exception);
-            else
-                targetBlock.Complete();
         }
 
         private static TRightInput GetRight(Either<TLeft, TRightInput> input)

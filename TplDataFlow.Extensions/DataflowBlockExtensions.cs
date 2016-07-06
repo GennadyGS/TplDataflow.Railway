@@ -1,10 +1,24 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace TplDataFlow.Extensions
 {
     public static class DataflowBlockExtensions
     {
+        public static void SetCompletionFromTask(this IDataflowBlock targetBlock, Task task)
+        {
+            if (task.IsFaulted)
+                targetBlock.Fault(task.Exception);
+            else
+                targetBlock.Complete();
+        }
+
+        public static void PropagateCompletionTo(this IDataflowBlock sourceBlock, IDataflowBlock targetBlock)
+        {
+            sourceBlock.Completion.ContinueWith(targetBlock.SetCompletionFromTask);
+        }
+
         public static ISourceBlock<TOutput> LinkWith<TInput, TOutput>(this ISourceBlock<TInput> sourceBlock,
             IPropagatorBlock<TInput, TOutput> targetBlock)
         {
