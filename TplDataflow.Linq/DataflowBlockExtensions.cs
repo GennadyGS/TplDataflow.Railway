@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
 using TplDataFlow.Extensions;
@@ -9,6 +10,11 @@ namespace TplDataflow.Linq
 {
     public static class DataflowBlockExtensions
     {
+        public static ISourceBlock<T> Concat<T>(this ISourceBlock<ISourceBlock<T>> source)
+        {
+            return source.LinkWith(CreateConcatBlock(source));
+        }
+
         public static ISourceBlock<TOutput> Select<TInput, TOutput>(
             this ISourceBlock<TInput> source, Func<TInput, TOutput> selector)
         {
@@ -24,7 +30,7 @@ namespace TplDataflow.Linq
         public static ISourceBlock<TOutput> SelectMany<TInput, TOutput>(
             this ISourceBlock<TInput> source, Func<TInput, ISourceBlock<TOutput>> selector)
         {
-            throw new NotImplementedException();
+            return source.Select(selector).Concat();
         }
 
         public static ISourceBlock<GroupedSourceBlock<TKey, TElement>> GroupBy<TElement, TKey>(
@@ -51,7 +57,19 @@ namespace TplDataflow.Linq
             return outputBlock;
         }
 
-        private static IPropagatorBlock<TElement, GroupedSourceBlock<TKey, TElement>> CreateGroupByBlock<TKey, TElement>(
+        private static IPropagatorBlock<ISourceBlock<T>, T> CreateConcatBlock<T>(ISourceBlock<ISourceBlock<T>> source)
+        {
+            JointPointBlock<T> sourceBlock = new JointPointBlock<T>();
+            ITargetBlock<ISourceBlock<T>> targetBlock = new ActionBlock<ISourceBlock<T>>(block =>
+            {
+                block.LinkTo(sourceBlock.AddInput());
+            });
+            targetBlock.PropagateCompletionTo(sourceBlock.AddInput());
+            return DataflowBlock.Encapsulate(targetBlock, sourceBlock);
+        }
+
+        private static IPropagatorBlock<TElement, GroupedSourceBlock<TKey, TElement>> CreateGroupByBlock<TKey, TElement>
+            (
             Func<TElement, TKey> keySelector)
         {
             var groups = new ConcurrentDictionary<TKey, GroupedSourceBlock<TKey, TElement>>();
@@ -64,12 +82,19 @@ namespace TplDataflow.Linq
                         var result = new GroupedSourceBlock<TKey, TElement>(key);
                         sourceBlock.Post(result);
                         return result;
-                    }, 
+                    },
                     (key, block) => block);
                 groupedSourceBlock.Post(item);
             });
-            targetBlock.PropagateCompletionTo(sourceBlock);
-        return DataflowBlock.Encapsulate(targetBlock, sourceBlock);
+            targetBlock.Completion.ContinueWith(
+                task =>
+                {
+                    groups.Values
+                        .ToList()
+                        .ForEach(group => group.SetCompletionFromTask(task));
+                    sourceBlock.SetCompletionFromTask(task);
+                });
+            return DataflowBlock.Encapsulate(targetBlock, sourceBlock);
         }
     }
 }
