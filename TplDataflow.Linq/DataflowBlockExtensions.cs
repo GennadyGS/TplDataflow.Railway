@@ -41,7 +41,7 @@ namespace TplDataflow.Linq
 
         public static ISourceBlock<TResult> Cast<TResult>(this ISourceBlock<object> source)
         {
-            return source.Select(item => (TResult) item);
+            return source.Select(item => (TResult)item);
         }
 
         public static ISourceBlock<IList<T>> Buffer<T>(this ISourceBlock<T> source,
@@ -62,7 +62,7 @@ namespace TplDataflow.Linq
             JointPointBlock<T> sourceBlock = new JointPointBlock<T>();
             ITargetBlock<ISourceBlock<T>> targetBlock = new ActionBlock<ISourceBlock<T>>(block =>
             {
-                block.LinkTo(sourceBlock.AddInput());
+                block.LinkTo(sourceBlock.AddInput(), new DataflowLinkOptions { PropagateCompletion = true });
             });
             targetBlock.PropagateCompletionTo(sourceBlock.AddInput());
             return DataflowBlock.Encapsulate(targetBlock, sourceBlock);
