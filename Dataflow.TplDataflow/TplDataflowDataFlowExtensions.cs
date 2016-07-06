@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks.Dataflow;
 using Dataflow.Core;
 using TplDataflow.Linq;
@@ -16,11 +17,9 @@ namespace Dataflow.TplDataflow
                 .TransformDataflows();
         }
 
-        public static ISourceBlock<TOutput> TransformDataflows<TOutput>(this ISourceBlock<Dataflow<TOutput>> dataflows)
+        private static ISourceBlock<TOutput> TransformDataflows<TOutput>(this ISourceBlock<Dataflow<TOutput>> dataflows)
         {
-            return dataflows
-                .GroupBy(dataflow => dataflow.GetDataflowType())
-                .SelectMany(group => ((TplDataflowType<TOutput>)group.Key).TransformTplDataFlows(group));
+            throw new NotImplementedException();
         }
     }
 }

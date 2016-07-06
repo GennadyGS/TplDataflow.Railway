@@ -76,14 +76,13 @@ namespace TplDataflow.Linq
             var sourceBlock = new BufferBlock<GroupedSourceBlock<TKey, TElement>>();
             var targetBlock = new ActionBlock<TElement>(item =>
             {
-                var groupedSourceBlock = groups.AddOrUpdate(keySelector(item),
+                var groupedSourceBlock = groups.GetOrAdd(keySelector(item),
                     key =>
                     {
                         var result = new GroupedSourceBlock<TKey, TElement>(key);
                         sourceBlock.Post(result);
                         return result;
-                    },
-                    (key, block) => block);
+                    });
                 groupedSourceBlock.Post(item);
             });
             targetBlock.Completion.ContinueWith(

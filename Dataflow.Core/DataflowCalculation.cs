@@ -4,22 +4,16 @@ namespace Dataflow.Core
 {
     public class DataflowCalculation<TInput, TOutput> : Dataflow<TOutput>
     {
-        private static readonly DataflowType<TOutput> DataflowType = new DataflowCalculationType<TInput,TOutput>();
-
         public DataflowOperator<TInput> Operator { get; }
 
         public Func<TInput, Dataflow<TOutput>> Continuation { get; }
 
-        public DataflowCalculation(IDataflowFactory factory, DataflowOperator<TInput> @operator, Func<TInput, Dataflow<TOutput>> continuation) 
-            : base(factory)
+        public DataflowCalculation(IDataflowFactory factory, IDataflowType<TOutput> type, 
+            DataflowOperator<TInput> @operator, Func<TInput, Dataflow<TOutput>> continuation) 
+            : base(factory, type)
         {
             Operator = @operator;
             Continuation = continuation;
-        }
-
-        public override DataflowType<TOutput> GetDataflowType()
-        {
-            return DataflowType;
         }
 
         public override Dataflow<TOutput2> Bind<TOutput2>(Func<TOutput, Dataflow<TOutput2>> bindFunc)

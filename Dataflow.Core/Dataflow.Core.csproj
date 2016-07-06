@@ -36,23 +36,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Buffer.cs" />
-    <Compile Include="BufferType.cs" />
     <Compile Include="Dataflow.cs" />
     <Compile Include="DataflowCalculation.cs" />
-    <Compile Include="DataflowCalculationType.cs" />
     <Compile Include="DataflowExtensions.cs" />
-    <Compile Include="EnumerableDataflowFactory.cs" />
+    <Compile Include="DataflowFactory.cs" />
     <Compile Include="IDataflowFactory.cs" />
     <Compile Include="DataflowOperator.cs" />
-    <Compile Include="DataflowType.cs" />
+    <Compile Include="IDataflowType.cs" />
     <Compile Include="EnumerableDataFlowExtensions.cs" />
+    <Compile Include="IDataflowTypeFactory.cs" />
     <Compile Include="ObservableDataflowExtensions.cs" />
-    <Compile Include="ObservableDataflowFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Return.cs" />
     <Compile Include="ReturnMany.cs" />
-    <Compile Include="ReturnManyType.cs" />
-    <Compile Include="ReturnType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />

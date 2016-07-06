@@ -44,7 +44,6 @@
     <Compile Include="TplDataflowDataflowFactory.cs" />
     <Compile Include="TplDataflowDataFlowExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TplDataflowType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />
