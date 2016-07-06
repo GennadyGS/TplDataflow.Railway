@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using TplDataFlow.Extensions;
 
 namespace TplDataflow.Railway
 {
@@ -10,8 +11,8 @@ namespace TplDataflow.Railway
         IPropagatorBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>,
         IReceivableSourceBlock<Either<TLeft, TRightOutput>>
     {
-        private readonly IPropagatorBlock<Either<TLeft, TRightOutput>, Either<TLeft, TRightOutput>> _outputBufferBlock =
-            new BufferBlock<Either<TLeft, TRightOutput>>();
+        private readonly JointPointBlock<Either<TLeft, TRightOutput>> _outputBufferBlock =
+            new JointPointBlock<Either<TLeft, TRightOutput>>();
 
         private readonly IPropagatorBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>> _transformLeftBlock = 
             new TransformBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>(input => GetLeft(input));
@@ -40,11 +41,8 @@ namespace TplDataflow.Railway
         {
             _transformRightBlock = transformRightBlock;
 
-            _transformRightBlock.LinkTo(_outputBufferBlock);
-            _transformLeftBlock.LinkTo(_outputBufferBlock);
-
-            Task.WhenAll(_transformRightBlock.Completion, _transformLeftBlock.Completion)
-                .ContinueWith(task => TplDataFlow.Extensions.DataflowBlockExtensions.SetCompletionFromTask(_outputBufferBlock, task));
+            _transformRightBlock.LinkTo(_outputBufferBlock.AddInput(), new DataflowLinkOptions { PropagateCompletion = true });
+            _transformLeftBlock.LinkTo(_outputBufferBlock.AddInput(), new DataflowLinkOptions { PropagateCompletion = true });
         }
 
         DataflowMessageStatus ITargetBlock<Either<TLeft, TRightInput>>.OfferMessage(DataflowMessageHeader messageHeader,
@@ -81,27 +79,30 @@ namespace TplDataflow.Railway
         IDisposable ISourceBlock<Either<TLeft, TRightOutput>>.LinkTo(ITargetBlock<Either<TLeft, TRightOutput>> target,
             DataflowLinkOptions linkOptions)
         {
-            return _outputBufferBlock.LinkTo(target, linkOptions);
+            return ((ISourceBlock<Either<TLeft, TRightOutput>>)_outputBufferBlock)
+                .LinkTo(target, linkOptions);
         }
 
         Either<TLeft, TRightOutput> ISourceBlock<Either<TLeft, TRightOutput>>.ConsumeMessage(
             DataflowMessageHeader messageHeader, ITargetBlock<Either<TLeft, TRightOutput>> target,
             out bool messageConsumed)
         {
-            return _outputBufferBlock.ConsumeMessage(messageHeader, target,
-                out messageConsumed);
+            return ((ISourceBlock<Either<TLeft, TRightOutput>>)_outputBufferBlock)
+                .ConsumeMessage(messageHeader, target, out messageConsumed);
         }
 
         bool ISourceBlock<Either<TLeft, TRightOutput>>.ReserveMessage(DataflowMessageHeader messageHeader,
             ITargetBlock<Either<TLeft, TRightOutput>> target)
         {
-            return _outputBufferBlock.ReserveMessage(messageHeader, target);
+            return ((ISourceBlock<Either<TLeft, TRightOutput>>)_outputBufferBlock)
+                .ReserveMessage(messageHeader, target);
         }
 
         void ISourceBlock<Either<TLeft, TRightOutput>>.ReleaseReservation(DataflowMessageHeader messageHeader,
             ITargetBlock<Either<TLeft, TRightOutput>> target)
         {
-            _outputBufferBlock.ReleaseReservation(messageHeader, target);
+            ((ISourceBlock<Either<TLeft, TRightOutput>>)_outputBufferBlock)
+                .ReleaseReservation(messageHeader, target);
         }
 
         bool IReceivableSourceBlock<Either<TLeft, TRightOutput>>.TryReceive(Predicate<Either<TLeft, TRightOutput>> filter,
