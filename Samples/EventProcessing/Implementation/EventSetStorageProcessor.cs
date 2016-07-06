@@ -8,7 +8,7 @@ using AsyncProcessing.Core;
 using AsyncProcessing.Dataflow;
 using AsyncProcessing.Dataflow.TplDataflow;
 using AsyncProcessing.TplDataflow;
-using Dataflow.Common;
+using Collection.Extensions;
 using EventProcessing.BusinessObjects;
 using EventProcessing.Exceptions;
 using EventProcessing.Interfaces;

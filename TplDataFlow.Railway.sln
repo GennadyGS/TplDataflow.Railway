@@ -29,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Core.Tests", "Data
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Railway", "Dataflow.Railway\Dataflow.Railway.csproj", "{1BCFCF79-6205-49A2-A213-62A97A1D10FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Common", "Dataflow.Common\Dataflow.Common.csproj", "{F1028071-1661-426E-937B-209A3CDEF603}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Collection.Extensions", "Collection.Extensions\\Collection.Extensions.csproj", "{F1028071-1661-426E-937B-209A3CDEF603}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncProcessing.Dataflow", "AsyncProcessing.Dataflow\AsyncProcessing.Dataflow.csproj", "{EB5B2262-B1A7-4B36-9248-1A8D608BC6E7}"
 EndProject

@@ -7,8 +7,8 @@
     <ProjectGuid>{F1028071-1661-426E-937B-209A3CDEF603}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Dataflow.Common</RootNamespace>
-    <AssemblyName>Dataflow.Common</AssemblyName>
+    <RootNamespace>Collection.Extensions</RootNamespace>
+    <AssemblyName>Collection.Extensions</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />

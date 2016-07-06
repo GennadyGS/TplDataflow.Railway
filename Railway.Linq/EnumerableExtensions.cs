@@ -3,7 +3,7 @@ using LanguageExt.Trans;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Dataflow.Common;
+using Collection.Extensions;
 
 namespace Railway.Linq
 {

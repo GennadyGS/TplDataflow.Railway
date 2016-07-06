@@ -54,9 +54,9 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Dataflow.Common\Dataflow.Common.csproj">
+    <ProjectReference Include="..\Collection.Extensions\Collection.Extensions.csproj">
       <Project>{F1028071-1661-426E-937B-209A3CDEF603}</Project>
-      <Name>Dataflow.Common</Name>
+      <Name>Collection.Extensions</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

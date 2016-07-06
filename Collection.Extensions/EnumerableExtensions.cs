@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Dataflow.Common
+namespace Collection.Extensions
 {
     public static class EnumerableExtensions
     {
