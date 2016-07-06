@@ -40,6 +40,7 @@
     <Compile Include="DataflowCalculation.cs" />
     <Compile Include="DataflowExtensions.cs" />
     <Compile Include="DataflowFactory.cs" />
+    <Compile Include="IDataflow.cs" />
     <Compile Include="IDataflowFactory.cs" />
     <Compile Include="DataflowOperator.cs" />
     <Compile Include="IDataflowType.cs" />

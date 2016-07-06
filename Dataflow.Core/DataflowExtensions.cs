@@ -6,19 +6,19 @@ namespace Dataflow.Core
 {
     public static class DataflowExtensions
     {
-        public static Dataflow<TOutput> Select<TInput, TOutput>(this Dataflow<TInput> source,
+        public static IDataflow<TOutput> Select<TInput, TOutput>(this IDataflow<TInput> source,
             Func<TInput, TOutput> selector)
         {
             return source.Bind(item => source.Factory.Return(selector(item)));
         }
 
-        public static Dataflow<TOutput> SelectMany<TInput, TOutput>(this Dataflow<TInput> source,
+        public static IDataflow<TOutput> SelectMany<TInput, TOutput>(this IDataflow<TInput> source,
             Func<TInput, IEnumerable<TOutput>> selector)
         {
             return source.Bind(input => source.Factory.ReturnMany(selector(input)));
         }
 
-        public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> dataflow,
+        public static IDataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this IDataflow<TInput> dataflow,
             Func<TInput, IEnumerable<TMedium>> mediumSelector,
             Func<TInput, TMedium, TOutput> resultSelector)
         {
@@ -27,14 +27,14 @@ namespace Dataflow.Core
                     .Select(medium => resultSelector(input, medium)));
         }
 
-        public static Dataflow<TOutput> SelectMany<TInput, TOutput>(this Dataflow<TInput> source,
-            Func<TInput, Dataflow<TOutput>> selector)
+        public static IDataflow<TOutput> SelectMany<TInput, TOutput>(this IDataflow<TInput> source,
+            Func<TInput, IDataflow<TOutput>> selector)
         {
             return source.Bind(selector);
         }
 
-        public static Dataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this Dataflow<TInput> source,
-            Func<TInput, Dataflow<TMedium>> mediumSelector,
+        public static IDataflow<TOutput> SelectMany<TInput, TMedium, TOutput>(this IDataflow<TInput> source,
+            Func<TInput, IDataflow<TMedium>> mediumSelector,
             Func<TInput, TMedium, TOutput> resultSelector)
         {
             return source.SelectMany(input =>
@@ -42,7 +42,7 @@ namespace Dataflow.Core
                     .Select(medium => resultSelector(input, medium)));
         }
 
-        public static Dataflow<IList<T>> Buffer<T>(this Dataflow<T> source,
+        public static IDataflow<IList<T>> Buffer<T>(this IDataflow<T> source,
             TimeSpan batchTimeout, int batchMaxSize)
         {
             return source.Bind(item => source.Factory.Buffer(item, batchTimeout, batchMaxSize));

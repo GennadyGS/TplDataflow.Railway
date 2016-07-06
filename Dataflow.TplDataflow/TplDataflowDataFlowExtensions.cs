@@ -10,13 +10,13 @@ namespace Dataflow.TplDataflow
     public static class TplDataflowDataFlowExtensions
     {
         public static ISourceBlock<TOutput> BindDataflow<TInput, TOutput>(this ISourceBlock<TInput> input,
-            Func<IDataflowFactory, TInput, Dataflow<TOutput>> bindFunc)
+            Func<IDataflowFactory, TInput, IDataflow<TOutput>> bindFunc)
         {
             var factory = new DataflowFactory(new DataflowTypeFactory());
             return input.Select(item => bindFunc(factory, item)).TransformDataflows();
         }
 
-        private static ISourceBlock<TOutput> TransformDataflows<TOutput>(this ISourceBlock<Dataflow<TOutput>> dataflows)
+        private static ISourceBlock<TOutput> TransformDataflows<TOutput>(this ISourceBlock<IDataflow<TOutput>> dataflows)
         {
             return dataflows
                 .GroupBy(dataflow => dataflow.Type)
@@ -48,19 +48,19 @@ namespace Dataflow.TplDataflow
 
         private abstract class DataflowType<T> : IDataflowType<T>
         {
-            public abstract ISourceBlock<T> TransformDataFlows(ISourceBlock<Dataflow<T>> dataflows);
+            public abstract ISourceBlock<T> TransformDataFlows(ISourceBlock<IDataflow<T>> dataflows);
         }
 
         private abstract class DataflowOperatorType<T> : DataflowType<T>
         {
-            public abstract ISourceBlock<Dataflow<TOutput>> PerformOperator<TOutput>(
+            public abstract ISourceBlock<IDataflow<TOutput>> PerformOperator<TOutput>(
                 ISourceBlock<DataflowCalculation<T, TOutput>> calculationDataflows);
 
         }
 
         private class DataflowCalculationType<TInput, TOutput> : DataflowType<TOutput>
         {
-            public override ISourceBlock<TOutput> TransformDataFlows(ISourceBlock<Dataflow<TOutput>> dataflows)
+            public override ISourceBlock<TOutput> TransformDataFlows(ISourceBlock<IDataflow<TOutput>> dataflows)
             {
                 return dataflows
                     .Cast<DataflowCalculation<TInput, TOutput>>()
@@ -72,12 +72,12 @@ namespace Dataflow.TplDataflow
 
         private class ReturnType<T> : DataflowOperatorType<T>
         {
-            public override ISourceBlock<T> TransformDataFlows(ISourceBlock<Dataflow<T>> dataflows)
+            public override ISourceBlock<T> TransformDataFlows(ISourceBlock<IDataflow<T>> dataflows)
             {
                 return dataflows.Select(dataflow => ((Return<T>)dataflow).Result);
             }
 
-            public override ISourceBlock<Dataflow<TOutput>> PerformOperator<TOutput>(
+            public override ISourceBlock<IDataflow<TOutput>> PerformOperator<TOutput>(
                 ISourceBlock<DataflowCalculation<T, TOutput>> calculationDataflows)
             {
                 return calculationDataflows.Select(dataflow =>
@@ -87,12 +87,12 @@ namespace Dataflow.TplDataflow
 
         private class ReturnManyType<T> : DataflowOperatorType<T>
         {
-            public override ISourceBlock<T> TransformDataFlows(ISourceBlock<Dataflow<T>> dataflows)
+            public override ISourceBlock<T> TransformDataFlows(ISourceBlock<IDataflow<T>> dataflows)
             {
                 return dataflows.SelectMany(dataflow => ((ReturnMany<T>)dataflow).Result);
             }
 
-            public override ISourceBlock<Dataflow<TOutput>> PerformOperator<TOutput>(
+            public override ISourceBlock<IDataflow<TOutput>> PerformOperator<TOutput>(
                 ISourceBlock<DataflowCalculation<T, TOutput>> calculationDataflows)
             {
                 return calculationDataflows.SelectMany(dataflow =>
@@ -102,7 +102,7 @@ namespace Dataflow.TplDataflow
 
         private class BufferType<T> : DataflowOperatorType<IList<T>>
         {
-            public override ISourceBlock<IList<T>> TransformDataFlows(ISourceBlock<Dataflow<IList<T>>> dataflows)
+            public override ISourceBlock<IList<T>> TransformDataFlows(ISourceBlock<IDataflow<IList<T>>> dataflows)
             {
                 return dataflows
                     .GroupBy(item => new { ((Buffer<T>)item).BatchMaxSize, ((Buffer<T>)item).BatchTimeout })
@@ -111,7 +111,7 @@ namespace Dataflow.TplDataflow
                         .Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize));
             }
 
-            public override ISourceBlock<Dataflow<TOutput>> PerformOperator<TOutput>(
+            public override ISourceBlock<IDataflow<TOutput>> PerformOperator<TOutput>(
                 ISourceBlock<DataflowCalculation<IList<T>, TOutput>> calculationDataflows)
             {
                 return calculationDataflows

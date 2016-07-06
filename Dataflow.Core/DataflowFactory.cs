@@ -14,7 +14,7 @@ namespace Dataflow.Core
             _typeFactory = typeFactory;
         }
 
-        public Dataflow<TOutput> Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator, Func<TInput, Dataflow<TOutput>> continuation)
+        IDataflow<TOutput> IDataflowFactory.Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator, Func<TInput, IDataflow<TOutput>> continuation)
         {
             var type = (IDataflowType<TOutput>)_typeCache.GetOrAdd(
                 typeof(DataflowCalculation<TInput, TOutput>),
@@ -22,7 +22,7 @@ namespace Dataflow.Core
             return new DataflowCalculation<TInput,TOutput>(this, type, @operator, continuation);
         }
 
-        public Return<T> Return<T>(T value)
+        IDataflow<T> IDataflowFactory.Return<T>(T value)
         {
             var type = (IDataflowType<T>)_typeCache.GetOrAdd(
                 typeof(Return<T>),
@@ -30,7 +30,7 @@ namespace Dataflow.Core
             return new Return<T>(this, type, value);
         }
 
-        public ReturnMany<T> ReturnMany<T>(IEnumerable<T> value)
+        IDataflow<T> IDataflowFactory.ReturnMany<T>(IEnumerable<T> value)
         {
             var type = (IDataflowType<T>)_typeCache.GetOrAdd(
                 typeof(ReturnMany<T>),
@@ -38,7 +38,7 @@ namespace Dataflow.Core
             return new ReturnMany<T>(this, type, value);
         }
 
-        public Buffer<T> Buffer<T>(T item, TimeSpan batchTimeout, int batchMaxSize)
+        IDataflow<IList<T>> IDataflowFactory.Buffer<T>(T item, TimeSpan batchTimeout, int batchMaxSize)
         {
             var type = (IDataflowType<IList<T>>)_typeCache.GetOrAdd(
                 typeof(Buffer<T>),

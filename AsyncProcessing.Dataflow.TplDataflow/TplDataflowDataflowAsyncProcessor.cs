@@ -12,7 +12,7 @@ namespace AsyncProcessing.Dataflow.TplDataflow
         private readonly BufferBlock<TInput> _inputBlock = new BufferBlock<TInput>();
         private readonly BufferBlock<TOutput> _outputBlock = new BufferBlock<TOutput>();
 
-        public TplDataflowDataflowAsyncProcessor(Func<IDataflowFactory, TInput, Dataflow<TOutput>> dataflow)
+        public TplDataflowDataflowAsyncProcessor(Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
         {
             _inputBlock.BindDataflow(dataflow).LinkWith(_outputBlock);
         }

@@ -2,7 +2,7 @@
 
 namespace Dataflow.Core
 {
-    public abstract class Dataflow<T>
+    public abstract class Dataflow<T> : IDataflow<T>
     {
         protected Dataflow(IDataflowFactory factory, IDataflowType<T> type)
         {
@@ -10,10 +10,10 @@ namespace Dataflow.Core
             Type = type;
         }
 
-        internal IDataflowFactory Factory { get; }
+        public IDataflowFactory Factory { get; }
 
         public IDataflowType<T> Type { get; }
 
-        public abstract Dataflow<TOutput> Bind<TOutput>(Func<T, Dataflow<TOutput>> bindFunc);
+        public abstract IDataflow<TOutput> Bind<TOutput>(Func<T, IDataflow<TOutput>> bindFunc);
     }
 }

@@ -8,7 +8,7 @@ namespace Dataflow.Core
         {
         }
 
-        public override Dataflow<TOutput> Bind<TOutput>(Func<T, Dataflow<TOutput>> bindFunc)
+        public override IDataflow<TOutput> Bind<TOutput>(Func<T, IDataflow<TOutput>> bindFunc)
         {
             return Factory.Calculation(this, bindFunc);
         }

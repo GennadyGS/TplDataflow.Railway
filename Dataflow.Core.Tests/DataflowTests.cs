@@ -182,7 +182,7 @@ namespace Dataflow.Core.Tests
 
         }
 
-        private static void TestDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, Dataflow<TOutput>> dataflow)
+        private static void TestDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
         {
             var inputList = input.ToList();
             var expectedOutputList = expectedOutput.ToList();

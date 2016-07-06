@@ -5,13 +5,13 @@ namespace Dataflow.Core
 {
     public interface IDataflowFactory
     {
-        Dataflow<TOutput> Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator,
-            Func<TInput, Dataflow<TOutput>> continuation);
+        IDataflow<TOutput> Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator,
+            Func<TInput, IDataflow<TOutput>> continuation);
 
-        Return<T> Return<T>(T value);
+        IDataflow<T> Return<T>(T value);
 
-        ReturnMany<T> ReturnMany<T>(IEnumerable<T> value);
+        IDataflow<T> ReturnMany<T>(IEnumerable<T> value);
 
-        Buffer<T> Buffer<T>(T item, TimeSpan batchTimeout, int batchMaxSize);
+        IDataflow<IList<T>> Buffer<T>(T item, TimeSpan batchTimeout, int batchMaxSize);
     }
 }

@@ -22,6 +22,7 @@ using TplDataflow.Linq;
 using TplDataflow.Railway;
 using static LanguageExt.Prelude;
 using DataflowBlockExtensions = TplDataflow.Railway.DataflowBlockExtensions;
+using DataflowExtensions = Dataflow.Railway.DataflowExtensions;
 using EnumerableExtensions = Railway.Linq.EnumerableExtensions;
 using ObservableExtensions = Railway.Linq.ObservableExtensions;
 
@@ -266,9 +267,9 @@ namespace EventProcessing.Implementation
                 return CreateDataflowAsyncProcessor(ProcessEventDataflow);
             }
 
-            protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, Dataflow<Result>> bindFunc);
+            protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc);
 
-            private Dataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            private IDataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
             {
                 return dataflowFactory.Return(@event)
                     .Select(_logic.LogEvent)
@@ -284,7 +285,7 @@ namespace EventProcessing.Implementation
 
         public class DataflowFactory : BaseDataflowFactory
         {
-            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, Dataflow<Result>> bindFunc)
+            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
                 return new DataflowAsyncProcessor<EventDetails, Result>(bindFunc);
             }
@@ -292,7 +293,7 @@ namespace EventProcessing.Implementation
 
         public class TplDataflowDataflowFactory : BaseDataflowFactory
         {
-            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, Dataflow<Result>> bindFunc)
+            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
                 return new TplDataflowDataflowAsyncProcessor<EventDetails, Result>(bindFunc);
             }
@@ -465,9 +466,9 @@ namespace EventProcessing.Implementation
                 return CreateDataflowAsyncProcessor(ProcessEventDataflow);
             }
 
-            protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, Dataflow<Result>> bindFunc);
+            protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc);
 
-            private Dataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            private IDataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
             {
                 return dataflowFactory.Return(@event)
                     .Select(_logic.LogEvent)
@@ -479,15 +480,15 @@ namespace EventProcessing.Implementation
                         _logic.TransformResult(res));
             }
 
-            private Dataflow<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IDataflowFactory dataflowFactory, Either<UnsuccessResult, EventGroup> eventGroup)
+            private IDataflow<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IDataflowFactory dataflowFactory, Either<UnsuccessResult, EventGroup> eventGroup)
             {
-                return global::Dataflow.Railway.DataflowExtensions.Use(_logic.CreateRepository(), repository =>
+                return DataflowExtensions.Use(_logic.CreateRepository(), repository =>
                 {
                     return dataflowFactory.Return(eventGroup)
                         .SelectSafe(group =>
-                            _logic.FindLastEventSetsSafe(repository, new[] { group })
-                                .Select(lastEventSets => new { group, lastEventSets }))
-                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
+                            _logic.FindLastEventSetsSafe(repository, new[] { @group })
+                                .Select(lastEventSets => new { @group, lastEventSets }))
+                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.@group, item.lastEventSets))
                         .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
                         .SelectMany(result => result);
                 });
@@ -496,7 +497,7 @@ namespace EventProcessing.Implementation
 
         public class DataflowFactoryOneByOne : BaseDataflowFactoryOneByOne
         {
-            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, Dataflow<Result>> bindFunc)
+            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
                 return new DataflowAsyncProcessor<EventDetails, Result>(bindFunc);
             }
@@ -504,7 +505,7 @@ namespace EventProcessing.Implementation
 
         public class TplDataflowDataflowFactoryOneByOne : BaseDataflowFactoryOneByOne
         {
-            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, Dataflow<Result>> bindFunc)
+            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
                 return new TplDataflowDataflowAsyncProcessor<EventDetails, Result>(bindFunc);
             }

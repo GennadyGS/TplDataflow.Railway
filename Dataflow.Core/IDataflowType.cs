@@ -1,6 +1,6 @@
 ﻿namespace Dataflow.Core
 {
-    public interface IDataflowType<T>
+    public interface IDataflowType<out T>
     {
     }
 }

@@ -8,13 +8,13 @@ namespace Dataflow.Core
     public static class ObservableDataFlowExtensions
     {
         public static IObservable<TOutput> BindDataflow<TInput, TOutput>(this IObservable<TInput> input,
-            Func<IDataflowFactory, TInput, Dataflow<TOutput>> bindFunc)
+            Func<IDataflowFactory, TInput, IDataflow<TOutput>> bindFunc)
         {
             var factory = new DataflowFactory(new DataflowTypeFactory());
             return input.Select(item => bindFunc(factory, item)).TransformDataflows();
         }
 
-        private static IObservable<TOutput> TransformDataflows<TOutput>(this IObservable<Dataflow<TOutput>> dataflows)
+        private static IObservable<TOutput> TransformDataflows<TOutput>(this IObservable<IDataflow<TOutput>> dataflows)
         {
             return dataflows
                 .GroupBy(dataflow => dataflow.Type)
@@ -46,19 +46,19 @@ namespace Dataflow.Core
 
         private abstract class DataflowType<T> : IDataflowType<T>
         {
-            public abstract IObservable<T> TransformDataFlows(IObservable<Dataflow<T>> dataflows);
+            public abstract IObservable<T> TransformDataFlows(IObservable<IDataflow<T>> dataflows);
         }
 
         private abstract class DataflowOperatorType<T> : DataflowType<T>
         {
-            public abstract IObservable<Dataflow<TOutput>> PerformOperator<TOutput>(
+            public abstract IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(
                 IObservable<DataflowCalculation<T, TOutput>> calculationDataflows);
 
         }
 
         private class DataflowCalculationType<TInput, TOutput> : DataflowType<TOutput>
         {
-            public override IObservable<TOutput> TransformDataFlows(IObservable<Dataflow<TOutput>> dataflows)
+            public override IObservable<TOutput> TransformDataFlows(IObservable<IDataflow<TOutput>> dataflows)
             {
                 return dataflows
                     .Cast<DataflowCalculation<TInput, TOutput>>()
@@ -70,12 +70,12 @@ namespace Dataflow.Core
 
         private class ReturnType<T> : DataflowOperatorType<T>
         {
-            public override IObservable<T> TransformDataFlows(IObservable<Dataflow<T>> dataflows)
+            public override IObservable<T> TransformDataFlows(IObservable<IDataflow<T>> dataflows)
             {
                 return dataflows.Select(dataflow => ((Return<T>)dataflow).Result);
             }
 
-            public override IObservable<Dataflow<TOutput>> PerformOperator<TOutput>(
+            public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(
                 IObservable<DataflowCalculation<T, TOutput>> calculationDataflows)
             {
                 return calculationDataflows.Select(dataflow =>
@@ -85,12 +85,12 @@ namespace Dataflow.Core
 
         private class ReturnManyType<T> : DataflowOperatorType<T>
         {
-            public override IObservable<T> TransformDataFlows(IObservable<Dataflow<T>> dataflows)
+            public override IObservable<T> TransformDataFlows(IObservable<IDataflow<T>> dataflows)
             {
                 return dataflows.SelectMany(dataflow => ((ReturnMany<T>)dataflow).Result);
             }
 
-            public override IObservable<Dataflow<TOutput>> PerformOperator<TOutput>(
+            public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(
                 IObservable<DataflowCalculation<T, TOutput>> calculationDataflows)
             {
                 return calculationDataflows.SelectMany(dataflow =>
@@ -100,7 +100,7 @@ namespace Dataflow.Core
 
         private class BufferType<T> : DataflowOperatorType<IList<T>>
         {
-            public override IObservable<IList<T>> TransformDataFlows(IObservable<Dataflow<IList<T>>> dataflows)
+            public override IObservable<IList<T>> TransformDataFlows(IObservable<IDataflow<IList<T>>> dataflows)
             {
                 return dataflows
                     .GroupBy(item => new { ((Buffer<T>)item).BatchMaxSize, ((Buffer<T>)item).BatchTimeout })
@@ -109,7 +109,7 @@ namespace Dataflow.Core
                         .Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize));
             }
 
-            public override IObservable<Dataflow<TOutput>> PerformOperator<TOutput>(
+            public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(
                 IObservable<DataflowCalculation<IList<T>, TOutput>> calculationDataflows)
             {
                 return calculationDataflows
