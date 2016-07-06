@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Collection.Extensions;
+using FluentAssertions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using Collection.Extensions;
-using FluentAssertions;
 using Xunit;
 
 namespace Dataflow.Core.Tests

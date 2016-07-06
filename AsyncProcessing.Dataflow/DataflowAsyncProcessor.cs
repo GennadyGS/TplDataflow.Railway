@@ -1,7 +1,7 @@
-﻿using System;
-using System.Reactive.Subjects;
-using AsyncProcessing.Core;
+﻿using AsyncProcessing.Core;
 using Dataflow.Core;
+using System;
+using System.Reactive.Subjects;
 
 namespace AsyncProcessing.Dataflow
 {

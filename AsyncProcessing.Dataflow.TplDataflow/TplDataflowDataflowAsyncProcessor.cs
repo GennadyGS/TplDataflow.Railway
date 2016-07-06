@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks.Dataflow;
-using AsyncProcessing.Core;
+﻿using AsyncProcessing.Core;
 using Dataflow.Core;
 using Dataflow.TplDataflow;
+using System;
+using System.Threading.Tasks.Dataflow;
 using TplDataFlow.Extensions;
 
 namespace AsyncProcessing.Dataflow.TplDataflow

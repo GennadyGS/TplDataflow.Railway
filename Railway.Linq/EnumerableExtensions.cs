@@ -1,9 +1,9 @@
-﻿using LanguageExt;
+﻿using Collection.Extensions;
+using LanguageExt;
 using LanguageExt.Trans;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Collection.Extensions;
 
 namespace Railway.Linq
 {

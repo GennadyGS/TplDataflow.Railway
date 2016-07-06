@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Dataflow.Core;
+﻿using Dataflow.Core;
 using LanguageExt;
 using Railway.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Dataflow.Railway
 {

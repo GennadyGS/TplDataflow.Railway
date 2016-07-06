@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Dataflow.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks.Dataflow;
-using Dataflow.Core;
 using TplDataflow.Linq;
 
 namespace Dataflow.TplDataflow

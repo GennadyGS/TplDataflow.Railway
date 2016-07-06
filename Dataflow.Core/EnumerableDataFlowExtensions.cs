@@ -1,7 +1,7 @@
+using Collection.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Collection.Extensions;
 
 namespace Dataflow.Core
 {
