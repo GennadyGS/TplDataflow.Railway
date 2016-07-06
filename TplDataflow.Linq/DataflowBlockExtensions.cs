@@ -39,9 +39,9 @@ namespace TplDataflow.Linq
             return source.LinkWith(CreateGroupByBlock(keySelector));
         }
 
-        public static ISourceBlock<TOutput> Cast<TInput, TOutput>(this ISourceBlock<TInput> source)
+        public static ISourceBlock<TResult> Cast<TResult>(this ISourceBlock<object> source)
         {
-            throw new NotImplementedException();
+            return source.Select(item => (TResult) item);
         }
 
         public static ISourceBlock<IList<T>> Buffer<T>(this ISourceBlock<T> source,

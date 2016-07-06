@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Dataflow.Core
 {
-    internal class DataflowFactory : IDataflowFactory
+    public class DataflowFactory : IDataflowFactory
     {
         private readonly IDataflowTypeFactory _typeFactory;
         private readonly ConcurrentDictionary<Type, object> _typeCache = new ConcurrentDictionary<Type, object>();
