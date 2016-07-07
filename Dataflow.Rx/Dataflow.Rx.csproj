@@ -33,9 +33,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Reactive.Linq">
-      <HintPath>C:\Users\Gennadii_Saltyshchak\.nuget\packages\Rx-Linq\2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ObservableDataflowExtensions.cs" />
