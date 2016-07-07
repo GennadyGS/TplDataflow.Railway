@@ -45,5 +45,15 @@ namespace Dataflow.Core
                 _ => _typeFactory.CreateBufferType<T>());
             return new Buffer<T>(this, type, item, batchTimeout, batchMaxSize);
         }
+
+        public IDataflow<IGroupedDataflow<TKey, TElement>> GroupBy<TKey, TElement>(TElement item, Func<TElement, TKey> keySelector)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDataflow<IList<T>> ToList<T>(T item)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

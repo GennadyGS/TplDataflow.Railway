@@ -183,6 +183,26 @@ namespace Dataflow.Core.Tests
 
         }
 
+        [Fact]
+        public void BindGroupByDataflow_ShouldReturnCorrectResult()
+        {
+            const int itemCount = 50;
+            var input = Enumerable.Range(0, itemCount * 2).ToList();
+
+            var expectedOutput = input
+                .GroupBy(i => i % 2)
+                .Select(group => group.ToList());
+
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            {
+                return dataflowFactory
+                    .Return(i)
+                    .GroupBy(item => item % 2)
+                    .SelectMany(group => group.ToList());
+            });
+
+        }
+
         private static void TestBindDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
         {
             var inputList = input.ToList();

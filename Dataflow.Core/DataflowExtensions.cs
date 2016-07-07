@@ -47,5 +47,16 @@ namespace Dataflow.Core
         {
             return source.Bind(item => source.Factory.Buffer(item, batchTimeout, batchMaxSize));
         }
+
+        public static IDataflow<IGroupedDataflow<TKey, TElement>> GroupBy<TElement, TKey>(this IDataflow<TElement> source,
+            Func<TElement, TKey> keySelector)
+        {
+            return source.Bind(item => source.Factory.GroupBy(item, keySelector));
+        }
+
+        public static IDataflow<IList<T>> ToList<T>(this IDataflow<T> source)
+        {
+            return source.Bind(item => source.Factory.ToList(item));
+        }
     }
 }
