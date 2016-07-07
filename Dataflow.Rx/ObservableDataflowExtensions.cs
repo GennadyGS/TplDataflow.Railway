@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using Dataflow.Core;
 using System.Reactive.Linq;
+using System.Linq;
 
-namespace Dataflow.Core
+namespace Dataflow.Rx
 {
     public static class ObservableDataFlowExtensions
     {

@@ -2,6 +2,7 @@
 using Dataflow.Core;
 using System;
 using System.Reactive.Subjects;
+using Dataflow.Rx;
 
 namespace AsyncProcessing.Dataflow
 {

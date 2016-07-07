@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using Dataflow.Rx;
 using Xunit;
 
 namespace Dataflow.Core.Tests
