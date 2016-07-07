@@ -12,45 +12,45 @@ namespace Dataflow.Core.Tests
     public class DataflowTests
     {
         [Fact]
-        public void BindReturnDataflowToEnumerable_ShouldReturnTheSameList()
+        public void BindReturnDataflow_ShouldReturnTheSameList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input;
             
-            TestDataflow(input, expectedOutput, (dataflowFactory, i) => dataflowFactory.Return(i));
+            TestBindDataflow(input, expectedOutput, (dataflowFactory, i) => dataflowFactory.Return(i));
         }
 
         [Fact]
-        public void BindReturnDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindReturnDataflow_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.Select(i => i * 2);
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i * 2));
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i * 2));
         }
 
         [Fact]
-        public void BindSelectDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindSelectDataflow_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.Select(i => i * 2);
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.Return(i)
                     .Select(item => item * 2));
         }
 
         [Fact]
-        public void BindMultipleSelectDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindMultipleSelectDataflow_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.Select(i => (i * 2 + 1) * 2);
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.Return(i)
                     .Select(item => item * 2)
                     .Select(item => item + 1)
@@ -58,26 +58,26 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
-        public void BindMultipleSelectDataflowToEnumerable_ShouldReturnTheProjectedListCrossType()
+        public void BindMultipleSelectDataflow_ShouldReturnTheProjectedListCrossType()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000");
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.Return(i)
                     .Select(item => new DateTime(2000 + item, 1, 1))
                     .Select(item => item.ToString("O")));
         }
 
         [Fact]
-        public void BindMultipleNestedDataflowsToEnumerable_ShouldReturnTheProjectedListCrossType()
+        public void BindMultipleNestedDataflows_ShouldReturnTheProjectedListCrossType()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.Select(i => $"{2000 + i}-01-01T00:00:00.0000000");
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.Return(i)
                     .Bind(item =>
                         dataflowFactory.Return(new DateTime(2000 + item, 1, 1))
@@ -86,13 +86,13 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
-        public void BindSelectManyDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindSelectManyDataflow_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2));
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.Return(i)
                     .SelectMany(item => Enumerable.Repeat(item * 2, 2))
                     .Select(item => item + 1));
@@ -100,13 +100,13 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
-        public void BinNestedSelectManyDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BinNestedSelectManyDataflow_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2));
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.Return(i)
                     .Bind(j =>
                         dataflowFactory.ReturnMany(Enumerable.Repeat(j * 2, 2))
@@ -115,25 +115,25 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
-        public void BindDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindDataflow_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.Select(i => i + 1);
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, x) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, x) =>
                 dataflowFactory.Return(1)
                     .Bind(y => dataflowFactory.Return(x + y)));
         }
 
         [Fact]
-        public void BindComplexDataflowToEnumerable_ShouldReturnTheProjectedList2()
+        public void BindComplexDataflow_ShouldReturnTheProjectedList2()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.Select(i => i + 1);
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.Return(i)
                     .Bind(x =>
                         dataflowFactory.Return(1)
@@ -142,20 +142,20 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
-        public void BindLinqDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindLinqDataflow_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input.Select(item => item + 1);
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) =>
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 from x in dataflowFactory.Return(i)
                 from y in dataflowFactory.Return(1)
                 select x + y);
         }
 
         [Fact]
-        public void BindBufferDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindBufferDataflow_ShouldReturnTheProjectedList()
         {
             const int batchSize = 3;
 
@@ -163,13 +163,13 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Select(item => item + 1).Buffer(TimeSpan.FromDays(1), batchSize);
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i)
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i)
                 .Select(item => item + 1)
                 .Buffer(TimeSpan.FromDays(1), batchSize));
         }
 
         [Fact]
-        public void BindBufferAndSelectDataflowToEnumerable_ShouldReturnTheProjectedList()
+        public void BindBufferAndSelectDataflow_ShouldReturnTheProjectedList()
         {
             const int batchSize = 3;
 
@@ -177,13 +177,13 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input.Buffer(TimeSpan.FromDays(1), batchSize).Select(i => i.Count);
 
-            TestDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i)
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i)
                 .Buffer(TimeSpan.FromDays(1), batchSize)
                 .Select(item => item.Count));
 
         }
 
-        private static void TestDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
+        private static void TestBindDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
         {
             var inputList = input.ToList();
             var expectedOutputList = expectedOutput.ToList();
