@@ -11,5 +11,7 @@ namespace Dataflow.Core
         IDataflowType<T> CreateReturnManyType<T>();
 
         IDataflowType<IList<T>> CreateBufferType<T>();
+
+        IDataflowType<IGroupedDataflow<TKey, TElement>> CreateGroupType<TKey, TElement>();
     }
 }

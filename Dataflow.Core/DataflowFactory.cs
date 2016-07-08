@@ -48,6 +48,14 @@ namespace Dataflow.Core
 
         public IDataflow<IGroupedDataflow<TKey, TElement>> GroupBy<TKey, TElement>(TElement item, Func<TElement, TKey> keySelector)
         {
+            var type = (IDataflowType<IGroupedDataflow<TKey, TElement>>)_typeCache.GetOrAdd(
+                typeof(Group<TKey, TElement>),
+                _ => _typeFactory.CreateGroupType<TKey, TElement>());
+            return new Group<TKey, TElement>(this, type, item, keySelector);
+        }
+
+        public IGroupedDataflow<TKey, TElement> CreateGroupedDataflow<TKey, TElement>(TKey key, IEnumerable<TElement> items)
+        {
             throw new NotImplementedException();
         }
 

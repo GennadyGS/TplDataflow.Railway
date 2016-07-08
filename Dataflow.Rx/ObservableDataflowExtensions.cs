@@ -43,6 +43,11 @@ namespace Dataflow.Rx
             {
                 return new BufferType<T>();
             }
+
+            public IDataflowType<IGroupedDataflow<TKey, TElement>> CreateGroupType<TKey, TElement>()
+            {
+                throw new NotImplementedException();
+            }
         }
 
         private abstract class DataflowType<T> : IDataflowType<T>

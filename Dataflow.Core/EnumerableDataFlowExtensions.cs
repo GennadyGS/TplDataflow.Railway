@@ -1,7 +1,7 @@
-using Collection.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Collection.Extensions;
 
 namespace Dataflow.Core
 {
@@ -42,6 +42,11 @@ namespace Dataflow.Core
             {
                 return new BufferType<T>();
             }
+
+            public IDataflowType<IGroupedDataflow<TKey, TElement>> CreateGroupType<TKey, TElement>()
+            {
+                return new GroupType<TKey, TElement>();
+            }
         }
 
         private abstract class DataflowType<T> : IDataflowType<T>
@@ -53,7 +58,6 @@ namespace Dataflow.Core
         {
             public abstract IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(
                 IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows);
-
         }
 
         private class DataflowCalculationType<TInput, TOutput> : DataflowType<TOutput>
@@ -126,6 +130,25 @@ namespace Dataflow.Core
                         batch.First().Continuation
                     })
                     .Select(batch => batch.Continuation(batch.Items));
+            }
+        }
+
+        private class GroupType<TKey, TElement> : DataflowOperatorType<IGroupedDataflow<TKey, TElement>>
+        {
+            public override IEnumerable<IGroupedDataflow<TKey, TElement>> TransformDataFlows(IEnumerable<IDataflow<IGroupedDataflow<TKey, TElement>>> dataflows)
+            {
+                return dataflows
+                    .GroupBy(item => ((Group<TKey, TElement>)item).KeySelector)
+                    .SelectMany(group => group
+                        .Select(item => (Group<TKey, TElement>)item)
+                        .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory} )
+                        .Select(innerGroup => innerGroup.Key.Factory.CreateGroupedDataflow(
+                            innerGroup.Key.Key, innerGroup.Select(item => item.Item))));
+            }
+
+            public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IGroupedDataflow<TKey, TElement>, TOutput>> calculationDataflows)
+            {
+                throw new NotImplementedException();
             }
         }
     }
