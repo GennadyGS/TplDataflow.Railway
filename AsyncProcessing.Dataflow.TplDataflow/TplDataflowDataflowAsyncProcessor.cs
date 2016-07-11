@@ -1,6 +1,5 @@
 ﻿using AsyncProcessing.Core;
 using Dataflow.Core;
-using Dataflow.TplDataflow;
 using System;
 using System.Threading.Tasks.Dataflow;
 using TplDataFlow.Extensions;
@@ -14,7 +13,8 @@ namespace AsyncProcessing.Dataflow.TplDataflow
 
         public TplDataflowDataflowAsyncProcessor(Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
         {
-            _inputBlock.BindDataflow(dataflow).LinkWith(_outputBlock);
+            throw new NotImplementedException();
+            // _inputBlock.BindDataflow(dataflow).LinkWith(_outputBlock);
         }
 
         private IObserver<TInput> InputObserver => _inputBlock.AsObserver();

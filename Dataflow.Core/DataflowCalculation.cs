@@ -2,14 +2,15 @@
 
 namespace Dataflow.Core
 {
-    public class DataflowCalculation<TInput, TOutput> : Dataflow<TOutput>
+    public class DataflowCalculation<TInput, TOutput, TDataflowOperator> : Dataflow<TOutput>
+        where TDataflowOperator : DataflowOperator<TInput>
     {
-        public DataflowOperator<TInput> Operator { get; }
+        public TDataflowOperator Operator { get; }
 
         public Func<TInput, IDataflow<TOutput>> Continuation { get; }
 
-        public DataflowCalculation(IDataflowFactory factory, IDataflowType<TOutput> type, 
-            DataflowOperator<TInput> @operator, Func<TInput, IDataflow<TOutput>> continuation) 
+        public DataflowCalculation(IDataflowFactory factory, IDataflowType<TOutput> type,
+            TDataflowOperator @operator, Func<TInput, IDataflow<TOutput>> continuation) 
             : base(factory, type)
         {
             Operator = @operator;
@@ -18,7 +19,7 @@ namespace Dataflow.Core
 
         public override IDataflow<TOutput2> Bind<TOutput2>(Func<TOutput, IDataflow<TOutput2>> bindFunc)
         {
-            return Factory.Calculation(Operator, item => Continuation(item).Bind(bindFunc));
+            return Factory.Calculation<TInput, TOutput2, TDataflowOperator>(Operator, item => Continuation(item).Bind(bindFunc));
         }
     }
 }

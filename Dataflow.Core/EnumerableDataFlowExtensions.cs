@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Collection.Extensions;
 
 namespace Dataflow.Core
@@ -18,14 +19,36 @@ namespace Dataflow.Core
         {
             return dataflows
                 .GroupBy(dataflow => dataflow.Type)
-                .SelectMany(group => ((DataflowType<TOutput>) group.Key).TransformDataFlows(group));
+                .SelectMany(group => TransformDataflowsByType(group.Key, group));
+        }
+
+        private static IEnumerable<TOutput> TransformDataflowsByType<TOutput>(IDataflowType<TOutput> dataflowType, IEnumerable<IDataflow<TOutput>> dataflows)
+        {
+            return (IEnumerable<TOutput>)typeof(EnumerableDataFlowExtensions)
+                .GetMethod(nameof(TransformDataflowsHelper), BindingFlags.NonPublic | BindingFlags.Static)
+                .MakeGenericMethod(typeof(TOutput), dataflowType.TypeOfDataflow)
+                .Invoke(null, new object[] { dataflowType, dataflows });
+        }
+
+        private static IEnumerable<TOutput> TransformDataflowsHelper<TOutput, TDataflow>(DataflowType<TOutput, TDataflow> dataflowType, IEnumerable<IDataflow<TOutput>> dataflows)
+            where TDataflow : IDataflow<TOutput>
+        {
+            return dataflowType.TransformDataFlows(dataflows.Cast<TDataflow>());
+        }
+
+        private static IEnumerable<TOutput> TransformDataflows<TOutput, TDataflow>(this IEnumerable<TDataflow> dataflows)
+            where TDataflow : IDataflow<TOutput>
+        {
+            return dataflows
+                .GroupBy(dataflow => dataflow.Type)
+                .SelectMany(group => ((DataflowType<TOutput, TDataflow>)group.Key).TransformDataFlows(group));
         }
 
         private class DataflowTypeFactory : IDataflowTypeFactory
         {
-            IDataflowType<TOutput> IDataflowTypeFactory.CreateCalculationType<TInput, TOutput>()
+            IDataflowType<TOutput> IDataflowTypeFactory.CreateCalculationType<TInput, TOutput, TDataflowOperator>()
             {
-                return new DataflowCalculationType<TInput,TOutput>();
+                return new DataflowCalculationType<TInput ,TOutput, TDataflowOperator>();
             }
 
             IDataflowType<T> IDataflowTypeFactory.CreateReturnType<T>()
@@ -49,104 +72,118 @@ namespace Dataflow.Core
             }
         }
 
-        private abstract class DataflowType<T> : IDataflowType<T>
+        private abstract class DataflowType<T, TDataflow> : IDataflowType<T> where TDataflow : IDataflow<T>
         {
-            public abstract IEnumerable<T> TransformDataFlows(IEnumerable<IDataflow<T>> dataflows);
+            public abstract IEnumerable<T> TransformDataFlows(IEnumerable<TDataflow> dataflows);
+
+            public Type TypeOfDataflow => typeof(TDataflow);
         }
 
-        private abstract class DataflowOperatorType<T> : DataflowType<T>
+
+        private abstract class DataflowOperatorType<T, TDataflow> : DataflowType<T, TDataflow> where TDataflow : DataflowOperator<T>
         {
             public abstract IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(
-                IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows);
+                IEnumerable<DataflowCalculation<T, TOutput, TDataflow>> calculationDataflows);
         }
 
-        private class DataflowCalculationType<TInput, TOutput> : DataflowType<TOutput>
+        private class DataflowCalculationType<TInput, TOutput, TDataflowOperator> : DataflowType<TOutput, DataflowCalculation<TInput, TOutput, TDataflowOperator>> 
+            where TDataflowOperator : DataflowOperator<TInput>
         {
-            public override IEnumerable<TOutput> TransformDataFlows(IEnumerable<IDataflow<TOutput>> dataflows)
+            public override IEnumerable<TOutput> TransformDataFlows(IEnumerable<DataflowCalculation<TInput, TOutput, TDataflowOperator>> dataflows)
             {
                 return dataflows
-                    .Cast<DataflowCalculation<TInput, TOutput>>()
                     .GroupBy(dataflow => dataflow.Operator.Type)
-                    .SelectMany(group => ((DataflowOperatorType<TInput>)group.Key).PerformOperator(group))
+                    .SelectMany(group => PerformOperatorTyped(group.Key, group))
                     .TransformDataflows();
             }
+
+            private static IEnumerable<IDataflow<TOutput>> PerformOperatorTyped(IDataflowType<TInput> dataflowType, IEnumerable<DataflowCalculation<TInput, TOutput, TDataflowOperator>> group)
+            {
+                return ((DataflowOperatorType<TInput, TDataflowOperator>)dataflowType).PerformOperator(group);
+            }
+
+            private static IEnumerable<IDataflow<TOutput>> PerformOperatorHelper(DataflowOperatorType<TInput, TDataflowOperator> operatorType, 
+                IEnumerable<DataflowCalculation<TInput, TOutput, TDataflowOperator>> calculationDataflows)
+            {
+                return operatorType.PerformOperator(calculationDataflows);
+            }
         }
 
-        private class ReturnType<T> : DataflowOperatorType<T>
+        private class ReturnType<T> : DataflowOperatorType<T, Return<T>>
         {
-            public override IEnumerable<T> TransformDataFlows(IEnumerable<IDataflow<T>> dataflows)
+            public override IEnumerable<T> TransformDataFlows(IEnumerable<Return<T>> dataflows)
             {
-                return dataflows.Select(dataflow => ((Return<T>)dataflow).Result);
+                return dataflows.Select(dataflow => dataflow.Result);
             }
 
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(
-                IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
+                IEnumerable<DataflowCalculation<T, TOutput, Return<T>>> calculationDataflows)
             {
                 return calculationDataflows.Select(dataflow =>
-                    dataflow.Continuation(((Return<T>)dataflow.Operator).Result));
+                    dataflow.Continuation(dataflow.Operator.Result));
             }
         }
 
-        private class ReturnManyType<T> : DataflowOperatorType<T>
+        private class ReturnManyType<T> : DataflowOperatorType<T, ReturnMany<T>>
         {
-            public override IEnumerable<T> TransformDataFlows(IEnumerable<IDataflow<T>> dataflows)
+            public override IEnumerable<T> TransformDataFlows(IEnumerable<ReturnMany<T>> dataflows)
             {
-                return dataflows.SelectMany(dataflow => ((ReturnMany<T>)dataflow).Result);
+                return dataflows.SelectMany(dataflow => dataflow.Result);
             }
 
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(
-                IEnumerable<DataflowCalculation<T, TOutput>> calculationDataflows)
+                IEnumerable<DataflowCalculation<T, TOutput, ReturnMany<T>>> calculationDataflows)
             {
                 return calculationDataflows.SelectMany(dataflow =>
-                    ((ReturnMany<T>)dataflow.Operator).Result.Select(dataflow.Continuation));
+                    dataflow.Operator.Result.Select(dataflow.Continuation));
             }
         }
 
-        private class BufferType<T> : DataflowOperatorType<IList<T>>
+        private class BufferType<T> : DataflowOperatorType<IList<T>, Buffer<T>>
         {
-            public override IEnumerable<IList<T>> TransformDataFlows(IEnumerable<IDataflow<IList<T>>> dataflows)
+            public override IEnumerable<IList<T>> TransformDataFlows(IEnumerable<Buffer<T>> dataflows)
             {
                 return dataflows
-                    .GroupBy(item => new { ((Buffer<T>)item).BatchMaxSize, ((Buffer<T>)item).BatchTimeout })
+                    .GroupBy(item => new { item.BatchMaxSize, item.BatchTimeout })
                     .SelectMany(group => group
-                        .Select(item => ((Buffer<T>)item).Item)
+                        .Select(item => item.Item)
                         .Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize));
             }
 
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(
-                IEnumerable<DataflowCalculation<IList<T>, TOutput>> calculationDataflows)
+                IEnumerable<DataflowCalculation<IList<T>, TOutput, Buffer<T>>> calculationDataflows)
             {
                 return calculationDataflows
                     .GroupBy(dataflow => new
                     {
-                        ((Buffer<T>)dataflow.Operator).BatchMaxSize,
-                        ((Buffer<T>)dataflow.Operator).BatchTimeout
+                        dataflow.Operator.BatchMaxSize,
+                        dataflow.Operator.BatchTimeout
                     })
                     .SelectMany(group => group.Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize))
                     .Where(batch => batch.Count > 0)
                     .Select(batch => new
                     {
-                        Items = batch.Select(item => ((Buffer<T>)item.Operator).Item).ToList(),
+                        Items = batch.Select(item => item.Operator.Item).ToList(),
                         batch.First().Continuation
                     })
                     .Select(batch => batch.Continuation(batch.Items));
             }
         }
 
-        private class GroupType<TKey, TElement> : DataflowOperatorType<IGroupedDataflow<TKey, TElement>>
+        private class GroupType<TKey, TElement> : DataflowOperatorType<IGroupedDataflow<TKey, TElement>, Group<TKey, TElement>>
         {
-            public override IEnumerable<IGroupedDataflow<TKey, TElement>> TransformDataFlows(IEnumerable<IDataflow<IGroupedDataflow<TKey, TElement>>> dataflows)
+            public override IEnumerable<IGroupedDataflow<TKey, TElement>> TransformDataFlows(IEnumerable<Group<TKey, TElement>> dataflows)
             {
                 return dataflows
-                    .GroupBy(item => ((Group<TKey, TElement>)item).KeySelector)
+                    .GroupBy(item => item.KeySelector)
                     .SelectMany(group => group
-                        .Select(item => (Group<TKey, TElement>)item)
+                        .Select(item => item)
                         .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory} )
                         .Select(innerGroup => innerGroup.Key.Factory.CreateGroupedDataflow(
                             innerGroup.Key.Key, innerGroup.Select(item => item.Item))));
             }
 
-            public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IGroupedDataflow<TKey, TElement>, TOutput>> calculationDataflows)
+            public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IGroupedDataflow<TKey, TElement>, TOutput, Group<TKey, TElement>>> calculationDataflows)
             {
                 throw new NotImplementedException();
             }

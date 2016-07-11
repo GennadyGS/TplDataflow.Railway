@@ -14,12 +14,12 @@ namespace Dataflow.Core
             _typeFactory = typeFactory;
         }
 
-        IDataflow<TOutput> IDataflowFactory.Calculation<TInput, TOutput>(DataflowOperator<TInput> @operator, Func<TInput, IDataflow<TOutput>> continuation)
+        IDataflow<TOutput> IDataflowFactory.Calculation<TInput, TOutput, TDataflowOperator>(TDataflowOperator @operator, Func<TInput, IDataflow<TOutput>> continuation)
         {
             var type = (IDataflowType<TOutput>)_typeCache.GetOrAdd(
-                typeof(DataflowCalculation<TInput, TOutput>),
-                _ => _typeFactory.CreateCalculationType<TInput, TOutput>());
-            return new DataflowCalculation<TInput,TOutput>(this, type, @operator, continuation);
+                typeof(DataflowCalculation<TInput, TOutput, TDataflowOperator>),
+                _ => _typeFactory.CreateCalculationType<TInput, TOutput, TDataflowOperator>());
+            return new DataflowCalculation<TInput,TOutput, TDataflowOperator>(this, type, @operator, continuation);
         }
 
         IDataflow<T> IDataflowFactory.Return<T>(T value)
