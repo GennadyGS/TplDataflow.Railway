@@ -9,7 +9,7 @@ namespace Dataflow.Core
 {
     public static class EnumerableDataFlowExtensions
     {
-        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods 
+        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods
             = new ConcurrentDictionary<Tuple<Type, Type>, MethodInfo>();
 
         public static IEnumerable<TOutput> BindDataflow<TInput, TOutput>(this IEnumerable<TInput> input,
@@ -31,7 +31,7 @@ namespace Dataflow.Core
             var transformDataflowHelperMethod = _transformDataflowHelperMethods.GetOrAdd(
                 new Tuple<Type, Type>(typeof(TOutput), dataflowType.TypeOfDataflow),
                 types => GetTransformDataflowHelperMethodInfo(types.Item1, types.Item2));
-            return (IEnumerable<TOutput>) transformDataflowHelperMethod.Invoke(null, new object[] { dataflowType, dataflows });
+            return (IEnumerable<TOutput>)transformDataflowHelperMethod.Invoke(null, new object[] { dataflowType, dataflows });
         }
 
         private static MethodInfo GetTransformDataflowHelperMethodInfo(Type outputType, Type typeOfDataflow)
@@ -89,7 +89,7 @@ namespace Dataflow.Core
                 IEnumerable<DataflowCalculation<T, TOutput, TDataflow>> calculationDataflows);
         }
 
-        private class DataflowCalculationType<TInput, TOutput, TDataflowOperator> : DataflowType<TOutput, DataflowCalculation<TInput, TOutput, TDataflowOperator>> 
+        private class DataflowCalculationType<TInput, TOutput, TDataflowOperator> : DataflowType<TOutput, DataflowCalculation<TInput, TOutput, TDataflowOperator>>
             where TDataflowOperator : DataflowOperator<TInput, TDataflowOperator>
         {
             public override IEnumerable<TOutput> TransformDataFlows(IEnumerable<DataflowCalculation<TInput, TOutput, TDataflowOperator>> dataflows)
@@ -175,14 +175,29 @@ namespace Dataflow.Core
                     .GroupBy(item => item.KeySelector)
                     .SelectMany(group => group
                         .Select(item => item)
-                        .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory} )
-                        .Select(innerGroup => innerGroup.Key.Factory.CreateGroupedDataflow(
+                        .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory })
+                        .Select(innerGroup => innerGroup.Key.Factory.GroupedDataflow(
                             innerGroup.Key.Key, innerGroup.Select(item => item.Item))));
             }
 
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IGroupedDataflow<TKey, TElement>, TOutput, Group<TKey, TElement>>> calculationDataflows)
             {
-                throw new NotImplementedException();
+                return calculationDataflows
+                    .GroupBy(item => item.Operator.KeySelector)
+                    .SelectMany(group => group
+                        .Select(item => item)
+                        .GroupBy(item => new
+                        {
+                            Key = group.Key(item.Operator.Item),
+                            Factory = item.Factory
+                        })
+                        .Select(innerGroup => new
+                        {
+                            Group = innerGroup.Key.Factory.GroupedDataflow(
+                                innerGroup.Key.Key, innerGroup.Select(item => item.Operator.Item)),
+                            Continuation = innerGroup.First().Continuation
+                        })
+                        .Select(groupAndCont => groupAndCont.Continuation(groupAndCont.Group)));
             }
         }
     }
