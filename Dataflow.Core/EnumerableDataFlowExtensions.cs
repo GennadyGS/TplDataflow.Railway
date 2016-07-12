@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -8,6 +9,9 @@ namespace Dataflow.Core
 {
     public static class EnumerableDataFlowExtensions
     {
+        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods 
+            = new ConcurrentDictionary<Tuple<Type, Type>, MethodInfo>();
+
         public static IEnumerable<TOutput> BindDataflow<TInput, TOutput>(this IEnumerable<TInput> input,
             Func<IDataflowFactory, TInput, IDataflow<TOutput>> bindFunc)
         {
@@ -24,10 +28,17 @@ namespace Dataflow.Core
 
         private static IEnumerable<TOutput> TransformDataflowsByType<TOutput>(IDataflowType<TOutput> dataflowType, IEnumerable<IDataflow<TOutput>> dataflows)
         {
-            return (IEnumerable<TOutput>)typeof(EnumerableDataFlowExtensions)
+            var transformDataflowHelperMethod = _transformDataflowHelperMethods.GetOrAdd(
+                new Tuple<Type, Type>(typeof(TOutput), dataflowType.TypeOfDataflow),
+                types => GetTransformDataflowHelperMethodInfo(types.Item1, types.Item2));
+            return (IEnumerable<TOutput>) transformDataflowHelperMethod.Invoke(null, new object[] { dataflowType, dataflows });
+        }
+
+        private static MethodInfo GetTransformDataflowHelperMethodInfo(Type outputType, Type typeOfDataflow)
+        {
+            return typeof(EnumerableDataFlowExtensions)
                 .GetMethod(nameof(TransformDataflowsHelper), BindingFlags.NonPublic | BindingFlags.Static)
-                .MakeGenericMethod(typeof(TOutput), dataflowType.TypeOfDataflow)
-                .Invoke(null, new object[] { dataflowType, dataflows });
+                .MakeGenericMethod(outputType, typeOfDataflow);
         }
 
         private static IEnumerable<TOutput> TransformDataflowsHelper<TOutput, TDataflow>(DataflowType<TOutput, TDataflow> dataflowType, IEnumerable<IDataflow<TOutput>> dataflows)
@@ -36,19 +47,11 @@ namespace Dataflow.Core
             return dataflowType.TransformDataFlows(dataflows.Cast<TDataflow>());
         }
 
-        private static IEnumerable<TOutput> TransformDataflows<TOutput, TDataflow>(this IEnumerable<TDataflow> dataflows)
-            where TDataflow : IDataflow<TOutput>
-        {
-            return dataflows
-                .GroupBy(dataflow => dataflow.Type)
-                .SelectMany(group => ((DataflowType<TOutput, TDataflow>)group.Key).TransformDataFlows(group));
-        }
-
         private class DataflowTypeFactory : IDataflowTypeFactory
         {
             IDataflowType<TOutput> IDataflowTypeFactory.CreateCalculationType<TInput, TOutput, TDataflowOperator>()
             {
-                return new DataflowCalculationType<TInput ,TOutput, TDataflowOperator>();
+                return new DataflowCalculationType<TInput, TOutput, TDataflowOperator>();
             }
 
             IDataflowType<T> IDataflowTypeFactory.CreateReturnType<T>()
@@ -80,14 +83,14 @@ namespace Dataflow.Core
         }
 
 
-        private abstract class DataflowOperatorType<T, TDataflow> : DataflowType<T, TDataflow> where TDataflow : DataflowOperator<T>
+        private abstract class DataflowOperatorType<T, TDataflow> : DataflowType<T, TDataflow> where TDataflow : DataflowOperator<T, TDataflow>
         {
             public abstract IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(
                 IEnumerable<DataflowCalculation<T, TOutput, TDataflow>> calculationDataflows);
         }
 
         private class DataflowCalculationType<TInput, TOutput, TDataflowOperator> : DataflowType<TOutput, DataflowCalculation<TInput, TOutput, TDataflowOperator>> 
-            where TDataflowOperator : DataflowOperator<TInput>
+            where TDataflowOperator : DataflowOperator<TInput, TDataflowOperator>
         {
             public override IEnumerable<TOutput> TransformDataFlows(IEnumerable<DataflowCalculation<TInput, TOutput, TDataflowOperator>> dataflows)
             {
@@ -100,12 +103,6 @@ namespace Dataflow.Core
             private static IEnumerable<IDataflow<TOutput>> PerformOperatorTyped(IDataflowType<TInput> dataflowType, IEnumerable<DataflowCalculation<TInput, TOutput, TDataflowOperator>> group)
             {
                 return ((DataflowOperatorType<TInput, TDataflowOperator>)dataflowType).PerformOperator(group);
-            }
-
-            private static IEnumerable<IDataflow<TOutput>> PerformOperatorHelper(DataflowOperatorType<TInput, TDataflowOperator> operatorType, 
-                IEnumerable<DataflowCalculation<TInput, TOutput, TDataflowOperator>> calculationDataflows)
-            {
-                return operatorType.PerformOperator(calculationDataflows);
             }
         }
 

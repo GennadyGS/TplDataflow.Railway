@@ -1,6 +1,6 @@
 namespace Dataflow.Core
 {
-    public class Return<T> : DataflowOperator<T>
+    public class Return<T> : DataflowOperator<T, Return<T>>
     {
         public T Result { get; }
 

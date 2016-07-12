@@ -4,7 +4,7 @@ namespace Dataflow.Core
 {
     public interface IDataflowTypeFactory
     {
-        IDataflowType<TOutput> CreateCalculationType<TInput, TOutput, TDataflowOperator>() where TDataflowOperator : DataflowOperator<TInput>;
+        IDataflowType<TOutput> CreateCalculationType<TInput, TOutput, TDataflowOperator>() where TDataflowOperator : DataflowOperator<TInput, TDataflowOperator>;
 
         IDataflowType<T> CreateReturnType<T>();
 

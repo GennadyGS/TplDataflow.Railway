@@ -6,7 +6,7 @@ namespace Dataflow.Core
     public interface IDataflowFactory
     {
         IDataflow<TOutput> Calculation<TInput, TOutput, TDataflowOperator>(TDataflowOperator @operator,
-            Func<TInput, IDataflow<TOutput>> continuation) where TDataflowOperator : DataflowOperator<TInput>;
+            Func<TInput, IDataflow<TOutput>> continuation) where TDataflowOperator : DataflowOperator<TInput, TDataflowOperator>;
 
         IDataflow<T> Return<T>(T value);
 

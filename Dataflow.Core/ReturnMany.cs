@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Dataflow.Core
 {
-    public class ReturnMany<T> : DataflowOperator<T>
+    public class ReturnMany<T> : DataflowOperator<T, ReturnMany<T>>
     {
         public IEnumerable<T> Result { get; }
 

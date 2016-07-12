@@ -3,7 +3,7 @@
 namespace Dataflow.Core
 {
     public class DataflowCalculation<TInput, TOutput, TDataflowOperator> : Dataflow<TOutput>
-        where TDataflowOperator : DataflowOperator<TInput>
+        where TDataflowOperator : DataflowOperator<TInput, TDataflowOperator>
     {
         public TDataflowOperator Operator { get; }
 

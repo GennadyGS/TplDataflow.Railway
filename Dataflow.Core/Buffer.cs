@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Dataflow.Core
 {
-    public class Buffer<T> : DataflowOperator<IList<T>>
+    public class Buffer<T> : DataflowOperator<IList<T>, Buffer<T>>
     {
         public T Item { get; }
 

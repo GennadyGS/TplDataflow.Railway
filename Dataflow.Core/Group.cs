@@ -2,7 +2,7 @@ using System;
 
 namespace Dataflow.Core
 {
-    public class Group<TKey, TElement> : DataflowOperator<IGroupedDataflow<TKey, TElement>>
+    public class Group<TKey, TElement> : DataflowOperator<IGroupedDataflow<TKey, TElement>, Group<TKey, TElement>>
     {
         public TElement Item { get; }
 
