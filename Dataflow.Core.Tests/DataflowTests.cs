@@ -214,15 +214,12 @@ namespace Dataflow.Core.Tests
 
             var expectedOutput = input
                 .GroupBy(i => i % 2)
-                .Select(group => group.ToList());
+                .SelectMany(group => group.ToListEnumerable());
 
-            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
-            {
-                return dataflowFactory
-                    .Return(i)
-                    .GroupBy(item => item % 2)
-                    .SelectMany(group => group.ToList());
-            });
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory
+                .Return(i)
+                .GroupBy(item => item % 2)
+                .SelectMany(group => group.ToList()));
 
         }
 
@@ -231,15 +228,20 @@ namespace Dataflow.Core.Tests
             var inputList = input.ToList();
             var expectedOutputList = expectedOutput.ToList();
 
-            inputList
-                .BindDataflow(dataflow)
-                .ShouldAllBeEquivalentTo(expectedOutputList, "Enumerable result should be correct");
+            InternalTestBindDataflow(items => items.BindDataflow(dataflow), 
+                inputList, expectedOutputList);
 
             //inputList
             //    .ToObservable()
             //    .BindDataflow(dataflow)
             //    .ToEnumerable()
             //    .ShouldAllBeEquivalentTo(expectedOutputList, "Observable result should be correct");
+        }
+
+        private static void InternalTestBindDataflow<TInput, TOutput>(Func<IEnumerable<TInput>, IEnumerable<TOutput>> transform, List<TInput> inputList, List<TOutput> expectedOutput)
+        {
+            var actualOutput = transform(inputList);
+            actualOutput.ShouldAllBeEquivalentTo(expectedOutput, "Enumerable result should be correct");
         }
     }
 }
