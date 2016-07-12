@@ -13,5 +13,7 @@ namespace Dataflow.Core
         IDataflowType<IList<T>> CreateBufferType<T>();
 
         IDataflowType<IGroupedDataflow<TKey, TElement>> CreateGroupType<TKey, TElement>();
+
+        IDataflowType<IList<T>> CreateToListType<T>();
     }
 }

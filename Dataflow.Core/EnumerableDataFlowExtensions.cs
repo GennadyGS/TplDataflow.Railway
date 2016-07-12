@@ -73,6 +73,11 @@ namespace Dataflow.Core
             {
                 return new GroupType<TKey, TElement>();
             }
+
+            public IDataflowType<IList<T>> CreateToListType<T>()
+            {
+                return new ToListType<T>();
+            }
         }
 
         private abstract class DataflowType<T, TDataflow> : IDataflowType<T> where TDataflow : IDataflow<T>
@@ -198,6 +203,25 @@ namespace Dataflow.Core
                             Continuation = innerGroup.First().Continuation
                         })
                         .Select(groupAndCont => groupAndCont.Continuation(groupAndCont.Group)));
+            }
+        }
+
+        private class ToListType<T> : DataflowOperatorType<IList<T>, ToList<T>>
+        {
+            public override IEnumerable<IList<T>> TransformDataFlows(IEnumerable<ToList<T>> dataflows)
+            {
+                return dataflows
+                    .Select(dataflow => dataflow.Item)
+                    .ToListEnumerable();
+            }
+
+            public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IList<T>, TOutput, ToList<T>>> calculationDataflows)
+            {
+                var calculationDataflowList = calculationDataflows.ToList();
+                return calculationDataflowList
+                    .Select(dataflow => dataflow.Operator.Item)
+                    .ToListEnumerable()
+                    .Select(list => calculationDataflowList[0].Continuation(list));
             }
         }
     }

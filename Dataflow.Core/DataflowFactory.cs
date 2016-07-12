@@ -64,7 +64,10 @@ namespace Dataflow.Core
 
         public IDataflow<IList<T>> ToList<T>(T item)
         {
-            throw new NotImplementedException();
+            var type = (IDataflowType<IList<T>>)_typeCache.GetOrAdd(
+                typeof(ToList<T>),
+                _ => _typeFactory.CreateToListType<T>());
+            return new ToList<T>(this, type, item);
         }
     }
 }

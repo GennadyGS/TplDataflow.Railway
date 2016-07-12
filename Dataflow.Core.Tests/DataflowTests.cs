@@ -183,6 +183,30 @@ namespace Dataflow.Core.Tests
         }
 
         [Fact]
+        public void BindToListDataflow_ShouldReturnCorrectResult()
+        {
+            var input = Enumerable.Range(0, 100).ToList();
+
+            var expectedOutput = input.ToListEnumerable();
+
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => 
+                dataflowFactory.ToList(i));
+        }
+
+        [Fact]
+        public void BindToListAndSelectManyDataflow_ShouldReturnCorrectResult()
+        {
+            var input = Enumerable.Range(0, 100).ToList();
+
+            var expectedOutput = input;
+
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory
+                    .ToList(i)
+                    .SelectMany(list => list));
+        }
+
+        [Fact]
         public void BindGroupByDataflow_ShouldReturnCorrectResult()
         {
             const int itemCount = 50;
