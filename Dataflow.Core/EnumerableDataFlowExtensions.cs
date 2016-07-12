@@ -176,6 +176,7 @@ namespace Dataflow.Core
         {
             public override IEnumerable<IGroupedDataflow<TKey, TElement>> TransformDataFlows(IEnumerable<Group<TKey, TElement>> dataflows)
             {
+                // TODO: Fix
                 return dataflows
                     .GroupBy(item => item.KeySelector)
                     .SelectMany(group => group
