@@ -12,6 +12,8 @@ namespace Dataflow.Core
         private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods
             = new ConcurrentDictionary<Tuple<Type, Type>, MethodInfo>();
 
+        private static readonly ConcurrentDictionary<Type, object> _typeCache = new ConcurrentDictionary<Type, object>();
+
         public static IEnumerable<TOutput> BindDataflow<TInput, TOutput>(this IEnumerable<TInput> input,
             Func<IDataflowFactory, TInput, IDataflow<TOutput>> bindFunc)
         {
@@ -45,6 +47,16 @@ namespace Dataflow.Core
             where TDataflow : IDataflow<TOutput>
         {
             return dataflowType.TransformDataFlows(dataflows.Cast<TDataflow>());
+        }
+
+        // TODO: Refactor
+        private static IGroupedDataflow<TKey, TElement> CreateGroupedDataflow<TKey, TElement>(IDataflowFactory factory, TKey key,
+            IEnumerable<TElement> items)
+        {
+            var type = (GroupedDataflowType<TKey, TElement>)_typeCache.GetOrAdd(
+                typeof(GroupedDataflow<TKey, TElement>),
+                _ => new GroupedDataflowType<TKey, TElement>());
+            return new GroupedDataflow<TKey, TElement>(factory, type, key, items);
         }
 
         private class DataflowTypeFactory : IDataflowTypeFactory
@@ -86,7 +98,6 @@ namespace Dataflow.Core
 
             public Type TypeOfDataflow => typeof(TDataflow);
         }
-
 
         private abstract class DataflowOperatorType<T, TDataflow> : DataflowType<T, TDataflow> where TDataflow : DataflowOperator<T, TDataflow>
         {
@@ -182,8 +193,9 @@ namespace Dataflow.Core
                     .SelectMany(group => group
                         .Select(item => item)
                         .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory })
-                        .Select(innerGroup => innerGroup.Key.Factory.GroupedDataflow(
-                            innerGroup.Key.Key, innerGroup.Select(item => item.Item))));
+                        .Select(innerGroup => CreateGroupedDataflow(
+                            innerGroup.Key.Factory, innerGroup.Key.Key, 
+                            innerGroup.Select(item => item.Item))));
             }
 
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IGroupedDataflow<TKey, TElement>, TOutput, Group<TKey, TElement>>> calculationDataflows)
@@ -199,8 +211,9 @@ namespace Dataflow.Core
                         })
                         .Select(innerGroup => new
                         {
-                            Group = innerGroup.Key.Factory.GroupedDataflow(
-                                innerGroup.Key.Key, innerGroup.Select(item => item.Operator.Item)),
+                            Group = CreateGroupedDataflow(
+                                innerGroup.Key.Factory, innerGroup.Key.Key,
+                                innerGroup.Select(item => item.Operator.Item)),
                             Continuation = innerGroup.First().Continuation
                         })
                         .Select(groupAndCont => groupAndCont.Continuation(groupAndCont.Group)));
@@ -223,6 +236,35 @@ namespace Dataflow.Core
                     .Select(dataflow => dataflow.Operator.Item)
                     .ToListEnumerable()
                     .Select(list => calculationDataflowList[0].Continuation(list));
+            }
+        }
+
+        private class GroupedDataflowType<TKey, TElement> : DataflowOperatorType<TElement, GroupedDataflow<TKey, TElement>>
+        {
+            public override IEnumerable<TElement> TransformDataFlows(IEnumerable<GroupedDataflow<TKey, TElement>> dataflows)
+            {
+                return dataflows.SelectMany(dataflow => dataflow.Items);
+            }
+
+            public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<TElement, TOutput, GroupedDataflow<TKey, TElement>>> calculationDataflows)
+            {
+                IEnumerable<TOutput> performOperator = calculationDataflows
+                    .SelectMany(dataflow => dataflow.Operator.Items.BindDataflow((factory, item) => dataflow.Continuation(item)));
+                throw new NotImplementedException();
+            }
+        }
+
+        public class GroupedDataflow<TKey, TElement> : DataflowOperator<TElement, GroupedDataflow<TKey, TElement>>, IGroupedDataflow<TKey, TElement>
+        {
+            public TKey Key { get; }
+
+            public IEnumerable<TElement> Items { get; }
+
+            public GroupedDataflow(IDataflowFactory factory, IDataflowType<TElement> type, TKey key, IEnumerable<TElement> items)
+                : base(factory, type)
+            {
+                Key = key;
+                Items = items;
             }
         }
     }
