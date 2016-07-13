@@ -54,14 +54,6 @@ namespace Dataflow.Core
             return new Group<TKey, TElement>(this, type, item, keySelector);
         }
 
-        public IGroupedDataflow<TKey, TElement> GroupedDataflow<TKey, TElement>(TKey key, IEnumerable<TElement> items)
-        {
-            var type = (IDataflowType<TElement>)_typeCache.GetOrAdd(
-                typeof(GroupedDataflow<TKey, TElement>),
-                _ => _typeFactory.CreateReturnManyType<TElement>());
-            return new GroupedDataflow<TKey, TElement>(this, type, key, items);
-        }
-
         public IDataflow<IList<T>> ToList<T>(T item)
         {
             var type = (IDataflowType<IList<T>>)_typeCache.GetOrAdd(

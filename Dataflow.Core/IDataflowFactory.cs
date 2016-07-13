@@ -16,8 +16,6 @@ namespace Dataflow.Core
 
         IDataflow<IGroupedDataflow<TKey, TElement>> GroupBy<TKey, TElement>(TElement item, Func<TElement, TKey> keySelector);
 
-        IGroupedDataflow<TKey, TElement> GroupedDataflow<TKey, TElement>(TKey key, IEnumerable<TElement> items);
-
         IDataflow<IList<T>> ToList<T>(T item);
     }
 }

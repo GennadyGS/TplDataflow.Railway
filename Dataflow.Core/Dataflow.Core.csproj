@@ -41,7 +41,6 @@
     <Compile Include="DataflowExtensions.cs" />
     <Compile Include="DataflowFactory.cs" />
     <Compile Include="Group.cs" />
-    <Compile Include="GroupedDataflow.cs" />
     <Compile Include="IDataflow.cs" />
     <Compile Include="IDataflowFactory.cs" />
     <Compile Include="DataflowOperator.cs" />

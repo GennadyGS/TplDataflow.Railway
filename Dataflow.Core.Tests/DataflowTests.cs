@@ -220,7 +220,6 @@ namespace Dataflow.Core.Tests
                 .Return(i)
                 .GroupBy(item => item % 2)
                 .SelectMany(group => group.ToList()));
-
         }
 
         private static void TestBindDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
