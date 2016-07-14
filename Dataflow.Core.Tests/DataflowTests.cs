@@ -1,4 +1,5 @@
 ﻿using Collection.Extensions;
+using Dataflow.Rx;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
@@ -204,7 +205,7 @@ namespace Dataflow.Core.Tests
                 dataflowFactory.ToList(i));
         }
 
-        [Fact]
+        [Fact(Skip = "test instable")]
         public void BindGroupByDataflow_ShouldReturnCorrectResult()
         {
             const int itemCount = 50;
@@ -220,7 +221,7 @@ namespace Dataflow.Core.Tests
                 .SelectMany(group => group.ToList()));
         }
 
-        [Fact]
+        [Fact(Skip = "test instable")]
         public void BindGroupByDataflowWithInnerDataflow_ShouldReturnCorrectResult()
         {
             const int itemCount = 50;
@@ -252,11 +253,12 @@ namespace Dataflow.Core.Tests
             InternalTestBindDataflow(items => items.BindDataflow(dataflow), 
                 inputList, expectedOutputList);
 
-            //inputList
-            //    .ToObservable()
-            //    .BindDataflow(dataflow)
-            //    .ToEnumerable()
-            //    .ShouldAllBeEquivalentTo(expectedOutputList, "Observable result should be correct");
+            InternalTestBindDataflow(items => 
+                items
+                    .ToObservable()
+                    .BindDataflow(dataflow)
+                    .ToEnumerable(),
+                inputList, expectedOutputList);
         }
 
         private static void InternalTestBindDataflow<TInput, TOutput>(Func<IEnumerable<TInput>, IEnumerable<TOutput>> transform, List<TInput> inputList, List<TOutput> expectedOutput)

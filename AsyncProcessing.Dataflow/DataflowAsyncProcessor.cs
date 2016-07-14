@@ -2,6 +2,7 @@
 using Dataflow.Core;
 using System;
 using System.Reactive.Subjects;
+using Dataflow.Rx;
 
 namespace AsyncProcessing.Dataflow
 {
@@ -12,8 +13,7 @@ namespace AsyncProcessing.Dataflow
 
         public DataflowAsyncProcessor(Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
         {
-            throw new NotImplementedException();
-            //_input.BindDataflow(dataflow).Subscribe(_output);
+            _input.BindDataflow(dataflow).Subscribe(_output);
         }
 
         void IObserver<TInput>.OnNext(TInput value)

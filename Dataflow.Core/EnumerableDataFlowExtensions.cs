@@ -231,11 +231,10 @@ namespace Dataflow.Core
 
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IList<T>, TOutput, ToList<T>>> calculationDataflows)
             {
-                var calculationDataflowList = calculationDataflows.ToList();
-                return calculationDataflowList
+                return calculationDataflows
                     .Select(dataflow => dataflow.Operator.Item)
                     .ToListEnumerable()
-                    .Select(list => calculationDataflowList[0].Continuation(list));
+                    .Select(list => calculationDataflows.First().Continuation(list));
             }
         }
 
