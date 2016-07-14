@@ -198,12 +198,10 @@ namespace Dataflow.Core.Tests
         {
             var input = Enumerable.Range(0, 100).ToList();
 
-            var expectedOutput = input;
+            var expectedOutput = input.ToListEnumerable();
 
             TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
-                dataflowFactory
-                    .ToList(i)
-                    .SelectMany(list => list));
+                dataflowFactory.ToList(i));
         }
 
         [Fact]
@@ -239,7 +237,7 @@ namespace Dataflow.Core.Tests
 
         private static void InternalTestBindDataflow<TInput, TOutput>(Func<IEnumerable<TInput>, IEnumerable<TOutput>> transform, List<TInput> inputList, List<TOutput> expectedOutput)
         {
-            var actualOutput = transform(inputList);
+            var actualOutput = transform(inputList).ToList();
             actualOutput.ShouldAllBeEquivalentTo(expectedOutput, "Enumerable result should be correct");
         }
     }

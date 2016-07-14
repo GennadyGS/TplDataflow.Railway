@@ -248,9 +248,10 @@ namespace Dataflow.Core
 
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<TElement, TOutput, GroupedDataflow<TKey, TElement>>> calculationDataflows)
             {
-                IEnumerable<TOutput> performOperator = calculationDataflows
-                    .SelectMany(dataflow => dataflow.Operator.Items.BindDataflow((factory, item) => dataflow.Continuation(item)));
-                throw new NotImplementedException();
+                return calculationDataflows
+                    .Select(dataflow => 
+                        dataflow.Factory.ReturnMany(dataflow.Operator.Items.BindDataflow((factory, item) => 
+                            dataflow.Continuation(item))));
             }
         }
 
@@ -265,6 +266,11 @@ namespace Dataflow.Core
             {
                 Key = key;
                 Items = items;
+            }
+
+            public override IDataflow<TOutput> Bind<TOutput>(Func<TElement, IDataflow<TOutput>> bindFunc)
+            {
+                return base.Bind(bindFunc);
             }
         }
     }
