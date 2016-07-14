@@ -267,11 +267,6 @@ namespace Dataflow.Core
                 Key = key;
                 Items = items;
             }
-
-            public override IDataflow<TOutput> Bind<TOutput>(Func<TElement, IDataflow<TOutput>> bindFunc)
-            {
-                return base.Bind(bindFunc);
-            }
         }
     }
 }
