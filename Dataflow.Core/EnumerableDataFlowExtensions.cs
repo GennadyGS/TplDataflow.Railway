@@ -182,13 +182,8 @@ namespace Dataflow.Core
                     })
                     .SelectMany(group => group.Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize))
                     .Where(batch => batch.Count > 0)
-                    // TODO: refactor to one select
-                    .Select(batch => new
-                    {
-                        Items = batch.Select(item => item.Operator.Item).ToList(),
-                        batch.First().Continuation
-                    })
-                    .Select(batch => batch.Continuation(batch.Items));
+                    .Select(batch => 
+                        batch[0].Continuation(batch.Select(item => item.Operator.Item).ToList()));
             }
         }
 
