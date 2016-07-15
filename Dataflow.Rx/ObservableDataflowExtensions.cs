@@ -60,6 +60,14 @@ namespace Dataflow.Rx
             return new GroupedDataflow<TKey, TElement>(factory, type, key, items);
         }
 
+        private static IDataflow<T> CreateResultDataflow<T>(IDataflowFactory factory, IObservable<T> results)
+        {
+            var type = (ResultDataflowType<T>)_typeCache.GetOrAdd(
+                typeof(ResultDataflow<T>),
+                _ => new ResultDataflowType<T>());
+            return new ResultDataflow<T>(factory, type, results);
+        }
+
         private class DataflowTypeFactory : IDataflowTypeFactory
         {
             IDataflowType<TOutput> IDataflowTypeFactory.CreateCalculationType<TInput, TOutput, TDataflowOperator>()
@@ -175,6 +183,7 @@ namespace Dataflow.Rx
                     })
                     .SelectMany(group => group.Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize))
                     .Where(batch => batch.Count > 0)
+                    // TODO: refactor to one select
                     .Select(batch => new
                     {
                         Items = batch.Select(item => item.Operator.Item).ToList(),
@@ -244,11 +253,10 @@ namespace Dataflow.Rx
 
             public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(IObservable<DataflowCalculation<TElement, TOutput, GroupedDataflow<TKey, TElement>>> calculationDataflows)
             {
-                throw new NotImplementedException();
-                //return calculationDataflows
-                //    .Select(dataflow =>
-                //        dataflow.Factory.ReturnMany(dataflow.Operator.Items.BindDataflow((factory, item) =>
-                //            dataflow.Continuation(item))));
+                return calculationDataflows
+                    .Select(dataflow =>
+                        CreateResultDataflow(dataflow.Factory, dataflow.Operator.Items.BindDataflow((factory, item) =>
+                            dataflow.Continuation(item))));
             }
         }
 
@@ -263,6 +271,33 @@ namespace Dataflow.Rx
             {
                 Key = key;
                 Items = items;
+            }
+        }
+
+        private class ResultDataflowType<T> : DataflowOperatorType<T, ResultDataflow<T>>
+        {
+            public override IObservable<T> TransformDataFlows(IObservable<ResultDataflow<T>> dataflows)
+            {
+                return dataflows.SelectMany(dataflow => dataflow.Results);
+            }
+
+            public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(IObservable<DataflowCalculation<T, TOutput, ResultDataflow<T>>> calculationDataflows)
+            {
+                return calculationDataflows
+                    .Select(dataflow => 
+                        CreateResultDataflow(dataflow.Factory, 
+                            dataflow.Operator.Results.BindDataflow((factory, item) => dataflow.Continuation(item))));
+            }
+        }
+
+        public class ResultDataflow<T> : DataflowOperator<T, ResultDataflow<T>>
+        {
+            public IObservable<T> Results { get; }
+
+            public ResultDataflow(IDataflowFactory factory, IDataflowType<T> type, IObservable<T> results) 
+                : base(factory, type)
+            {
+                Results = results;
             }
         }
     }

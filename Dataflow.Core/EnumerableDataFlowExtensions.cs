@@ -59,6 +59,14 @@ namespace Dataflow.Core
             return new GroupedDataflow<TKey, TElement>(factory, type, key, items);
         }
 
+        private static IDataflow<T> CreateResultDataflow<T>(IDataflowFactory factory, IEnumerable<T> results)
+        {
+            var type = (ResultDataflowType<T>)_typeCache.GetOrAdd(
+                typeof(ResultDataflow<T>),
+                _ => new ResultDataflowType<T>());
+            return new ResultDataflow<T>(factory, type, results);
+        }
+
         private class DataflowTypeFactory : IDataflowTypeFactory
         {
             IDataflowType<TOutput> IDataflowTypeFactory.CreateCalculationType<TInput, TOutput, TDataflowOperator>()
@@ -246,7 +254,7 @@ namespace Dataflow.Core
             {
                 return calculationDataflows
                     .Select(dataflow =>
-                        dataflow.Factory.ReturnMany(dataflow.Operator.Items.BindDataflow((factory, item) =>
+                        CreateResultDataflow(dataflow.Factory, dataflow.Operator.Items.BindDataflow((factory, item) =>
                             dataflow.Continuation(item))));
             }
         }
@@ -262,6 +270,33 @@ namespace Dataflow.Core
             {
                 Key = key;
                 Items = items;
+            }
+        }
+
+        private class ResultDataflowType<T> : DataflowOperatorType<T, ResultDataflow<T>>
+        {
+            public override IEnumerable<T> TransformDataFlows(IEnumerable<ResultDataflow<T>> dataflows)
+            {
+                return dataflows.SelectMany(dataflow => dataflow.Results);
+            }
+
+            public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<T, TOutput, ResultDataflow<T>>> calculationDataflows)
+            {
+                return calculationDataflows
+                    .Select(dataflow => 
+                        CreateResultDataflow(dataflow.Factory, 
+                            dataflow.Operator.Results.BindDataflow((factory, item) => dataflow.Continuation(item))));
+            }
+        }
+
+        public class ResultDataflow<T> : DataflowOperator<T, ResultDataflow<T>>
+        {
+            public IEnumerable<T> Results { get; }
+
+            public ResultDataflow(IDataflowFactory factory, IDataflowType<T> type, IEnumerable<T> results) 
+                : base(factory, type)
+            {
+                Results = results;
             }
         }
     }
