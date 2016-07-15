@@ -174,6 +174,7 @@ namespace Dataflow.Core
                     })
                     .SelectMany(group => group.Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize))
                     .Where(batch => batch.Count > 0)
+                    // TODO: refactor to one select
                     .Select(batch => new
                     {
                         Items = batch.Select(item => item.Operator.Item).ToList(),
@@ -194,7 +195,7 @@ namespace Dataflow.Core
                         .Select(item => item)
                         .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory })
                         .Select(innerGroup => CreateGroupedDataflow(
-                            innerGroup.Key.Factory, innerGroup.Key.Key, 
+                            innerGroup.Key.Factory, innerGroup.Key.Key,
                             innerGroup.Select(item => item.Item))));
             }
 
@@ -232,9 +233,9 @@ namespace Dataflow.Core
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IList<T>, TOutput, ToList<T>>> calculationDataflows)
             {
                 return calculationDataflows
-                    .Select(dataflow => dataflow.Operator.Item)
                     .ToListEnumerable()
-                    .Select(list => calculationDataflows.First().Continuation(list));
+                    .Where(list => list.Count > 0)
+                    .Select(list => list[0].Continuation(list.Select(item => item.Operator.Item).ToList()));
             }
         }
 
@@ -248,8 +249,8 @@ namespace Dataflow.Core
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<TElement, TOutput, GroupedDataflow<TKey, TElement>>> calculationDataflows)
             {
                 return calculationDataflows
-                    .Select(dataflow => 
-                        dataflow.Factory.ReturnMany(dataflow.Operator.Items.BindDataflow((factory, item) => 
+                    .Select(dataflow =>
+                        dataflow.Factory.ReturnMany(dataflow.Operator.Items.BindDataflow((factory, item) =>
                             dataflow.Continuation(item))));
             }
         }

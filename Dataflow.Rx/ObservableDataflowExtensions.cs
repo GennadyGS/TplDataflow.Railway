@@ -233,9 +233,9 @@ namespace Dataflow.Rx
             public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(IObservable<DataflowCalculation<IList<T>, TOutput, ToList<T>>> calculationDataflows)
             {
                 return calculationDataflows
-                    .Select(dataflow => dataflow.Operator.Item)
                     .ToList()
-                    .Select(list => calculationDataflows.First().Continuation(list));
+                    .Where(list => list.Count > 0)
+                    .Select(list => list[0].Continuation(list.Select(item => item.Operator.Item).ToList()));
             }
         }
 
