@@ -205,7 +205,7 @@ namespace Dataflow.Core.Tests
                 dataflowFactory.ToList(i));
         }
 
-        [Fact(Skip = "test instable")]
+        [Fact(Skip = "")]
         public void BindGroupByDataflow_ShouldReturnCorrectResult()
         {
             const int itemCount = 50;
@@ -221,7 +221,7 @@ namespace Dataflow.Core.Tests
                 .SelectMany(group => group.ToList()));
         }
 
-        [Fact(Skip = "test instable")]
+        [Fact(Skip = "")]
         public void BindGroupByDataflowWithInnerDataflow_ShouldReturnCorrectResult()
         {
             const int itemCount = 50;
@@ -253,7 +253,7 @@ namespace Dataflow.Core.Tests
             InternalTestBindDataflow(items => items.BindDataflow(dataflow), 
                 inputList, expectedOutputList);
 
-            InternalTestBindDataflow(items => 
+            InternalTestBindDataflow(items =>
                 items
                     .ToObservable()
                     .BindDataflow(dataflow)

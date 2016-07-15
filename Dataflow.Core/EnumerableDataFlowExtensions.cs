@@ -204,20 +204,16 @@ namespace Dataflow.Core
                 return calculationDataflows
                     .GroupBy(item => item.Operator.KeySelector)
                     .SelectMany(group => group
-                        .Select(item => item)
                         .GroupBy(item => new
                         {
                             Key = group.Key(item.Operator.Item),
+                            Continuation = item.Continuation,
                             Factory = item.Factory
                         })
-                        .Select(innerGroup => new
-                        {
-                            Group = CreateGroupedDataflow(
+                        .Select(innerGroup => innerGroup.Key.Continuation(
+                            CreateGroupedDataflow(
                                 innerGroup.Key.Factory, innerGroup.Key.Key,
-                                innerGroup.Select(item => item.Operator.Item)),
-                            Continuation = innerGroup.First().Continuation
-                        })
-                        .Select(groupAndCont => groupAndCont.Continuation(groupAndCont.Group)));
+                                innerGroup.Select(item => item.Operator.Item)))));
             }
         }
 
