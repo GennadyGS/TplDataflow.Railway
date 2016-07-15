@@ -25,7 +25,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TplDataflow.Railway", "TplD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Core", "Dataflow.Core\Dataflow.Core.csproj", "{79C5A0F9-E9EC-4B45-8F84-6859C6E07522}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Core.Tests", "Dataflow.Core.Tests\Dataflow.Core.Tests.csproj", "{54E4902A-C90A-4507-A41C-E709B476477D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Tests", "Dataflow.Tests\Dataflow.Tests.csproj", "{54E4902A-C90A-4507-A41C-E709B476477D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dataflow.Railway", "Dataflow.Railway\Dataflow.Railway.csproj", "{1BCFCF79-6205-49A2-A213-62A97A1D10FF}"
 EndProject

@@ -7,8 +7,8 @@
     <ProjectGuid>{54E4902A-C90A-4507-A41C-E709B476477D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Dataflow.Core.Tests</RootNamespace>
-    <AssemblyName>Dataflow.Core.Tests</AssemblyName>
+    <RootNamespace>Dataflow.Tests</RootNamespace>
+    <AssemblyName>Dataflow.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
