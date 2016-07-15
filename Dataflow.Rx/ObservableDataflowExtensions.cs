@@ -192,11 +192,9 @@ namespace Dataflow.Rx
         {
             public override IObservable<IGroupedDataflow<TKey, TElement>> TransformDataFlows(IObservable<Group<TKey, TElement>> dataflows)
             {
-                // TODO: Fix
                 return dataflows
                     .GroupBy(item => item.KeySelector)
                     .SelectMany(group => group
-                        .Select(item => item)
                         .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory })
                         .Select(innerGroup => CreateGroupedDataflow(
                             innerGroup.Key.Factory, innerGroup.Key.Key,
