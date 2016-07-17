@@ -53,22 +53,18 @@ namespace Dataflow.Core
             {
             }
 
-            private readonly ConcurrentDictionary<Type, object> _typeCache = new ConcurrentDictionary<Type, object>();
-
             public IGroupedDataflow<TKey, TElement> CreateGroupedDataflow<TKey, TElement>(TKey key,
                 IEnumerable<TElement> items)
             {
-                var type = (GroupedDataflowType<TKey, TElement>) _typeCache.GetOrAdd(
-                    typeof(GroupedDataflow<TKey, TElement>),
-                    _ => new GroupedDataflowType<TKey, TElement>());
+                var type = GetOrCreateType(typeof(GroupedDataflow<TKey, TElement>),
+                    () => new GroupedDataflowType<TKey, TElement>());
                 return new GroupedDataflow<TKey, TElement>(this, type, key, items);
             }
 
             public IDataflow<T> CreateResultDataflow<T>(IEnumerable<T> results)
             {
-                var type = (ResultDataflowType<T>) _typeCache.GetOrAdd(
-                    typeof(ResultDataflow<T>),
-                    _ => new ResultDataflowType<T>());
+                var type = GetOrCreateType(typeof(ResultDataflow<T>),
+                    () => new ResultDataflowType<T>());
                 return new ResultDataflow<T>(this, type, results);
             }
         }
