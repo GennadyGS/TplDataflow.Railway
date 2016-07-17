@@ -35,7 +35,8 @@ namespace TplDataflow.Linq
 
         public static ISourceBlock<T> Where<T>(this ISourceBlock<T> source, Predicate<T> predicate)
         {
-            throw new NotImplementedException();
+            // TODO: Implement filtering
+            return source;
         }
 
         public static ISourceBlock<GroupedSourceBlock<TKey, TElement>> GroupBy<TElement, TKey>(
