@@ -8,7 +8,9 @@ namespace Collection.Extensions
     {
         public static IEnumerable<IList<T>> ToListEnumerable<T>(this IEnumerable<T> source)
         {
-            return Enumerable.Repeat(source.ToList(), 1);
+            return source
+                .GroupBy(_ => true)
+                .Select(group => group.ToList());
         }
 
         public static IEnumerable<IList<T>> Buffer<T>(this IEnumerable<T> source, TimeSpan batchTimeout, int count)
