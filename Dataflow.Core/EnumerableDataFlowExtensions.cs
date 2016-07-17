@@ -12,8 +12,6 @@ namespace Dataflow.Core
         private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods
             = new ConcurrentDictionary<Tuple<Type, Type>, MethodInfo>();
 
-        private static readonly ConcurrentDictionary<Type, object> _typeCache = new ConcurrentDictionary<Type, object>();
-
         public static IEnumerable<TOutput> BindDataflow<TInput, TOutput>(this IEnumerable<TInput> input,
             Func<IDataflowFactory, TInput, IDataflow<TOutput>> bindFunc)
         {
@@ -49,22 +47,30 @@ namespace Dataflow.Core
             return dataflowType.TransformDataFlows(dataflows.Cast<TDataflow>());
         }
 
-        // TODO: Refactor
-        private static IGroupedDataflow<TKey, TElement> CreateGroupedDataflow<TKey, TElement>(IDataflowFactory factory, TKey key,
-            IEnumerable<TElement> items)
+        private class DataflowFactory : Core.DataflowFactory
         {
-            var type = (GroupedDataflowType<TKey, TElement>)_typeCache.GetOrAdd(
-                typeof(GroupedDataflow<TKey, TElement>),
-                _ => new GroupedDataflowType<TKey, TElement>());
-            return new GroupedDataflow<TKey, TElement>(factory, type, key, items);
-        }
+            public DataflowFactory(IDataflowTypeFactory typeFactory) : base(typeFactory)
+            {
+            }
 
-        private static IDataflow<T> CreateResultDataflow<T>(IDataflowFactory factory, IEnumerable<T> results)
-        {
-            var type = (ResultDataflowType<T>)_typeCache.GetOrAdd(
-                typeof(ResultDataflow<T>),
-                _ => new ResultDataflowType<T>());
-            return new ResultDataflow<T>(factory, type, results);
+            private readonly ConcurrentDictionary<Type, object> _typeCache = new ConcurrentDictionary<Type, object>();
+
+            public IGroupedDataflow<TKey, TElement> CreateGroupedDataflow<TKey, TElement>(TKey key,
+                IEnumerable<TElement> items)
+            {
+                var type = (GroupedDataflowType<TKey, TElement>) _typeCache.GetOrAdd(
+                    typeof(GroupedDataflow<TKey, TElement>),
+                    _ => new GroupedDataflowType<TKey, TElement>());
+                return new GroupedDataflow<TKey, TElement>(this, type, key, items);
+            }
+
+            public IDataflow<T> CreateResultDataflow<T>(IEnumerable<T> results)
+            {
+                var type = (ResultDataflowType<T>) _typeCache.GetOrAdd(
+                    typeof(ResultDataflow<T>),
+                    _ => new ResultDataflowType<T>());
+                return new ResultDataflow<T>(this, type, results);
+            }
         }
 
         private class DataflowTypeFactory : IDataflowTypeFactory
@@ -195,9 +201,9 @@ namespace Dataflow.Core
                     .GroupBy(item => item.KeySelector)
                     .SelectMany(group => group
                         .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory })
-                        .Select(innerGroup => CreateGroupedDataflow(
-                            innerGroup.Key.Factory, innerGroup.Key.Key,
-                            innerGroup.Select(item => item.Item))));
+                        .Select(innerGroup =>
+                            ((DataflowFactory) innerGroup.Key.Factory).CreateGroupedDataflow(
+                                innerGroup.Key.Key, innerGroup.Select(item => item.Item))));
             }
 
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<IGroupedDataflow<TKey, TElement>, TOutput, Group<TKey, TElement>>> calculationDataflows)
@@ -212,9 +218,8 @@ namespace Dataflow.Core
                             Factory = item.Factory
                         })
                         .Select(innerGroup => innerGroup.Key.Continuation(
-                            CreateGroupedDataflow(
-                                innerGroup.Key.Factory, innerGroup.Key.Key,
-                                innerGroup.Select(item => item.Operator.Item)))));
+                            ((DataflowFactory) innerGroup.Key.Factory).CreateGroupedDataflow(
+                                innerGroup.Key.Key, innerGroup.Select(item => item.Operator.Item)))));
             }
         }
 
@@ -247,8 +252,9 @@ namespace Dataflow.Core
             {
                 return calculationDataflows
                     .Select(dataflow =>
-                        CreateResultDataflow(dataflow.Factory, dataflow.Operator.Items.BindDataflow((factory, item) =>
-                            dataflow.Continuation(item))));
+                        ((DataflowFactory) dataflow.Factory).CreateResultDataflow(
+                            dataflow.Operator.Items.BindDataflow((factory, item) => 
+                                dataflow.Continuation(item))));
             }
         }
 
@@ -276,8 +282,8 @@ namespace Dataflow.Core
             public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<T, TOutput, ResultDataflow<T>>> calculationDataflows)
             {
                 return calculationDataflows
-                    .Select(dataflow => 
-                        CreateResultDataflow(dataflow.Factory, 
+                    .Select(dataflow =>
+                        ((DataflowFactory) dataflow.Factory).CreateResultDataflow(
                             dataflow.Operator.Results.BindDataflow((factory, item) => dataflow.Continuation(item))));
             }
         }
