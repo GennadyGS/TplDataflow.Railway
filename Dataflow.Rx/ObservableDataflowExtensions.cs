@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reactive.Linq;
 using System.Reflection;
 using Dataflow.Core;
+using System.Reactive.Linq;
+using System.Linq;
 
 namespace Dataflow.Rx
 {
@@ -12,8 +12,6 @@ namespace Dataflow.Rx
     {
         private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods
             = new ConcurrentDictionary<Tuple<Type, Type>, MethodInfo>();
-
-        private static readonly ConcurrentDictionary<Type, object> _typeCache = new ConcurrentDictionary<Type, object>();
 
         public static IObservable<TOutput> BindDataflow<TInput, TOutput>(this IObservable<TInput> input,
             Func<IDataflowFactory, TInput, IDataflow<TOutput>> bindFunc)
@@ -50,22 +48,26 @@ namespace Dataflow.Rx
             return dataflowType.TransformDataFlows(dataflows.Cast<TDataflow>());
         }
 
-        // TODO: Refactor
-        private static IGroupedDataflow<TKey, TElement> CreateGroupedDataflow<TKey, TElement>(IDataflowFactory factory, TKey key,
-            IObservable<TElement> items)
+        private class DataflowFactory : Core.DataflowFactory
         {
-            var type = (GroupedDataflowType<TKey, TElement>)_typeCache.GetOrAdd(
-                typeof(GroupedDataflow<TKey, TElement>),
-                _ => new GroupedDataflowType<TKey, TElement>());
-            return new GroupedDataflow<TKey, TElement>(factory, type, key, items);
-        }
+            public DataflowFactory(IDataflowTypeFactory typeFactory) : base(typeFactory)
+            {
+            }
 
-        private static IDataflow<T> CreateResultDataflow<T>(IDataflowFactory factory, IObservable<T> results)
-        {
-            var type = (ResultDataflowType<T>)_typeCache.GetOrAdd(
-                typeof(ResultDataflow<T>),
-                _ => new ResultDataflowType<T>());
-            return new ResultDataflow<T>(factory, type, results);
+            public IGroupedDataflow<TKey, TElement> CreateGroupedDataflow<TKey, TElement>(TKey key,
+                IObservable<TElement> items)
+            {
+                var type = GetOrCreateType(typeof(GroupedDataflow<TKey, TElement>),
+                    () => new GroupedDataflowType<TKey, TElement>());
+                return new GroupedDataflow<TKey, TElement>(this, type, key, items);
+            }
+
+            public IDataflow<T> CreateResultDataflow<T>(IObservable<T> results)
+            {
+                var type = GetOrCreateType(typeof(ResultDataflow<T>),
+                    () => new ResultDataflowType<T>());
+                return new ResultDataflow<T>(this, type, results);
+            }
         }
 
         private class DataflowTypeFactory : IDataflowTypeFactory
@@ -183,7 +185,7 @@ namespace Dataflow.Rx
                     })
                     .SelectMany(group => group.Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize))
                     .Where(batch => batch.Count > 0)
-                    .Select(batch => 
+                    .Select(batch =>
                         batch[0].Continuation(batch.Select(item => item.Operator.Item).ToList()));
             }
         }
@@ -196,9 +198,9 @@ namespace Dataflow.Rx
                     .GroupBy(item => item.KeySelector)
                     .SelectMany(group => group
                         .GroupBy(item => new { Key = group.Key(item.Item), Factory = item.Factory })
-                        .Select(innerGroup => CreateGroupedDataflow(
-                            innerGroup.Key.Factory, innerGroup.Key.Key,
-                            innerGroup.Select(item => item.Item))));
+                        .Select(innerGroup =>
+                            ((DataflowFactory)innerGroup.Key.Factory).CreateGroupedDataflow(
+                                innerGroup.Key.Key, innerGroup.Select(item => item.Item))));
             }
 
             public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(IObservable<DataflowCalculation<IGroupedDataflow<TKey, TElement>, TOutput, Group<TKey, TElement>>> calculationDataflows)
@@ -213,9 +215,8 @@ namespace Dataflow.Rx
                             Factory = item.Factory
                         })
                         .Select(innerGroup => innerGroup.Key.Continuation(
-                            CreateGroupedDataflow(
-                                innerGroup.Key.Factory, innerGroup.Key.Key,
-                                innerGroup.Select(item => item.Operator.Item)))));
+                            ((DataflowFactory)innerGroup.Key.Factory).CreateGroupedDataflow(
+                                innerGroup.Key.Key, innerGroup.Select(item => item.Operator.Item)))));
             }
         }
 
@@ -248,8 +249,9 @@ namespace Dataflow.Rx
             {
                 return calculationDataflows
                     .Select(dataflow =>
-                        CreateResultDataflow(dataflow.Factory, dataflow.Operator.Items.BindDataflow((factory, item) =>
-                            dataflow.Continuation(item))));
+                        ((DataflowFactory)dataflow.Factory).CreateResultDataflow(
+                            dataflow.Operator.Items.BindDataflow((factory, item) =>
+                                dataflow.Continuation(item))));
             }
         }
 
@@ -277,8 +279,8 @@ namespace Dataflow.Rx
             public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(IObservable<DataflowCalculation<T, TOutput, ResultDataflow<T>>> calculationDataflows)
             {
                 return calculationDataflows
-                    .Select(dataflow => 
-                        CreateResultDataflow(dataflow.Factory, 
+                    .Select(dataflow =>
+                        ((DataflowFactory)dataflow.Factory).CreateResultDataflow(
                             dataflow.Operator.Results.BindDataflow((factory, item) => dataflow.Continuation(item))));
             }
         }
@@ -287,7 +289,7 @@ namespace Dataflow.Rx
         {
             public IObservable<T> Results { get; }
 
-            public ResultDataflow(IDataflowFactory factory, IDataflowType<T> type, IObservable<T> results) 
+            public ResultDataflow(IDataflowFactory factory, IDataflowType<T> type, IObservable<T> results)
                 : base(factory, type)
             {
                 Results = results;
