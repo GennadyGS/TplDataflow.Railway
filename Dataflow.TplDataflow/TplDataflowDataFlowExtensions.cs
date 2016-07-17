@@ -185,7 +185,7 @@ namespace Dataflow.TplDataflow
                         dataflow.Operator.BatchTimeout
                     })
                     .SelectMany(group => group.Buffer(group.Key.BatchTimeout, group.Key.BatchMaxSize))
-                    // .Where(batch => batch.Count > 0)
+                    .Where(batch => batch.Count > 0)
                     .Select(batch =>
                         batch[0].Continuation(batch.Select(item => item.Operator.Item).ToList()));
             }
@@ -225,12 +225,17 @@ namespace Dataflow.TplDataflow
         {
             public override ISourceBlock<IList<T>> TransformDataFlows(ISourceBlock<ToList<T>> dataflows)
             {
-                throw new NotImplementedException();
+                return dataflows
+                    .Select(dataflow => dataflow.Item)
+                    .ToList();
             }
 
             public override ISourceBlock<IDataflow<TOutput>> PerformOperator<TOutput>(ISourceBlock<DataflowCalculation<IList<T>, TOutput, ToList<T>>> calculationDataflows)
             {
-                throw new NotImplementedException();
+                return calculationDataflows
+                    .ToList()
+                    .Where(list => list.Count > 0)
+                    .Select(list => list[0].Continuation(list.Select(item => item.Operator.Item).ToList()));
             }
         }
 

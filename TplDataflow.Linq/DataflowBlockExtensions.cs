@@ -33,6 +33,11 @@ namespace TplDataflow.Linq
             return source.Select(selector).Concat();
         }
 
+        public static ISourceBlock<T> Where<T>(this ISourceBlock<T> source, Predicate<T> predicate)
+        {
+            throw new NotImplementedException();
+        }
+
         public static ISourceBlock<GroupedSourceBlock<TKey, TElement>> GroupBy<TElement, TKey>(
             this ISourceBlock<TElement> source, Func<TElement, TKey> keySelector)
         {
@@ -55,6 +60,11 @@ namespace TplDataflow.Linq
                 .Subscribe(outputBlock.AsObserver());
 
             return outputBlock;
+        }
+
+        public static ISourceBlock<IList<T>> ToList<T>(this ISourceBlock<T> source)
+        {
+            throw new NotImplementedException();
         }
 
         private static IPropagatorBlock<ISourceBlock<T>, T> CreateConcatBlock<T>(ISourceBlock<ISourceBlock<T>> source)
