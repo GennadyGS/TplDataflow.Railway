@@ -16,50 +16,49 @@ namespace Dataflow.Core
 
         IDataflow<TOutput> IDataflowFactory.Calculation<TInput, TOutput, TDataflowOperator>(TDataflowOperator @operator, Func<TInput, IDataflow<TOutput>> continuation)
         {
-            var type = (IDataflowType<TOutput>)_typeCache.GetOrAdd(
-                typeof(DataflowCalculation<TInput, TOutput, TDataflowOperator>),
-                _ => _typeFactory.CreateCalculationType<TInput, TOutput, TDataflowOperator>());
+            var type = GetOrCreateType(typeof(DataflowCalculation<TInput, TOutput, TDataflowOperator>),
+                () => _typeFactory.CreateCalculationType<TInput, TOutput, TDataflowOperator>());
             return new DataflowCalculation<TInput,TOutput, TDataflowOperator>(this, type, @operator, continuation);
         }
 
         IDataflow<T> IDataflowFactory.Return<T>(T value)
         {
-            var type = (IDataflowType<T>)_typeCache.GetOrAdd(
-                typeof(Return<T>),
-                _ => _typeFactory.CreateReturnType<T>());
+            var type = GetOrCreateType(typeof(Return<T>),
+                () => _typeFactory.CreateReturnType<T>());
             return new Return<T>(this, type, value);
         }
 
         IDataflow<T> IDataflowFactory.ReturnMany<T>(IEnumerable<T> value)
         {
-            var type = (IDataflowType<T>)_typeCache.GetOrAdd(
-                typeof(ReturnMany<T>),
-                _ => _typeFactory.CreateReturnManyType<T>());
+            var type = GetOrCreateType(typeof(ReturnMany<T>),
+                () => _typeFactory.CreateReturnManyType<T>());
             return new ReturnMany<T>(this, type, value);
         }
 
         IDataflow<IList<T>> IDataflowFactory.Buffer<T>(T item, TimeSpan batchTimeout, int batchMaxSize)
         {
-            var type = (IDataflowType<IList<T>>)_typeCache.GetOrAdd(
-                typeof(Buffer<T>),
-                _ => _typeFactory.CreateBufferType<T>());
+            var type = GetOrCreateType(typeof(Buffer<T>),
+                () => _typeFactory.CreateBufferType<T>());
             return new Buffer<T>(this, type, item, batchTimeout, batchMaxSize);
         }
 
         public IDataflow<IGroupedDataflow<TKey, TElement>> GroupBy<TKey, TElement>(TElement item, Func<TElement, TKey> keySelector)
         {
-            var type = (IDataflowType<IGroupedDataflow<TKey, TElement>>)_typeCache.GetOrAdd(
-                typeof(Group<TKey, TElement>),
-                _ => _typeFactory.CreateGroupType<TKey, TElement>());
+            var type = GetOrCreateType(typeof(Group<TKey, TElement>),
+                () => _typeFactory.CreateGroupType<TKey, TElement>());
             return new Group<TKey, TElement>(this, type, item, keySelector);
         }
 
         public IDataflow<IList<T>> ToList<T>(T item)
         {
-            var type = (IDataflowType<IList<T>>)_typeCache.GetOrAdd(
-                typeof(ToList<T>),
-                _ => _typeFactory.CreateToListType<T>());
+            var type = GetOrCreateType(typeof(ToList<T>),
+                () => _typeFactory.CreateToListType<T>());
             return new ToList<T>(this, type, item);
+        }
+
+        protected IDataflowType<TOutput> GetOrCreateType<TOutput>(Type typeOfDataflow, Func<IDataflowType<TOutput>> typeFactory)
+        {
+            return (IDataflowType<TOutput>)_typeCache.GetOrAdd(typeOfDataflow, typeFactory());
         }
     }
 }
