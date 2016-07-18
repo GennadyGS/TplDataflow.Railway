@@ -475,20 +475,21 @@ namespace EventProcessing.Implementation
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .Bind(item => ProcessEventGroupDataflow(dataflowFactory, item))
+                    .GroupBySafe(group => group.EventSetType.GetCode())
+                    .BindSafe(innerGroup => innerGroup.ToList().SelectMany(ProcessEventGroupDataflow))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         _logic.TransformResult(res));
             }
 
-            private IDataflow<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IDataflowFactory dataflowFactory, Either<UnsuccessResult, EventGroup> eventGroup)
+            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IList<EventGroup> eventGroups)
             {
-                return DataflowExtensions.Use(_logic.CreateRepository(), repository =>
+                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
                 {
-                    return dataflowFactory.Return(eventGroup)
-                        .SelectSafe(group =>
-                            _logic.FindLastEventSetsSafe(repository, new[] { @group })
-                                .Select(lastEventSets => new { @group, lastEventSets }))
-                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.@group, item.lastEventSets))
+                    return eventGroups
+                        .Select(group =>
+                            _logic.FindLastEventSetsSafe(repository, new[] { group })
+                                .Select(lastEventSets => new { group, lastEventSets }))
+                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
                         .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
                         .SelectMany(result => result);
                 });

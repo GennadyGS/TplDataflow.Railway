@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Railway.Linq;
 using TplDataFlow.Extensions;
 
 namespace TplDataflow.Railway
@@ -15,25 +16,25 @@ namespace TplDataflow.Railway
             new JointPointBlock<Either<TLeft, TRightOutput>>();
 
         private readonly IPropagatorBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>> _transformLeftBlock = 
-            new TransformBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>(input => GetLeft(input));
+            new TransformBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>(input => input.GetLeftSafe());
 
         private readonly IPropagatorBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>> _transformRightBlock;
 
         public TransformSafeBlock(Func<TRightInput, TRightOutput> transform) :
             this(new TransformBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>(
-                input => transform(GetRight(input))))
+                input => transform(input.GetRightSafe())))
         {
         }
 
         public TransformSafeBlock(Func<TRightInput, Either<TLeft, TRightOutput>> transform)
             : this(new TransformBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>(
-                input => transform(GetRight(input))))
+                input => transform(input.GetRightSafe())))
         {
         }
 
         public TransformSafeBlock(Func<TRightInput, IEnumerable<Either<TLeft, TRightOutput>>> transform)
             : this(new TransformManyBlock<Either<TLeft, TRightInput>, Either<TLeft, TRightOutput>>(
-                input => transform(GetRight(input))))
+                input => transform(input.GetRightSafe())))
         {
         }
 
@@ -114,16 +115,6 @@ namespace TplDataflow.Railway
         bool IReceivableSourceBlock<Either<TLeft, TRightOutput>>.TryReceiveAll(out IList<Either<TLeft, TRightOutput>> items)
         {
             return ((IReceivableSourceBlock<Either<TLeft, TRightOutput>>)_outputBufferBlock).TryReceiveAll(out items);
-        }
-
-        private static TRightInput GetRight(Either<TLeft, TRightInput> input)
-        {
-            return input.IfLeft(() => Prelude.failwith<TRightInput>("Not in right state"));
-        }
-
-        private static TLeft GetLeft(Either<TLeft, TRightInput> input)
-        {
-            return input.IfRight(() => Prelude.failwith<TLeft>("Not in left state"));
         }
     }
 }

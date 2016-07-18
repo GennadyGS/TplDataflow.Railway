@@ -208,7 +208,7 @@ namespace Dataflow.Tests
                 dataflowFactory.ToList(i));
         }
 
-        [Fact(Skip = "")]
+        [Fact]
         public void BindGroupByDataflow_ShouldReturnCorrectResult()
         {
             const int itemCount = 50;
@@ -224,7 +224,7 @@ namespace Dataflow.Tests
                 .SelectMany(group => group.ToList()));
         }
 
-        [Fact(Skip = "")]
+        [Fact]
         public void BindGroupByDataflowWithInnerDataflow_ShouldReturnCorrectResult()
         {
             const int itemCount = 50;

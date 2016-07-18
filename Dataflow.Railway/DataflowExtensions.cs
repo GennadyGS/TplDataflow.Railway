@@ -4,11 +4,33 @@ using Railway.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static LanguageExt.Prelude;
 
 namespace Dataflow.Railway
 {
     public static class DataflowExtensions
     {
+        public static IDataflow<TRight> Rights<TLeft, TRight>(this IDataflow<Either<TLeft, TRight>> source)
+        {
+            return source.Select(item => item.GetRightSafe());
+        }
+
+        public static IDataflow<TLeft> Lefts<TLeft, TRight>(this IDataflow<Either<TLeft, TRight>> source)
+        {
+            return source.Select(item => item.GetLeftSafe());
+        }
+
+        public static IDataflow<Either<TLeft, TRightOutput>> BindSafe<TLeft, TRightInput, TRightOutput>(
+            this IDataflow<Either<TLeft, TRightInput>> source,
+            Func<TRightInput, IDataflow<Either<TLeft, TRightOutput>>> bindFunc)
+        {
+            return source.Bind(item => 
+                item.Match(
+                    right => bindFunc(right), 
+                    left => source.Factory.Return(Left<TLeft, TRightOutput>(left))));
+        }
+
+
         public static IDataflow<Either<TLeft, TRightOutput>> Select<TLeft, TRightInput, TRightOutput>(
             this IDataflow<Either<TLeft, TRightInput>> source,
             Func<TRightInput, TRightOutput> selector)
@@ -64,21 +86,21 @@ namespace Dataflow.Railway
             return source.SelectMany(item => item.SelectManySafe(mediumSelector, resultSelector));
         }
 
-        //public static IDataflow<Either<TLeft, IGrouping<TKey, TRight>>> GroupBy<TLeft, TRight, TKey>(
-        //    this IDataflow<Either<TLeft, TRight>> source, Func<TRight, TKey> keySelector)
-        //{
-        //    return source
-        //        .GroupBy(item => item.IsRight)
-        //        .SelectMany(
-        //            group => group.Key
-        //                ? group
-        //                    .Rights()
-        //                    .GroupBy(keySelector)
-        //                    .Select(Prelude.Right<TLeft, IGrouping<TKey, TRight>>)
-        //                : group
-        //                    .Lefts()
-        //                    .Select(Prelude.Left<TLeft, IGrouping<TKey, TRight>>));
-        //}
+        public static IDataflow<Either<TLeft, IGroupedDataflow<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
+            this IDataflow<Either<TLeft, TRight>> source, Func<TRight, TKey> keySelector)
+        {
+            return source
+                .GroupBy(item => item.IsRight)
+                .SelectMany(
+                    group => group.Key
+                        ? group
+                            .Rights()
+                            .GroupBy(keySelector)
+                            .Select(Right<TLeft, IGroupedDataflow<TKey, TRight>>)
+                        : group
+                            .Lefts()
+                            .Select(Left<TLeft, IGroupedDataflow<TKey, TRight>>));
+        }
 
         public static IDataflow<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(
             this IDataflow<Either<TLeft, TRight>> source, TimeSpan batchTimeout, int count)
@@ -88,12 +110,12 @@ namespace Dataflow.Railway
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsRight)
                     .SelectMany(group => group.Key
-                        ? Prelude.List(
-                            Prelude.Right<TLeft, IList<TRight>>(
+                        ? List(
+                            Right<TLeft, IList<TRight>>(
                                 group.Rights().ToList()))
                         : group
                             .Lefts()
-                            .Select(Prelude.Left<TLeft, IList<TRight>>)));
+                            .Select(Left<TLeft, IList<TRight>>)));
         }
 
         public static IDataflow<Either<TLeftOutput, TRightOutput>> Use<TInput, TLeftOutput, TRightOutput>(TInput disposable,
