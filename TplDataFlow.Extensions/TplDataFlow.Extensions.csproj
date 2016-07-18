@@ -42,12 +42,6 @@
   <ItemGroup>
     <None Include="project.json" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\AsyncProcessing.Core\AsyncProcessing.Core.csproj">
-      <Project>{7145B448-A3EB-4F44-9560-DD0E3CC147AB}</Project>
-      <Name>AsyncProcessing.Core</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>

@@ -56,10 +56,6 @@
       <Project>{2a6c3b20-c6b1-4aec-b14a-ea163e70abc3}</Project>
       <Name>EventProcessing</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\TplDataFlow.Extensions\TplDataFlow.Extensions.csproj">
-      <Project>{6C3DF27A-610C-48B9-A815-CF1496CB5663}</Project>
-      <Name>TplDataFlow.Extensions</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

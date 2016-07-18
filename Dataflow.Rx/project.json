@@ -1,7 +1,6 @@
 ﻿{
   "dependencies": {
-    "Rx-Linq": "2.2.5",
-    "LanguageExt.Core": "1.7.38"
+    "Rx-Linq": "2.2.5"
   },
   "frameworks": {
     "net461": {}

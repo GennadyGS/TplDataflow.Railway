@@ -46,10 +46,6 @@
       <Project>{79C5A0F9-E9EC-4B45-8F84-6859C6E07522}</Project>
       <Name>Dataflow.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Railway.Linq\Railway.Linq.csproj">
-      <Project>{A90AFA32-26F3-4E80-B8E8-CEA8C6B61D9C}</Project>
-      <Name>Railway.Linq</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

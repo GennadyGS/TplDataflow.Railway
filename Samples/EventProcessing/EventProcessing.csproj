@@ -96,10 +96,6 @@
       <Project>{A90AFA32-26F3-4E80-B8E8-CEA8C6B61D9C}</Project>
       <Name>Railway.Linq</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\TplDataFlow.Extensions\TplDataFlow.Extensions.csproj">
-      <Project>{6c3df27a-610c-48b9-a815-cf1496cb5663}</Project>
-      <Name>TplDataFlow.Extensions</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\TplDataflow.Linq\TplDataflow.Linq.csproj">
       <Project>{7E939908-2AD2-4587-BAA5-3390DEB1C52D}</Project>
       <Name>TplDataflow.Linq</Name>
