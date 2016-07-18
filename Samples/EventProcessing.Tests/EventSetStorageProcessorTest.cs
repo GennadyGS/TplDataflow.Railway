@@ -7,6 +7,7 @@ using FluentAssertions;
 using Moq;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Xunit;
 
 namespace EventProcessing.Tests
@@ -679,10 +680,9 @@ namespace EventProcessing.Tests
                 .Returns((string sequenceName, int amount) =>
                 {
                     var res = eventSetIds
-                        .Skip(currentEventSetIdIndex)
+                        .Skip(Interlocked.Add(ref currentEventSetIdIndex, amount) - amount)
                         .Take(amount)
                         .ToList();
-                    currentEventSetIdIndex += amount;
                     return res;
                 });
 

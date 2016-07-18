@@ -39,10 +39,14 @@ namespace EventProcessing.Tests
                 .And.OnlyContain(result => result.ResultCode == EventSetStorageProcessor.ResultCode.EventSetCreated);
                 
             results.Select(result => result.EventSetCreated)
-                .Zip(sourceEvents, (eventSetWithEvents, sourceEvent) =>
-                    new { EventSetWithEvents = eventSetWithEvents, SourceEvent = sourceEvent })
-                .Zip(eventSetIds, (item, eventSetId) =>
-                    new { EventSetId = eventSetId, EventSetWithEvents = item.EventSetWithEvents, SourceEvent = item.SourceEvent })
+                .OrderBy(item => item.EventSet.Id)
+                .Zip(eventSetIds, (eventSetWithEvents, eventSetId) => new { eventSetWithEvents, eventSetId })
+                .Join(sourceEvents, 
+                    item => item.eventSetWithEvents.Events.Single().ReadTime, 
+                    @event => @event.ReadTime,
+                    (item, sourceEvent) =>
+                        new { EventSetWithEvents = item.eventSetWithEvents, EventSetId = item.eventSetId, SourceEvent = sourceEvent })
+                .VerifyCount(results.Count, "All event sets should match events")
                 .ToList()
                 .ForEach(item => item.EventSetWithEvents.EventSet.VerifyCreatedEventSet(item.EventSetId, item.SourceEvent, level, currentTime));
         }
@@ -75,6 +79,13 @@ namespace EventProcessing.Tests
             eventSet.LastReadTime.Should().Be(sourceEvent.ReadTime);
             eventSet.LastUpdateTime.Should().Be(currentTime);
             return true;
+        }
+
+        private static IEnumerable<T> VerifyCount<T>(this IEnumerable<T> source, int expectedCount, string because)
+        {
+            var verifyCount = source.ToList();
+            verifyCount.Should().HaveCount(expectedCount, because);
+            return verifyCount;
         }
     }
 }
