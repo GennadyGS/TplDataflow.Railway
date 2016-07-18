@@ -1,13 +1,16 @@
-﻿using Collection.Extensions;
-using Dataflow.Rx;
-using FluentAssertions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks.Dataflow;
+using Collection.Extensions;
+using Dataflow.Core;
+using Dataflow.Rx;
+using Dataflow.TplDataflow;
+using FluentAssertions;
 using Xunit;
 
-namespace Dataflow.Core.Tests
+namespace Dataflow.Tests
 {
     public class DataflowTests
     {
@@ -259,6 +262,20 @@ namespace Dataflow.Core.Tests
                     .BindDataflow(dataflow)
                     .ToEnumerable(),
                 inputList, expectedOutputList);
+
+            InternalTestBindDataflow(items => 
+                TransformTplDataflow(dataflow, items), inputList, expectedOutputList);
+        }
+
+        private static IEnumerable<TOutput> TransformTplDataflow<TInput, TOutput>(
+            Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow, IEnumerable<TInput> items)
+        {
+            var block = new BufferBlock<TInput>();
+            items.ToObservable().Subscribe(block.AsObserver());
+            return block
+                .BindDataflow(dataflow)
+                .AsObservable()
+                .ToEnumerable();
         }
 
         private static void InternalTestBindDataflow<TInput, TOutput>(Func<IEnumerable<TInput>, IEnumerable<TOutput>> transform, List<TInput> inputList, List<TOutput> expectedOutput)
