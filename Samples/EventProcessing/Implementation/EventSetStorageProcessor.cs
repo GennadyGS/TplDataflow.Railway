@@ -362,28 +362,31 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(Dataflow);
+                return new AsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
             }
 
-            private IObservable<Result> Dataflow(IObservable<EventDetails> input)
+            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> events)
             {
-                return input
+                return events
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .Apply(ProcessEventGroupSafeDataflow)
+                    .GroupBySafe(group => group.EventSetType.GetCode())
+                    .SelectManySafe(innerGroup =>
+                        innerGroup
+                            .ToList()
+                            .SelectMany(ProcessEventGroupDataflow))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         _logic.TransformResult(res));
             }
 
-            private IObservable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafeDataflow(
-                IObservable<Either<UnsuccessResult, EventGroup>> eventGroups)
+            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IList<EventGroup> eventGroups)
             {
-                return ObservableExtensions.Use(_logic.CreateRepository(), repository =>
+                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
                 {
                     return eventGroups
-                        .SelectSafe(group =>
+                        .Select(group =>
                             _logic.FindLastEventSetsSafe(repository, new[] { group })
                                 .Select(lastEventSets => new { group, lastEventSets }))
                         .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))

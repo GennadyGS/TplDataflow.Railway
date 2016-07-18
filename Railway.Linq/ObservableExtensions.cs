@@ -63,7 +63,17 @@ namespace Railway.Linq
             return source.SelectMany(item => item.SelectManySafe(mediumSelector, resultSelector));
         }
 
-        public static IObservable<Either<TLeft, IGroupedObservable<TKey, TRight>>> GroupBy<TLeft, TRight, TKey>(
+        public static IObservable<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightOutput>(
+            this IObservable<Either<TLeft, TRightInput>> source,
+            Func<TRightInput, IObservable<Either<TLeft, TRightOutput>>> selector)
+        {
+            return source.SelectMany(item =>
+                item.Match(
+                    right => selector(right),
+                    left => Observable.Return<Either<TLeft, TRightOutput>>(left)));
+        }
+
+        public static IObservable<Either<TLeft, IGroupedObservable<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
             this IObservable<Either<TLeft, TRight>> source, Func<TRight, TKey> keySelector)
         {
             return source
