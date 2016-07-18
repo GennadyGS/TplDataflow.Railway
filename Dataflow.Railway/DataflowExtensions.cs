@@ -86,6 +86,13 @@ namespace Dataflow.Railway
             return source.SelectMany(item => item.SelectManySafe(mediumSelector, resultSelector));
         }
 
+        public static IDataflow<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightOutput>(
+            this IDataflow<Either<TLeft, TRightInput>> source,
+            Func<TRightInput, IDataflow<Either<TLeft, TRightOutput>>> bindFunc)
+        {
+            return source.BindSafe(bindFunc);
+        }
+
         public static IDataflow<Either<TLeft, IGroupedDataflow<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
             this IDataflow<Either<TLeft, TRight>> source, Func<TRight, TKey> keySelector)
         {

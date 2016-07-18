@@ -476,7 +476,7 @@ namespace EventProcessing.Implementation
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .GroupBySafe(group => group.EventSetType.GetCode())
-                    .BindSafe(innerGroup => innerGroup.ToList().SelectMany(ProcessEventGroupDataflow))
+                    .SelectManySafe(innerGroup => innerGroup.ToList().SelectMany(ProcessEventGroupDataflow))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         _logic.TransformResult(res));
             }
