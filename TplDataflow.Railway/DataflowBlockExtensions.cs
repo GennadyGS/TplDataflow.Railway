@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks.Dataflow;
 using TplDataflow.Linq;
 using TplDataFlow.Extensions;
+using static LanguageExt.Prelude;
 
 namespace TplDataflow.Railway
 {
@@ -29,8 +30,34 @@ namespace TplDataflow.Railway
             return source.LinkWith(new TransformSafeBlock<TLeft, TRightInput, TRightOutput>(selector));
         }
 
+        public static ISourceBlock<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightOutput>(
+            this ISourceBlock<Either<TLeft, TRightInput>> source, Func<TRightInput, ISourceBlock<Either<TLeft, TRightOutput>>> selector)
+        {
+            return source
+                .GroupBy(item => item.IsRight)
+                .SelectMany(group => group.Key
+                    ? group.SelectMany(item => selector(item.GetRightSafe()))
+                    : group.Select(item => Left<TLeft, TRightOutput>(item.GetLeftSafe())));
+        }
+
+        public static ISourceBlock<Either<TLeft, GroupedSourceBlock<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
+            this ISourceBlock<Either<TLeft, TRight>> source, Func<TRight, TKey> keySelector)
+        {
+            return source
+                .GroupBy(item => item.IsRight)
+                .SelectMany(
+                    group => group.Key
+                        ? group
+                            .SelectMany(item => item.RightAsEnumerable())
+                            .GroupBy(keySelector)
+                            .Select(Right<TLeft, GroupedSourceBlock<TKey, TRight>>)
+                        : group
+                            .SelectMany(item => item.LeftAsEnumerable())
+                            .Select(Left<TLeft, GroupedSourceBlock<TKey, TRight>>));
+        }
+
         public static ISourceBlock<Either<TLeft, IList<TSuccess>>> BufferSafe<TLeft, TSuccess>(this ISourceBlock<Either<TLeft, TSuccess>> source,
-            int batchMaxSize)
+                int batchMaxSize)
         {
             var outputBlock = new BufferBlock<Either<TLeft, IList<TSuccess>>>();
 
@@ -63,6 +90,5 @@ namespace TplDataflow.Railway
                     return item;
                 });
         }
-
     }
 }
