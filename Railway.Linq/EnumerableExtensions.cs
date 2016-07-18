@@ -64,7 +64,7 @@ namespace Railway.Linq
             return source.SelectMany(item => item.SelectManySafe(mediumSelector, resultSelector));
         }
 
-        public static IEnumerable<Either<TLeft, IGrouping<TKey, TRight>>> GroupBy<TLeft, TRight, TKey>(
+        public static IEnumerable<Either<TLeft, IGrouping<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
             this IEnumerable<Either<TLeft, TRight>> source, Func<TRight, TKey> keySelector)
         {
             return source

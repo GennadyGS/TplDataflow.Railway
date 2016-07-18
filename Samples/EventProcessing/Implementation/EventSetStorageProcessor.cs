@@ -215,7 +215,7 @@ namespace EventProcessing.Implementation
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
                     .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => 
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         _logic.TransformResult(res));
             }
         }
@@ -313,42 +313,31 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(Dataflow);
+                return new AsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
             }
 
-            private IEnumerable<Result> Dataflow(IEnumerable<EventDetails> input)
+            private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> events)
             {
-                return input
+                return events
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .GroupBy(group => group.EventSetType.GetCode())
-                    .SelectManySafe(group => group.ToList().SelectMany(ProcessEventGroupSafeDataflow2))
+                    .GroupBySafe(group => group.EventSetType.GetCode())
+                    .SelectManySafe(innerGroup => 
+                        innerGroup
+                            .ToListEnumerable()
+                            .SelectMany(ProcessEventGroupDataflow))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => 
                         _logic.TransformResult(res));
             }
 
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafeDataflow(
-                IEnumerable<Either<UnsuccessResult, EventGroup>> eventGroups)
+            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(
+                IList<EventGroup> eventGroups)
             {
                 return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
                 {
                     return eventGroups
-                        .SelectSafe(group =>
-                            _logic.FindLastEventSetsSafe(repository, new[] { group })
-                                .Select(lastEventSets => new { group, lastEventSets }))
-                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
-                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
-                        .SelectMany(result => result);
-                });
-            }
-
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupSafeDataflow2(EventGroup eventGroup)
-            {
-                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
-                {
-                    return List(eventGroup)
                         .Select(group =>
                             _logic.FindLastEventSetsSafe(repository, new[] { group })
                                 .Select(lastEventSets => new { group, lastEventSets }))
@@ -476,7 +465,10 @@ namespace EventProcessing.Implementation
                     .SelectMany(_logic.SplitEventsIntoGroupsSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .GroupBySafe(group => group.EventSetType.GetCode())
-                    .SelectManySafe(innerGroup => innerGroup.ToList().SelectMany(ProcessEventGroupDataflow))
+                    .SelectManySafe(innerGroup => 
+                        innerGroup
+                            .ToList()
+                            .SelectMany(ProcessEventGroupDataflow))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         _logic.TransformResult(res));
             }
@@ -616,7 +608,7 @@ namespace EventProcessing.Implementation
                             EventSetType = EventSetType.CreateFromEventAndLevel(@event,
                                     (EventLevel)processType.EventSetProcessType.Level)
                         })
-                    .GroupBy(eventInfo => eventInfo.EventSetType)
+                    .GroupBySafe(eventInfo => eventInfo.EventSetType)
                     .Select(eventGroup => new EventGroup
                     {
                         EventSetType = eventGroup.Key,
