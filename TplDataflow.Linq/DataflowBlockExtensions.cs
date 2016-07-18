@@ -65,7 +65,7 @@ namespace TplDataflow.Linq
 
         public static ISourceBlock<IList<T>> ToList<T>(this ISourceBlock<T> source)
         {
-            throw new NotImplementedException();
+            return source.LinkWith(CreateToListBlock<T>());
         }
 
         private static IPropagatorBlock<ISourceBlock<T>, T> CreateConcatBlock<T>(ISourceBlock<ISourceBlock<T>> source)
@@ -79,8 +79,7 @@ namespace TplDataflow.Linq
             return DataflowBlock.Encapsulate(targetBlock, sourceBlock);
         }
 
-        private static IPropagatorBlock<TElement, GroupedSourceBlock<TKey, TElement>> CreateGroupByBlock<TKey, TElement>
-            (
+        private static IPropagatorBlock<TElement, GroupedSourceBlock<TKey, TElement>> CreateGroupByBlock<TKey, TElement>(
             Func<TElement, TKey> keySelector)
         {
             var groups = new ConcurrentDictionary<TKey, GroupedSourceBlock<TKey, TElement>>();
@@ -102,6 +101,23 @@ namespace TplDataflow.Linq
                     groups.Values
                         .ToList()
                         .ForEach(group => group.SetCompletionFromTask(task));
+                    sourceBlock.SetCompletionFromTask(task);
+                });
+            return DataflowBlock.Encapsulate(targetBlock, sourceBlock);
+        }
+
+        private static IPropagatorBlock<T, IList<T>> CreateToListBlock<T>()
+        {
+            var list = new List<T>();
+            var sourceBlock = new BufferBlock<IList<T>>();
+            var targetBlock = new ActionBlock<T>(item =>
+            {
+                list.Add(item);
+            });
+            targetBlock.Completion.ContinueWith(
+                task =>
+                {
+                    sourceBlock.Post(list);
                     sourceBlock.SetCompletionFromTask(task);
                 });
             return DataflowBlock.Encapsulate(targetBlock, sourceBlock);
