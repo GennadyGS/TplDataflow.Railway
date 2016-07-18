@@ -8,7 +8,6 @@ using Dataflow.Railway;
 using EventProcessing.BusinessObjects;
 using EventProcessing.Exceptions;
 using EventProcessing.Interfaces;
-using EventProcessing.Utils;
 using LanguageExt;
 using log4net;
 using Railway.Linq;
@@ -21,10 +20,7 @@ using System.Threading.Tasks.Dataflow;
 using TplDataflow.Linq;
 using TplDataflow.Railway;
 using static LanguageExt.Prelude;
-using DataflowBlockExtensions = TplDataflow.Railway.DataflowBlockExtensions;
-using DataflowExtensions = Dataflow.Railway.DataflowExtensions;
 using EnumerableExtensions = Railway.Linq.EnumerableExtensions;
-using ObservableExtensions = Railway.Linq.ObservableExtensions;
 
 namespace EventProcessing.Implementation
 {
@@ -185,7 +181,7 @@ namespace EventProcessing.Implementation
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
                     .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        _logic.TransformResult(res));
+                        Logic.TransformResult(res));
             }
         }
 
@@ -216,7 +212,7 @@ namespace EventProcessing.Implementation
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
                     .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        _logic.TransformResult(res));
+                        Logic.TransformResult(res));
             }
         }
 
@@ -246,7 +242,7 @@ namespace EventProcessing.Implementation
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
                     .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => _logic.TransformResult(res));
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => Logic.TransformResult(res));
             }
         }
 
@@ -279,7 +275,7 @@ namespace EventProcessing.Implementation
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
                     .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        _logic.TransformResult(res));
+                        Logic.TransformResult(res));
             }
         }
 
@@ -327,24 +323,9 @@ namespace EventProcessing.Implementation
                     .SelectManySafe(innerGroup => 
                         innerGroup
                             .ToListEnumerable()
-                            .SelectMany(ProcessEventGroupDataflow))
+                            .SelectMany(_logic.ProcessEventGroupsSafe))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => 
-                        _logic.TransformResult(res));
-            }
-
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(
-                IList<EventGroup> eventGroups)
-            {
-                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
-                {
-                    return eventGroups
-                        .Select(group =>
-                            _logic.FindLastEventSetsSafe(repository, new[] { group })
-                                .Select(lastEventSets => new { group, lastEventSets }))
-                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
-                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
-                        .SelectMany(result => result);
-                });
+                        Logic.TransformResult(res));
             }
         }
 
@@ -376,23 +357,9 @@ namespace EventProcessing.Implementation
                     .SelectManySafe(innerGroup =>
                         innerGroup
                             .ToList()
-                            .SelectMany(ProcessEventGroupDataflow))
+                            .SelectMany(_logic.ProcessEventGroupsSafe))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        _logic.TransformResult(res));
-            }
-
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IList<EventGroup> eventGroups)
-            {
-                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
-                {
-                    return eventGroups
-                        .Select(group =>
-                            _logic.FindLastEventSetsSafe(repository, new[] { group })
-                                .Select(lastEventSets => new { group, lastEventSets }))
-                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
-                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
-                        .SelectMany(result => result);
-                });
+                        Logic.TransformResult(res));
             }
         }
 
@@ -424,23 +391,9 @@ namespace EventProcessing.Implementation
                     .SelectManySafe(innerGroup =>
                         innerGroup
                             .ToList()
-                            .SelectMany(ProcessEventGroupDataflow))
+                            .SelectMany(_logic.ProcessEventGroupsSafe))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        _logic.TransformResult(res));
-            }
-
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IList<EventGroup> eventGroups)
-            {
-                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
-                {
-                    return eventGroups
-                        .Select(group =>
-                            _logic.FindLastEventSetsSafe(repository, new[] { group })
-                                .Select(lastEventSets => new { group, lastEventSets }))
-                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
-                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
-                        .SelectMany(result => result);
-                });
+                        Logic.TransformResult(res));
             }
         }
 
@@ -474,23 +427,9 @@ namespace EventProcessing.Implementation
                     .SelectManySafe(innerGroup => 
                         innerGroup
                             .ToList()
-                            .SelectMany(ProcessEventGroupDataflow))
+                            .SelectMany(_logic.ProcessEventGroupsSafe))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        _logic.TransformResult(res));
-            }
-
-            private IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupDataflow(IList<EventGroup> eventGroups)
-            {
-                return EnumerableExtensions.Use(_logic.CreateRepository(), repository =>
-                {
-                    return eventGroups
-                        .Select(group =>
-                            _logic.FindLastEventSetsSafe(repository, new[] { group })
-                                .Select(lastEventSets => new { group, lastEventSets }))
-                        .SelectSafe(item => _logic.InternalProcessEventGroupSafe(item.group, item.lastEventSets))
-                        .SelectSafe(result => _logic.ApplyChangesSafe(repository, new[] { result }))
-                        .SelectMany(result => result);
-                });
+                        Logic.TransformResult(res));
             }
         }
 
@@ -648,12 +587,21 @@ namespace EventProcessing.Implementation
                 });
             }
 
-            public IEventSetRepository CreateRepository()
+            public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupsSafe(IList<EventGroup> eventGroups)
             {
-                return _repositoryResolver();
+                return EnumerableExtensions.Use(CreateRepository(), repository =>
+                {
+                    return eventGroups
+                        .Select(group =>
+                            FindLastEventSetsSafe(repository, new[] { group })
+                                .Select(lastEventSets => new { group, lastEventSets }))
+                        .SelectSafe(item => InternalProcessEventGroupSafe(item.group, item.lastEventSets))
+                        .SelectSafe(result => ApplyChangesSafe(repository, new[] { result }))
+                        .SelectMany(result => result);
+                });
             }
 
-            public IEnumerable<Result> TransformResult(Either<UnsuccessResult, SuccessResult> result)
+            public static IEnumerable<Result> TransformResult(Either<UnsuccessResult, SuccessResult> result)
             {
                 return result.Match(
                     successResult => successResult.IsCreated
@@ -664,7 +612,12 @@ namespace EventProcessing.Implementation
                         : unsuccessResult.Events.Select(Result.CreateEventFailed));
             }
 
-            public Either<UnsuccessResult, IList<EventSet>> FindLastEventSetsSafe(
+            private IEventSetRepository CreateRepository()
+            {
+                return _repositoryResolver();
+            }
+
+            private Either<UnsuccessResult, IList<EventSet>> FindLastEventSetsSafe(
                 IEventSetRepository repository, IList<EventGroup> eventGroups)
             {
                 var events = eventGroups
@@ -677,14 +630,14 @@ namespace EventProcessing.Implementation
                 return InvokeSafe(events, () => repository.FindLastEventSetsByTypeCodes(typeCodes));
             }
 
-            public Either<UnsuccessResult, SuccessResult> InternalProcessEventGroupSafe(EventGroup eventGroup, IList<EventSet> lastEventSets)
+            private Either<UnsuccessResult, SuccessResult> InternalProcessEventGroupSafe(EventGroup eventGroup, IList<EventSet> lastEventSets)
             {
                 return NeedToCreateEventSet(eventGroup, lastEventSets)
                     ? CreateEventSetForEventGroup(eventGroup)
                     : UpdateEventSetForEventGroup(eventGroup, lastEventSets);
             }
 
-            public Either<UnsuccessResult, IList<SuccessResult>> ApplyChangesSafe(
+            private Either<UnsuccessResult, IList<SuccessResult>> ApplyChangesSafe(
                 IEventSetRepository repository, IList<SuccessResult> results)
             {
                 var events = results
