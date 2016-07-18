@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks.Dataflow;
 using TplDataFlow.Extensions;
 
@@ -35,8 +36,9 @@ namespace TplDataflow.Linq
 
         public static ISourceBlock<T> Where<T>(this ISourceBlock<T> source, Predicate<T> predicate)
         {
-            // TODO: Implement filtering
-            return source;
+            var buffer = new BufferBlock<T>();
+            source.LinkTo(buffer, new DataflowLinkOptions { PropagateCompletion = true }, predicate);
+            return buffer;
         }
 
         public static ISourceBlock<GroupedSourceBlock<TKey, TElement>> GroupBy<TElement, TKey>(
