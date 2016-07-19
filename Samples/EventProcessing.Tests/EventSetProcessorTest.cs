@@ -23,9 +23,7 @@ namespace EventProcessing.Tests
 
         public EventSetProcessorTest()
         {
-            var storageProcessor =
-                new AsyncProcessor<EventDetails, EventSetStorageProcessor.Result>(_storageProcessorDataflowMock.Object);
-
+            var storageProcessor = AsyncProcessor.Create(_storageProcessorDataflowMock.Object);
             _processor = new EventSetProcessor(storageProcessor, _notificationServiceMock.Object);
         }
 

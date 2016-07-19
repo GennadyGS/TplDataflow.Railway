@@ -1,11 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Collection.Extensions
 {
     public static class EnumerableExtensions
     {
+        public static IEnumerable<Task<TResult>> SelectMany<TSource, TResult>(this IEnumerable<Task<TSource>> source,
+            Func<TSource, IEnumerable<TResult>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
         public static IEnumerable<IList<T>> ToListEnumerable<T>(this IEnumerable<T> source)
         {
             return source

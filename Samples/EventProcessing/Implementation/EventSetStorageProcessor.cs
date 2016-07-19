@@ -200,7 +200,7 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
             }
 
             private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
@@ -231,7 +231,7 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Result>>) ProcessEventDataflow);
             }
 
             private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> input)
@@ -243,6 +243,36 @@ namespace EventProcessing.Implementation
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
                     .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => Logic.TransformResult(res));
+            }
+        }
+
+        public class EnumerableAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Task<Result>>>) ProcessEventDataflow);
+            }
+
+            private IEnumerable<Task<Result>> ProcessEventDataflow(IEnumerable<EventDetails> input)
+            {
+                return input
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferAsyncSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => Logic.TransformResult(res));
             }
         }
@@ -310,7 +340,7 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Result>>) ProcessEventDataflow);
             }
 
             private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> events)
@@ -344,7 +374,7 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
             }
 
             private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> events)

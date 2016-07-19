@@ -63,6 +63,13 @@ namespace Railway.Linq
             return source.Select(item => item.SelectSafe(selector));
         }
 
+        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectSafe<TLeft, TRightInput, TRightOutput>(
+            this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
+            Func<TRightInput, Either<TLeft, TRightOutput>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectSafe
             <TLeft, TRightInput, TRightMedium, TRightOutput>(
             this IEnumerable<Either<TLeft, TRightInput>> source,
@@ -93,6 +100,13 @@ namespace Railway.Linq
             Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
         {
             return source.SelectMany(item => item.SelectManySafe(mediumSelector, resultSelector));
+        }
+
+        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+            this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
+            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+        {
+            throw new NotImplementedException();
         }
 
         public static IEnumerable<Either<TLeft, IGrouping<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
