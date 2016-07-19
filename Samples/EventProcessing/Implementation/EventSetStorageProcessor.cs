@@ -8,7 +8,6 @@ using Dataflow.Railway;
 using EventProcessing.BusinessObjects;
 using EventProcessing.Exceptions;
 using EventProcessing.Interfaces;
-using LanguageExt;
 using log4net;
 using Railway.Linq;
 using System;
@@ -18,6 +17,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using LanguageExt;
 using TplDataflow.Linq;
 using TplDataflow.Railway;
 using static LanguageExt.Prelude;
@@ -169,10 +169,10 @@ namespace EventProcessing.Implementation
                     identityService, processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new TplDataflowAsyncProcessor<EventDetails, Result>(Dataflow);
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
             }
 
-            private ISourceBlock<Result> Dataflow(ISourceBlock<EventDetails> input)
+            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> input)
             {
                 return input
                     .Select(_logic.LogEvent)
@@ -200,10 +200,10 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(Dataflow);
+                return new AsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
             }
 
-            private IObservable<Result> Dataflow(IObservable<EventDetails> input)
+            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
             {
                 return input
                     .Select(_logic.LogEvent)
@@ -231,10 +231,10 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return new AsyncProcessor<EventDetails, Result>(Dataflow);
+                return new AsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
             }
 
-            private IEnumerable<Result> Dataflow(IEnumerable<EventDetails> input)
+            private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> input)
             {
                 return input
                     .Select(_logic.LogEvent)
