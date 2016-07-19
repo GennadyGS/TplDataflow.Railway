@@ -35,8 +35,13 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BaseDataflowTestEngine.cs" />
     <Compile Include="DataflowTests.cs" />
+    <Compile Include="EnumerableDataflowTestEngine.cs" />
+    <Compile Include="IDataflowTestEngine.cs" />
+    <Compile Include="ObservableDataflowTestEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TplDataflowDataflowTestEngine.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />

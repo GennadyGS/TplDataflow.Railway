@@ -1,26 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Linq;
-using System.Threading.Tasks.Dataflow;
 using Collection.Extensions;
 using Dataflow.Core;
-using Dataflow.Rx;
-using Dataflow.TplDataflow;
-using FluentAssertions;
 using Xunit;
 
 namespace Dataflow.Tests
 {
-    public class DataflowTests
+    public abstract class DataflowTests
     {
+        private readonly IDataflowTestEngine _testEngine;
+
+        public DataflowTests(IDataflowTestEngine testEngine)
+        {
+            _testEngine = testEngine;
+        }
+
         [Fact]
         public void BindReturnDataflow_ShouldReturnTheSameList()
         {
             int[] input = { 1, 2, 3 };
 
             var expectedOutput = input;
-            
+
             TestBindDataflow(input, expectedOutput, (dataflowFactory, i) => dataflowFactory.Return(i));
         }
 
@@ -193,7 +195,7 @@ namespace Dataflow.Tests
 
             var expectedOutput = input.ToListEnumerable();
 
-            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => 
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.ToList(i));
         }
 
@@ -232,7 +234,7 @@ namespace Dataflow.Tests
 
             var expectedOutput = input
                 .GroupBy(i => i % 2)
-                .SelectMany(group => 
+                .SelectMany(group =>
                     group
                         .Select(item => item + 1)
                         .ToListEnumerable()
@@ -241,47 +243,39 @@ namespace Dataflow.Tests
             TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory
                 .Return(i)
                 .GroupBy(item => item % 2)
-                .SelectMany(group => 
+                .SelectMany(group =>
                     group
                         .Select(item => item + 1)
                         .ToList()
                         .SelectMany(item => item)));
         }
 
-        private static void TestBindDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow)
+        private void TestBindDataflow<TInput, TOutput>(IEnumerable<TOutput> expectedOutput, IEnumerable<TInput> input, Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflowBindFunc)
         {
             var inputList = input.ToList();
             var expectedOutputList = expectedOutput.ToList();
-
-            InternalTestBindDataflow(items => items.BindDataflow(dataflow), 
-                inputList, expectedOutputList);
-
-            InternalTestBindDataflow(items =>
-                items
-                    .ToObservable()
-                    .BindDataflow(dataflow)
-                    .ToEnumerable(),
-                inputList, expectedOutputList);
-
-            InternalTestBindDataflow(items => 
-                TransformTplDataflow(dataflow, items), inputList, expectedOutputList);
+            _testEngine.TestBindDataflow(expectedOutputList, inputList, dataflowBindFunc);
         }
+    }
 
-        private static IEnumerable<TOutput> TransformTplDataflow<TInput, TOutput>(
-            Func<IDataflowFactory, TInput, IDataflow<TOutput>> dataflow, IEnumerable<TInput> items)
+    public class EnumerableDataflowTestsImpl : DataflowTests
+    {
+        public EnumerableDataflowTestsImpl() : base(new EnumerableDataflowTestEngine())
         {
-            var block = new BufferBlock<TInput>();
-            items.ToObservable().Subscribe(block.AsObserver());
-            return block
-                .BindDataflow(dataflow)
-                .AsObservable()
-                .ToEnumerable();
         }
+    }
 
-        private static void InternalTestBindDataflow<TInput, TOutput>(Func<IEnumerable<TInput>, IEnumerable<TOutput>> transform, List<TInput> inputList, List<TOutput> expectedOutput)
+    public class ObservableDataflowTestsImpl : DataflowTests
+    {
+        public ObservableDataflowTestsImpl() : base(new ObservableDataflowTestEngine())
         {
-            var actualOutput = transform(inputList).ToList();
-            actualOutput.ShouldAllBeEquivalentTo(expectedOutput, "Enumerable result should be correct");
+        }
+    }
+
+    public class TplDataflowDataflowTestsImpl : DataflowTests
+    {
+        public TplDataflowDataflowTestsImpl() : base(new TplDataflowDataflowTestEngine())
+        {
         }
     }
 }
