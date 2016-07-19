@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -24,7 +23,7 @@ namespace AsyncProcessing.Core
                     dataflowFunc(task.Result).Subscribe(_output));
         }
 
-        internal AsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<Task<TOutput>>> dataflow)
+        internal AsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<Task<TOutput>>> dataflowFunc)
         {
             throw new NotImplementedException();
         }

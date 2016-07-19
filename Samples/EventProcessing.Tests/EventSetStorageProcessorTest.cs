@@ -786,6 +786,13 @@ namespace EventProcessing.Tests
             }
         }
 
+        public class EnumerableAsyncImpl : EventSetStorageProcessorTest
+        {
+            public EnumerableAsyncImpl() : base(new EventSetStorageProcessor.EnumerableAsyncFactory())
+            {
+            }
+        }
+
         public class EnumerableOneByOneImpl : EventSetStorageProcessorTest
         {
             public EnumerableOneByOneImpl() : base(new EventSetStorageProcessor.EnumerableFactoryOneByOne())
