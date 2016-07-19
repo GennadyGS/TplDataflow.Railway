@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using TplDataflow.Linq;
 using TplDataflow.Railway;
@@ -630,6 +631,19 @@ namespace EventProcessing.Implementation
                 return InvokeSafe(events, () => repository.FindLastEventSetsByTypeCodes(typeCodes));
             }
 
+            private Task<Either<UnsuccessResult, IList<EventSet>>> FindLastEventSetsAsyncSafe(
+                IEventSetRepository repository, IList<EventGroup> eventGroups)
+            {
+                var events = eventGroups
+                    .SelectMany(group => group.Events)
+                    .ToList();
+                var typeCodes = eventGroups
+                    .Select(group => group.EventSetType.GetCode())
+                    .Distinct()
+                    .ToList();
+                return InvokeAsyncSafe(events, () => repository.FindLastEventSetsByTypeCodesAsync(typeCodes));
+            }
+
             private Either<UnsuccessResult, SuccessResult> InternalProcessEventGroupSafe(EventGroup eventGroup, IList<EventSet> lastEventSets)
             {
                 return NeedToCreateEventSet(eventGroup, lastEventSets)
@@ -644,6 +658,15 @@ namespace EventProcessing.Implementation
                     .SelectMany(result => result.EventSetWithEvents.Events)
                     .ToList();
                 return InvokeSafe(events, () => ApplyChanges(repository, results));
+            }
+
+            private Task<Either<UnsuccessResult, IList<SuccessResult>>> ApplyChangesAsyncSafe(
+                IEventSetRepository repository, IList<SuccessResult> results)
+            {
+                var events = results
+                    .SelectMany(result => result.EventSetWithEvents.Events)
+                    .ToList();
+                return InvokeAsyncSafe(events, async () => await ApplyChangesAsync(repository, results));
             }
 
             private static Either<UnsuccessResult, T> InvokeSafe<T>(
@@ -669,10 +692,39 @@ namespace EventProcessing.Implementation
                 }
             }
 
+            private static async Task<Either<UnsuccessResult, T>> InvokeAsyncSafe<T>(
+                IList<EventDetails> events, Func<Task<Either<UnsuccessResult, T>>> func)
+            {
+                try
+                {
+                    return await func();
+                }
+                catch (EventHandlingException e)
+                {
+                    return UnsuccessResult.CreateFailed(events, e.ErrorCode, e.Message);
+                }
+                catch (DBConcurrencyException e)
+                {
+                    return UnsuccessResult.CreateFailed(events,
+                            Metadata.ExceptionHandling.DbUpdateConcurrencyException.Code,
+                            e.Message);
+                }
+                catch (Exception e)
+                {
+                    return UnsuccessResult.CreateFailed(events, Metadata.ExceptionHandling.UnhandledException.Code, e.Message);
+                }
+            }
+
             private static Either<UnsuccessResult, T> InvokeSafe<T>(
                 IList<EventDetails> events, Func<T> func)
             {
                 return InvokeSafe(events, () => (Either<UnsuccessResult, T>)func());
+            }
+
+            private static Task<Either<UnsuccessResult, T>> InvokeAsyncSafe<T>(
+                IList<EventDetails> events, Func<Task<T>> func)
+            {
+                return InvokeAsyncSafe(events, async () => (Either<UnsuccessResult, T>) await func());
             }
 
             private static bool NeedSkipEventGroup(EventGroup eventGroup)
@@ -692,6 +744,20 @@ namespace EventProcessing.Implementation
             private static IList<SuccessResult> ApplyChanges(IEventSetRepository repository, IList<SuccessResult> results)
             {
                 repository.ApplyChanges(
+                    results
+                        .Where(result => result.IsCreated)
+                        .Select(result => result.EventSetWithEvents.EventSet)
+                        .ToList(),
+                    results
+                        .Where(result => !result.IsCreated)
+                        .Select(result => result.EventSetWithEvents.EventSet)
+                        .ToList());
+                return results;
+            }
+
+            private static async Task<IList<SuccessResult>> ApplyChangesAsync(IEventSetRepository repository, IList<SuccessResult> results)
+            {
+                await repository.ApplyChangesAsync(
                     results
                         .Where(result => result.IsCreated)
                         .Select(result => result.EventSetWithEvents.EventSet)
@@ -904,6 +970,18 @@ namespace EventProcessing.Implementation
             {
                 return InvokeSafe(events, () =>
                     _processTypeManager.GetProcessType(eventTypeId, category) ??
+                        Left<UnsuccessResult, EventSetProcessType>(
+                            UnsuccessResult.CreateFailed(events,
+                                Metadata.ExceptionHandling.NotFoundException.Code,
+                                "EventSetProcessingType was not found for [EventTypeId = {0}, Category = {1}]", eventTypeId,
+                                category)));
+            }
+
+            private Task<Either<UnsuccessResult, EventSetProcessType>> GetProcessTypeSafeAsync(int eventTypeId,
+                EventTypeCategory category, IList<EventDetails> events)
+            {
+                return InvokeAsyncSafe(events, async () =>
+                    await _processTypeManager.GetProcessTypeAsync(eventTypeId, category) ??
                         Left<UnsuccessResult, EventSetProcessType>(
                             UnsuccessResult.CreateFailed(events,
                                 Metadata.ExceptionHandling.NotFoundException.Code,
