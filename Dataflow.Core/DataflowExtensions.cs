@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Dataflow.Core
 {
@@ -40,6 +41,12 @@ namespace Dataflow.Core
             return source.SelectMany(input =>
                 mediumSelector(input)
                     .Select(medium => resultSelector(input, medium)));
+        }
+
+        public static IDataflow<TOutput> SelectManyAsync<TInput, TOutput>(this IDataflow<TInput> source,
+            Func<TInput, IEnumerable<Task<TOutput>>> selector)
+        {
+            throw new NotImplementedException();
         }
 
         public static IDataflow<IList<T>> Buffer<T>(this IDataflow<T> source,

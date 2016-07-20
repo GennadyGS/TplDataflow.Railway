@@ -372,7 +372,48 @@ namespace EventProcessing.Implementation
             }
         }
 
+        public abstract class BaseDataflowAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return CreateDataflowAsyncProcessor(ProcessEventDataflow);
+            }
+
+            protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc);
+
+            private IDataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            {
+                return dataflowFactory.Return(@event)
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
         public class DataflowFactory : BaseDataflowFactory
+        {
+            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
+            {
+                return new DataflowAsyncProcessor<EventDetails, Result>(bindFunc);
+            }
+        }
+
+        public class DataflowAsyncFactory : BaseDataflowAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {

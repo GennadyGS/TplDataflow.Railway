@@ -4,6 +4,7 @@ using Railway.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using static LanguageExt.Prelude;
 
 namespace Dataflow.Railway
@@ -91,6 +92,13 @@ namespace Dataflow.Railway
             Func<TRightInput, IDataflow<Either<TLeft, TRightOutput>>> bindFunc)
         {
             return source.BindSafe(bindFunc);
+        }
+
+        public static IDataflow<Either<TLeft, TRightOutput>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+            this IDataflow<Either<TLeft, TRightInput>> source,
+            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+        {
+            throw new NotImplementedException();
         }
 
         public static IDataflow<Either<TLeft, IGroupedDataflow<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
