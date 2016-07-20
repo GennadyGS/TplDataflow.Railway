@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using TplDataFlow.Extensions;
 
@@ -25,6 +26,12 @@ namespace TplDataflow.Linq
             this ISourceBlock<TInput> source, Func<TInput, IEnumerable<TOutput>> selector)
         {
             return source.LinkWith(new TransformManyBlock<TInput, TOutput>(selector));
+        }
+
+        public static ISourceBlock<TOutput> SelectManyAsync<TInput, TOutput>(
+            this ISourceBlock<TInput> source, Func<TInput, IEnumerable<Task<TOutput>>> selector)
+        {
+            throw new NotImplementedException();
         }
 
         public static ISourceBlock<TOutput> SelectMany<TInput, TOutput>(

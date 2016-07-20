@@ -2,6 +2,7 @@ using LanguageExt;
 using Railway.Linq;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using TplDataflow.Linq;
 using TplDataFlow.Extensions;
@@ -38,6 +39,13 @@ namespace TplDataflow.Railway
                 .SelectMany(group => group.Key
                     ? group.SelectMany(item => selector(item.GetRightSafe()))
                     : group.Select(item => Left<TLeft, TRightOutput>(item.GetLeftSafe())));
+        }
+
+        public static ISourceBlock<Either<TLeft, TRightOutput>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+            this ISourceBlock<Either<TLeft, TRightInput>> source, 
+            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+        {
+            throw new NotImplementedException();
         }
 
         public static ISourceBlock<Either<TLeft, GroupedSourceBlock<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(

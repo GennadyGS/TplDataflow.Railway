@@ -186,6 +186,37 @@ namespace EventProcessing.Implementation
             }
         }
 
+        public class TplDataflowAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver,
+                    identityService, processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> input)
+            {
+                return input
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
         public class ObservableFactory : IFactory
         {
             private Logic _logic;
