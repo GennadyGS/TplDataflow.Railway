@@ -437,7 +437,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableFactoryOneByOne : IFactory
+        public class EnumerableOneByOneFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -467,6 +467,40 @@ namespace EventProcessing.Implementation
                             .ToListEnumerable()
                             .SelectMany(_logic.ProcessEventGroupsSafe))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => 
+                        Logic.TransformResult(res));
+            }
+        }
+
+        public class EnumerableOneByOneAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Result>>)ProcessEventDataflow);
+            }
+
+            private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> events)
+            {
+                return events
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .GroupBySafe(group => group.EventSetType.GetCode())
+                    .SelectManySafe(innerGroup =>
+                        innerGroup
+                            .ToListEnumerable()
+                            .SelectManyAsync(_logic.ProcessEventGroupsAsyncSafe))
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
         }
