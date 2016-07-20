@@ -737,6 +737,14 @@ namespace EventProcessing.Implementation
             }
         }
 
+        public class TplDataflowDataflowOneByOneAsyncFactory : BaseDataflowOneByOneAsyncFactory
+        {
+            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
+            {
+                return new TplDataflowDataflowAsyncProcessor<EventDetails, Result>(bindFunc);
+            }
+        }
+
         private class SuccessResult
         {
             public SuccessResult(bool isCreated, EventSet eventSet, IList<EventDetails> events)
