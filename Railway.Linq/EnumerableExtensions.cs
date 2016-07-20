@@ -102,6 +102,13 @@ namespace Railway.Linq
             return source.SelectMany(item => item.SelectManySafe(mediumSelector, resultSelector));
         }
 
+        public static IEnumerable<Either<TLeft, TRightOutput>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+            this IEnumerable<Either<TLeft, TRightInput>> source,
+            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
         public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
             this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)

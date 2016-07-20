@@ -13,6 +13,12 @@ namespace Collection.Extensions
             throw new NotImplementedException();
         }
 
+        public static IEnumerable<TResult> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
+            Func<TSource, IEnumerable<Task<TResult>>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
         public static IEnumerable<IList<T>> ToListEnumerable<T>(this IEnumerable<T> source)
         {
             return source

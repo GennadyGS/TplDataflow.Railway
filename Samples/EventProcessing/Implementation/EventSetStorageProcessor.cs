@@ -261,17 +261,17 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Task<Result>>>) ProcessEventDataflow);
+                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Result>>) ProcessEventDataflow);
             }
 
-            private IEnumerable<Task<Result>> ProcessEventDataflow(IEnumerable<EventDetails> input)
+            private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> input)
             {
                 return input
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectMany(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .BufferAsyncSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
                     .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) => Logic.TransformResult(res));
             }

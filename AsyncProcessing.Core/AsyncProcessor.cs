@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Threading.Tasks;
 
 namespace AsyncProcessing.Core
 {
@@ -21,11 +20,6 @@ namespace AsyncProcessing.Core
             _input.ToListAsync()
                 .ContinueWith(task =>
                     dataflowFunc(task.Result).Subscribe(_output));
-        }
-
-        internal AsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<Task<TOutput>>> dataflowFunc)
-        {
-            throw new NotImplementedException();
         }
 
         void IObserver<TInput>.OnNext(TInput value)
@@ -52,11 +46,6 @@ namespace AsyncProcessing.Core
     public static class AsyncProcessor
     {
         public static AsyncProcessor<TInput, TOutput> Create<TInput, TOutput>(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflowFunc)
-        {
-            return new AsyncProcessor<TInput, TOutput>(dataflowFunc);
-        }
-
-        public static AsyncProcessor<TInput, TOutput> Create<TInput, TOutput>(Func<IEnumerable<TInput>, IEnumerable<Task<TOutput>>> dataflowFunc)
         {
             return new AsyncProcessor<TInput, TOutput>(dataflowFunc);
         }
