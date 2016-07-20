@@ -217,6 +217,37 @@ namespace EventProcessing.Implementation
             }
         }
 
+        public class ObservableAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
+            {
+                return input
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
         public class EnumerableFactory : IFactory
         {
             private Logic _logic;

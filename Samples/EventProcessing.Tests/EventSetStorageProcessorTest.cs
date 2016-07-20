@@ -807,6 +807,13 @@ namespace EventProcessing.Tests
             }
         }
 
+        public class ObservableAsyncImpl : EventSetStorageProcessorTest
+        {
+            public ObservableAsyncImpl() : base(new EventSetStorageProcessor.ObservableAsyncFactory())
+            {
+            }
+        }
+
         public class ObservableOneByOneImpl : EventSetStorageProcessorTest
         {
             public ObservableOneByOneImpl() : base(new EventSetStorageProcessor.ObservableFactoryOneByOne())

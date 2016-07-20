@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 
 namespace Railway.Linq
 {
@@ -29,6 +30,12 @@ namespace Railway.Linq
             Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
         {
             return source.SelectMany(item => item.SelectMany(mediumSelector, resultSelector));
+        }
+
+        public static IObservable<TResult> SelectManyAsync<TSource, TResult>(this IObservable<TSource> source,
+            Func<TSource, IEnumerable<Task<TResult>>> selector)
+        {
+            throw new NotImplementedException();
         }
 
         public static IObservable<Either<TLeft, TRightOutput>> SelectSafe<TLeft, TRightInput, TRightOutput>(
@@ -71,6 +78,13 @@ namespace Railway.Linq
                 item.Match(
                     right => selector(right),
                     left => Observable.Return<Either<TLeft, TRightOutput>>(left)));
+        }
+
+        public static IObservable<Either<TLeft, TRightOutput>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+            this IObservable<Either<TLeft, TRightInput>> source,
+            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+        {
+            throw new NotImplementedException();
         }
 
         public static IObservable<Either<TLeft, IGroupedObservable<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
