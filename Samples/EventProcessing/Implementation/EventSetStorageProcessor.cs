@@ -429,6 +429,14 @@ namespace EventProcessing.Implementation
             }
         }
 
+        public class TplDataflowDataflowAsyncFactory : BaseDataflowAsyncFactory
+        {
+            protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
+            {
+                return new TplDataflowDataflowAsyncProcessor<EventDetails, Result>(bindFunc);
+            }
+        }
+
         public class EnumerableFactoryOneByOne : IFactory
         {
             private Logic _logic;
