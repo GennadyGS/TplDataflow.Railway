@@ -471,7 +471,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class ObservableFactoryOneByOne : IFactory
+        public class ObservableOneByOneFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -505,7 +505,41 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowFactoryOneByOne : IFactory
+        public class ObservableOneByOneAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> events)
+            {
+                return events
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .GroupBySafe(group => group.EventSetType.GetCode())
+                    .SelectManySafe(innerGroup =>
+                        innerGroup
+                            .ToList()
+                            .SelectManyAsync(_logic.ProcessEventGroupsAsyncSafe))
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
+        public class TplDataflowOneByOneFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -534,6 +568,40 @@ namespace EventProcessing.Implementation
                         innerGroup
                             .ToList()
                             .SelectMany(_logic.ProcessEventGroupsSafe))
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
+        public class TplDataflowOneByOneAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> events)
+            {
+                return events
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .GroupBySafe(group => group.EventSetType.GetCode())
+                    .SelectManySafe(innerGroup =>
+                        innerGroup
+                            .ToList()
+                            .SelectManyAsync(_logic.ProcessEventGroupsAsyncSafe))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
