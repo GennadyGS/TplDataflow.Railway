@@ -45,7 +45,11 @@ namespace TplDataflow.Railway
             this ISourceBlock<Either<TLeft, TRightInput>> source, 
             Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
         {
-            throw new NotImplementedException();
+            return source
+                .GroupBy(item => item.IsRight)
+                .SelectMany(group => group.Key
+                    ? group.SelectManyAsync(item => selector(item.GetRightSafe()))
+                    : group.Select(item => Left<TLeft, TRightOutput>(item.GetLeftSafe())));
         }
 
         public static ISourceBlock<Either<TLeft, GroupedSourceBlock<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(

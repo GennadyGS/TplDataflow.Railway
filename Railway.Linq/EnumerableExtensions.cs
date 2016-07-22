@@ -46,7 +46,7 @@ namespace Railway.Linq
             Func<TRightInput, IEnumerable<TRightMedium>> mediumSelector,
             Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
         {
-            throw new NotImplementedException();
+            return source.SelectMany(item => item.SelectMany(mediumSelector, resultSelector));
         }
 
         public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectMany<TLeft, TRightInput, TRightOutput>(
@@ -135,7 +135,17 @@ namespace Railway.Linq
         public static IEnumerable<Task<Either<TLeft, IGrouping<TKey, TRight>>>> GroupByAsyncSafe<TLeft, TRight, TKey>(
             this IEnumerable<Task<Either<TLeft, TRight>>> source, Func<TRight, TKey> keySelector)
         {
-            throw new NotImplementedException();
+            return source
+                .GroupByAsync(item => item.IsRight)
+                .SelectMany(
+                    group => group.Key
+                        ? group
+                            .Rights()
+                            .GroupBy(keySelector)
+                            .Select(Prelude.Right<TLeft, IGrouping<TKey, TRight>>)
+                        : group
+                            .Lefts()
+                            .Select(Prelude.Left<TLeft, IGrouping<TKey, TRight>>));
         }
 
         public static IEnumerable<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(
