@@ -17,8 +17,8 @@ namespace Railway.Linq
             return source.MapT(selector);
         }
 
-        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> Select<TLeft, TRightInput, TRightOutput>(
-            this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, TRightOutput> selector)
         {
             throw new NotImplementedException();
@@ -31,8 +31,7 @@ namespace Railway.Linq
             return source.SelectMany(item => item.SelectMany(selector));
         }
 
-        public static IEnumerable<Either<TLeft, TRightOutput>> SelectMany
-            <TLeft, TRightInput, TRightMedium, TRightOutput>(
+        public static IEnumerable<Either<TLeft, TRightOutput>> SelectMany<TLeft, TRightInput, TRightMedium, TRightOutput>(
             this IEnumerable<Either<TLeft, TRightInput>> source,
             Func<TRightInput, IEnumerable<TRightMedium>> mediumSelector,
             Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
@@ -40,17 +39,16 @@ namespace Railway.Linq
             return source.SelectMany(item => item.SelectMany(mediumSelector, resultSelector));
         }
 
-        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectMany
-            <TLeft, TRightInput, TRightMedium, TRightOutput>(
-            this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManyAsync<TLeft, TRightInput, TRightMedium, TRightOutput>(
+            this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, IEnumerable<TRightMedium>> mediumSelector,
             Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
         {
-            return source.SelectMany(item => item.SelectMany(mediumSelector, resultSelector));
+            return source.SelectManyAsync(item => item.SelectMany(mediumSelector, resultSelector));
         }
 
-        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectMany<TLeft, TRightInput, TRightOutput>(
-            this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManyAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, IEnumerable<TRightOutput>> selector)
         {
             throw new NotImplementedException();
@@ -63,13 +61,6 @@ namespace Railway.Linq
             return source.Select(item => item.SelectSafe(selector));
         }
 
-        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectSafe<TLeft, TRightInput, TRightOutput>(
-            this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
-            Func<TRightInput, Either<TLeft, TRightOutput>> selector)
-        {
-            throw new NotImplementedException();
-        }
-
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectSafe
             <TLeft, TRightInput, TRightMedium, TRightOutput>(
             this IEnumerable<Either<TLeft, TRightInput>> source,
@@ -79,8 +70,15 @@ namespace Railway.Linq
             return source.Select(item => item.SelectSafe(mediumSelector, resultSelector));
         }
 
-        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectAsyncSafe<TLeft, TRightInput, TRightOutput>(
-            this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectSafeAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
+            Func<TRightInput, Either<TLeft, TRightOutput>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectSafeAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, Task<Either<TLeft, TRightOutput>>> selector)
         {
             throw new NotImplementedException();
@@ -102,16 +100,16 @@ namespace Railway.Linq
             return source.SelectMany(item => item.SelectManySafe(mediumSelector, resultSelector));
         }
 
-        public static IEnumerable<Either<TLeft, TRightOutput>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
             this IEnumerable<Either<TLeft, TRightInput>> source,
-            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
             throw new NotImplementedException();
         }
 
-        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
-            this IEnumerable<Task<Either<TLeft, TRightInput>>> source,
-            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
+            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
             throw new NotImplementedException();
         }
@@ -132,12 +130,12 @@ namespace Railway.Linq
                             .Select(Prelude.Left<TLeft, IGrouping<TKey, TRight>>));
         }
 
-        public static IEnumerable<Task<Either<TLeft, IGrouping<TKey, TRight>>>> GroupByAsyncSafe<TLeft, TRight, TKey>(
-            this IEnumerable<Task<Either<TLeft, TRight>>> source, Func<TRight, TKey> keySelector)
+        public static Task<IEnumerable<Either<TLeft, IGrouping<TKey, TRight>>>> GroupBySafeAsync<TLeft, TRight, TKey>(
+            this Task<IEnumerable<Either<TLeft, TRight>>> source, Func<TRight, TKey> keySelector)
         {
             return source
                 .GroupByAsync(item => item.IsRight)
-                .SelectMany(
+                .SelectManyAsync(
                     group => group.Key
                         ? group
                             .Rights()
@@ -164,8 +162,8 @@ namespace Railway.Linq
                             .Select(Prelude.Left<TLeft, IList<TRight>>)));
         }
 
-        public static IEnumerable<Task<Either<TLeft, IList<TRight>>>> BufferAsyncSafe<TLeft, TRight>(
-            this IEnumerable<Task<Either<TLeft, TRight>>> source, TimeSpan batchTimeout, int count)
+        public static Task<IEnumerable<Either<TLeft, IList<TRight>>>> BufferSafeAsync<TLeft, TRight>(
+            this Task<IEnumerable<Either<TLeft, TRight>>> source, TimeSpan batchTimeout, int count)
         {
             throw new NotImplementedException();
         }
@@ -181,8 +179,8 @@ namespace Railway.Linq
                 });
         }
 
-        public static IEnumerable<Task<Either<TLeftOutput, TRightOutput>>> UseAsync<TInput, TLeftOutput, TRightOutput>(TInput disposable,
-            Func<TInput, IEnumerable<Task<Either<TLeftOutput, TRightOutput>>>> selector) where TInput : IDisposable
+        public static Task<IEnumerable<Either<TLeftOutput, TRightOutput>>> UseAsync<TInput, TLeftOutput, TRightOutput>(TInput disposable,
+            Func<TInput, Task<IEnumerable<Either<TLeftOutput, TRightOutput>>>> selector) where TInput : IDisposable
         {
             throw new NotImplementedException();
         }

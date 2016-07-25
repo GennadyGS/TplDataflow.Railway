@@ -8,6 +8,12 @@ namespace Collection.Extensions
 {
     public static class EnumerableExtensions
     {
+        public static Task<IEnumerable<TResult>> SelectAsync<TSource, TResult>(this IEnumerable<TSource> source,
+            Func<TSource, Task<TResult>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
         public static IEnumerable<Task<TResult>> SelectMany<TSource, TResult>(this IEnumerable<Task<TSource>> source,
             Func<TSource, IEnumerable<TResult>> selector)
         {
@@ -16,14 +22,26 @@ namespace Collection.Extensions
                 .SelectMany(item => item.ToEnumerableOfTasks());
         }
 
-        public static IEnumerable<TResult> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
+        public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
             Func<TSource, IEnumerable<Task<TResult>>> selector)
         {
             throw new NotImplementedException();
         }
 
-        public static IEnumerable<Task<IGrouping<TKey, TSource>>> GroupByAsync<TSource, TKey>(
-            this IEnumerable<Task<TSource>> source,
+        public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
+            Func<TSource, Task<IEnumerable<TResult>>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this Task<IEnumerable<TSource>> source,
+            Func<TSource, IEnumerable<TResult>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static Task<IEnumerable<IGrouping<TKey, TSource>>> GroupByAsync<TSource, TKey>(
+            this Task<IEnumerable<TSource>> source,
             Func<TSource, TKey> keySelector)
         {
             throw new NotImplementedException();

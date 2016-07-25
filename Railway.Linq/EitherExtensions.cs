@@ -75,8 +75,8 @@ namespace Railway.Linq
                 left => List(Left<TLeft, TRightOutput>(left)));
         }
 
-        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
-            this Task<Either<TLeft, TRightInput>> source, Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<Either<TLeft, TRightInput>> source, Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
             throw new NotImplementedException();
         }

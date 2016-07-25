@@ -94,9 +94,9 @@ namespace Dataflow.Railway
             return source.BindSafe(bindFunc);
         }
 
-        public static IDataflow<Either<TLeft, TRightOutput>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+        public static IDataflow<Either<TLeft, TRightOutput>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
             this IDataflow<Either<TLeft, TRightInput>> source,
-            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
             throw new NotImplementedException();
         }

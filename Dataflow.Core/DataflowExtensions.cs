@@ -44,7 +44,7 @@ namespace Dataflow.Core
         }
 
         public static IDataflow<TOutput> SelectManyAsync<TInput, TOutput>(this IDataflow<TInput> source,
-            Func<TInput, IEnumerable<Task<TOutput>>> selector)
+            Func<TInput, Task<IEnumerable<TOutput>>> selector)
         {
             throw new NotImplementedException();
         }

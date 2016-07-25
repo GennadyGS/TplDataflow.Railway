@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using LanguageExt;
 using TplDataFlow.Extensions;
 
 namespace TplDataflow.Linq
@@ -30,11 +29,9 @@ namespace TplDataflow.Linq
         }
 
         public static ISourceBlock<TOutput> SelectManyAsync<TInput, TOutput>(
-            this ISourceBlock<TInput> source, Func<TInput, IEnumerable<Task<TOutput>>> selector)
+            this ISourceBlock<TInput> source, Func<TInput, Task<IEnumerable<TOutput>>> selector)
         {
-            return source.LinkWith(new TransformManyBlock<TInput, TOutput>(item => 
-                Task.WhenAll(selector(item))
-                    .Map(items => (IEnumerable<TOutput>)items)));
+            return source.LinkWith(new TransformManyBlock<TInput, TOutput>(selector));
         }
 
         public static ISourceBlock<TOutput> SelectMany<TInput, TOutput>(

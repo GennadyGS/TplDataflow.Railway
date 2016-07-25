@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading.Tasks;
 
 namespace AsyncProcessing.Core
 {
@@ -12,7 +13,8 @@ namespace AsyncProcessing.Core
 
         internal AsyncProcessor(Func<IObservable<TInput>, IObservable<TOutput>> dataflowFunc)
         {
-            dataflowFunc(_input).Subscribe(_output);
+            dataflowFunc(_input)
+                .Subscribe(_output);
         }
 
         internal AsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflowFunc)
@@ -20,6 +22,13 @@ namespace AsyncProcessing.Core
             _input.ToListAsync()
                 .ContinueWith(task =>
                     dataflowFunc(task.Result).Subscribe(_output));
+        }
+
+        internal AsyncProcessor(Func<IEnumerable<TInput>, Task<IEnumerable<TOutput>>> dataflowFunc)
+        {
+            _input.ToListAsync()
+                .ContinueWith(async task =>
+                    (await dataflowFunc(task.Result)).Subscribe(_output));
         }
 
         void IObserver<TInput>.OnNext(TInput value)
@@ -46,6 +55,11 @@ namespace AsyncProcessing.Core
     public static class AsyncProcessor
     {
         public static AsyncProcessor<TInput, TOutput> Create<TInput, TOutput>(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflowFunc)
+        {
+            return new AsyncProcessor<TInput, TOutput>(dataflowFunc);
+        }
+
+        public static AsyncProcessor<TInput, TOutput> Create<TInput, TOutput>(Func<IEnumerable<TInput>, Task<IEnumerable<TOutput>>> dataflowFunc)
         {
             return new AsyncProcessor<TInput, TOutput>(dataflowFunc);
         }

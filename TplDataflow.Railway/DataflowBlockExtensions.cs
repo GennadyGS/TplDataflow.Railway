@@ -41,9 +41,9 @@ namespace TplDataflow.Railway
                     : group.Select(item => Left<TLeft, TRightOutput>(item.GetLeftSafe())));
         }
 
-        public static ISourceBlock<Either<TLeft, TRightOutput>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+        public static ISourceBlock<Either<TLeft, TRightOutput>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
             this ISourceBlock<Either<TLeft, TRightInput>> source, 
-            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
             return source
                 .GroupBy(item => item.IsRight)

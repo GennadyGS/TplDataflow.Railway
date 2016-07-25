@@ -208,10 +208,10 @@ namespace EventProcessing.Implementation
                 return input
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
+                    .SelectManySafeAsync(_logic.ProcessEventGroupsBatchSafeAsync)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
@@ -270,10 +270,10 @@ namespace EventProcessing.Implementation
                 return input
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
+                    .SelectManySafeAsync(_logic.ProcessEventGroupsBatchSafeAsync)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
@@ -323,19 +323,19 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Result>>) ProcessEventDataflow);
+                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, Task<IEnumerable<Result>>>) ProcessEventDataflowAsync);
             }
 
-            private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> input)
+            private Task<IEnumerable<Result>> ProcessEventDataflowAsync(IEnumerable<EventDetails> input)
             {
                 return input
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
-                    .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) => Logic.TransformResult(res));
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
+                    .SelectSafeAsync(_logic.FilterSkippedEventGroup)
+                    .BufferSafeAsync(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafeAsync(_logic.ProcessEventGroupsBatchSafeAsync)
+                    .SelectManyAsync((Either<UnsuccessResult, SuccessResult> res) => Logic.TransformResult(res));
             }
         }
 
@@ -396,10 +396,10 @@ namespace EventProcessing.Implementation
                 return dataflowFactory.Return(@event)
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManyAsyncSafe(_logic.ProcessEventGroupsBatchAsyncSafe)
+                    .SelectManySafeAsync(_logic.ProcessEventGroupsBatchSafeAsync)
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
@@ -485,22 +485,22 @@ namespace EventProcessing.Implementation
                     processTypeManager, currentTimeProvider);
                 _configuration = configuration;
 
-                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Result>>)ProcessEventDataflow);
+                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, Task<IEnumerable<Result>>>) ProcessEventDataflowAsync);
             }
 
-            private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> events)
+            private Task<IEnumerable<Result>> ProcessEventDataflowAsync(IEnumerable<EventDetails> events)
             {
                 return events
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
-                    .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .GroupBySafe(group => group.EventSetType.GetCode())
-                    .SelectManySafe(innerGroup =>
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
+                    .SelectSafeAsync(_logic.FilterSkippedEventGroup)
+                    .GroupBySafeAsync(group => group.EventSetType.GetCode())
+                    .SelectManySafeAsync(innerGroup =>
                         innerGroup
                             .ToListEnumerable()
-                            .SelectManyAsync(_logic.ProcessEventGroupsAsyncSafe))
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                            .SelectManyAsync(_logic.ProcessEventGroupsSafeAsync))
+                    .SelectManyAsync((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
         }
@@ -561,13 +561,13 @@ namespace EventProcessing.Implementation
                 return events
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .GroupBySafe(group => group.EventSetType.GetCode())
                     .SelectManySafe(innerGroup =>
                         innerGroup
                             .ToList()
-                            .SelectManyAsync(_logic.ProcessEventGroupsAsyncSafe))
+                            .SelectManyAsync(_logic.ProcessEventGroupsSafeAsync))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
@@ -629,13 +629,13 @@ namespace EventProcessing.Implementation
                 return events
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .GroupBySafe(group => group.EventSetType.GetCode())
                     .SelectManySafe(innerGroup =>
                         innerGroup
                             .ToList()
-                            .SelectManyAsync(_logic.ProcessEventGroupsAsyncSafe))
+                            .SelectManyAsync(_logic.ProcessEventGroupsSafeAsync))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
@@ -701,13 +701,13 @@ namespace EventProcessing.Implementation
                 return dataflowFactory.Return(@event)
                     .Select(_logic.LogEvent)
                     .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsAsyncSafe)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
                     .SelectSafe(_logic.FilterSkippedEventGroup)
                     .GroupBySafe(group => group.EventSetType.GetCode())
                     .SelectManySafe(innerGroup =>
                         innerGroup
                             .ToList()
-                            .SelectManyAsync(_logic.ProcessEventGroupsAsyncSafe))
+                            .SelectManyAsync(_logic.ProcessEventGroupsSafeAsync))
                     .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
                         Logic.TransformResult(res));
             }
@@ -859,7 +859,7 @@ namespace EventProcessing.Implementation
                     .SelectMany(SplitEventGroupByThreshold);
             }
 
-            public IEnumerable<Task<Either<UnsuccessResult, EventGroup>>> SplitEventsIntoGroupsAsyncSafe(
+            public Task<IEnumerable<Either<UnsuccessResult, EventGroup>>> SplitEventsIntoGroupsSafeAsync(
                 IList<EventDetails> events)
             {
                 return events
@@ -868,7 +868,7 @@ namespace EventProcessing.Implementation
                         EventTypeId = @event.EventTypeId,
                         EventCategory = @event.Category
                     })
-                    .Select(
+                    .SelectAsync(
                         eventGroup =>
                             GetProcessTypeSafeAsync(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory, eventGroup.ToList())
                                 .Select((EventSetProcessType processType) => new
@@ -876,7 +876,7 @@ namespace EventProcessing.Implementation
                                     EventSetProcessType = processType,
                                     Events = eventGroup
                                 }))
-                    .SelectMany(processType => processType.Events,
+                    .SelectManyAsync(processType => processType.Events,
                         (processType, @event) => new
                         {
                             Event = @event,
@@ -884,14 +884,14 @@ namespace EventProcessing.Implementation
                             EventSetType = EventSetType.CreateFromEventAndLevel(@event,
                                     (EventLevel)processType.EventSetProcessType.Level)
                         })
-                    .GroupByAsyncSafe(eventInfo => eventInfo.EventSetType)
-                    .Select(eventGroup => new EventGroup
+                    .GroupBySafeAsync(eventInfo => eventInfo.EventSetType)
+                    .SelectAsync(eventGroup => new EventGroup
                     {
                         EventSetType = eventGroup.Key,
                         EventSetProcessType = eventGroup.First().EventSetProcessType,
                         Events = eventGroup.Select(arg => arg.Event).ToList()
                     })
-                    .SelectMany(SplitEventGroupByThreshold);
+                    .SelectManyAsync(SplitEventGroupByThreshold);
             }
 
             public Either<UnsuccessResult, EventGroup> FilterSkippedEventGroup(EventGroup eventGroup)
@@ -918,19 +918,17 @@ namespace EventProcessing.Implementation
                 });
             }
 
-            public IEnumerable<Task<Either<UnsuccessResult, SuccessResult>>> ProcessEventGroupsBatchAsyncSafe(
+            public Task<IEnumerable<Either<UnsuccessResult, SuccessResult>>> ProcessEventGroupsBatchSafeAsync(
                 IList<EventGroup> eventGroupsBatch)
             {
-                return EnumerableExtensions.UseAsync(_repositoryResolver(), repository =>
-                {
-                    return FindLastEventSetsSafeAsync(repository, eventGroupsBatch)
-                        .SelectManyAsyncSafe(
+                return EnumerableExtensions.UseAsync(_repositoryResolver(), repository => 
+                    FindLastEventSetsSafeAsync(repository, eventGroupsBatch)
+                        .SelectManySafeAsync(
                             lastEventSets =>
-                                InternalProcessEventGroupsBatchAsyncSafe(eventGroupsBatch, lastEventSets))
-                        .BufferAsyncSafe(TimeSpan.MaxValue, int.MaxValue)
-                        .SelectAsyncSafe(resultList => ApplyChangesSafeAsync(repository, resultList))
-                        .SelectMany(result => result);
-                });
+                                InternalProcessEventGroupsBatchSafeAsync(eventGroupsBatch, lastEventSets))
+                        .BufferSafeAsync(TimeSpan.MaxValue, int.MaxValue)
+                        .SelectSafeAsync(resultList => ApplyChangesSafeAsync(repository, resultList))
+                        .SelectManyAsync(result => result));
             }
 
             public IEnumerable<Either<UnsuccessResult, SuccessResult>> ProcessEventGroupsSafe(IList<EventGroup> eventGroups)
@@ -947,19 +945,16 @@ namespace EventProcessing.Implementation
                 });
             }
 
-            public IEnumerable<Task<Either<UnsuccessResult, SuccessResult>>> ProcessEventGroupsAsyncSafe(IList<EventGroup> eventGroups)
+            public Task<IEnumerable<Either<UnsuccessResult, SuccessResult>>> ProcessEventGroupsSafeAsync(IList<EventGroup> eventGroups)
             {
-                return EnumerableExtensions.UseAsync(_repositoryResolver(), repository =>
-                {
-                    var enumerable = eventGroups
-                        .Select(group => 
+                return EnumerableExtensions.UseAsync(_repositoryResolver(), repository => 
+                    eventGroups
+                        .SelectAsync(group => 
                             FindLastEventSetsSafeAsync(repository, new[] { group })
-                                .Select((IList <EventSet> lastEventSets) => new { group, lastEventSets }));
-                    return enumerable
-                        .SelectAsyncSafe(item => InternalProcessEventGroupSafeAsync(item.group, item.lastEventSets))
-                        .SelectAsyncSafe(result => ApplyChangesSafeAsync(repository, new[] { result }))
-                        .SelectMany(result => result);
-                });
+                                .Select((IList <EventSet> lastEventSets) => new { group, lastEventSets }))
+                        .SelectSafeAsync(item => InternalProcessEventGroupSafeAsync(item.group, item.lastEventSets))
+                        .SelectSafeAsync(result => ApplyChangesSafeAsync(repository, new[] { result }))
+                        .SelectManyAsync(result => result));
             }
 
             public static IEnumerable<Result> TransformResult(Either<UnsuccessResult, SuccessResult> result)
@@ -1103,11 +1098,11 @@ namespace EventProcessing.Implementation
                         : UpdateEventSetsForEventGroupBatch(eventGroup.ToList(), lastEventSets));
             }
 
-            private IEnumerable<Task<Either<UnsuccessResult, SuccessResult>>> InternalProcessEventGroupsBatchAsyncSafe(IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
+            private Task<IEnumerable<Either<UnsuccessResult, SuccessResult>>> InternalProcessEventGroupsBatchSafeAsync(IList<EventGroup> eventGroupsBatch, IList<EventSet> lastEventSets)
             {
                 return eventGroupsBatch
                     .GroupBy(eventGroup => NeedToCreateEventSet(eventGroup, lastEventSets))
-                    .SelectMany(eventGroup => eventGroup.Key
+                    .SelectManyAsync(eventGroup => eventGroup.Key
                         ? CreateEventSetsForEventGroupBatchAsync(eventGroup.ToList())
                         : UpdateEventSetsForEventGroupBatchAsync(eventGroup.ToList(), lastEventSets));
             }

@@ -33,7 +33,7 @@ namespace Railway.Linq
         }
 
         public static IObservable<TResult> SelectManyAsync<TSource, TResult>(this IObservable<TSource> source,
-            Func<TSource, IEnumerable<Task<TResult>>> selector)
+            Func<TSource, Task<IEnumerable<TResult>>> selector)
         {
             throw new NotImplementedException();
         }
@@ -80,9 +80,9 @@ namespace Railway.Linq
                     left => Observable.Return<Either<TLeft, TRightOutput>>(left)));
         }
 
-        public static IObservable<Either<TLeft, TRightOutput>> SelectManyAsyncSafe<TLeft, TRightInput, TRightOutput>(
+        public static IObservable<Either<TLeft, TRightOutput>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
             this IObservable<Either<TLeft, TRightInput>> source,
-            Func<TRightInput, IEnumerable<Task<Either<TLeft, TRightOutput>>>> selector)
+            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
             throw new NotImplementedException();
         }
