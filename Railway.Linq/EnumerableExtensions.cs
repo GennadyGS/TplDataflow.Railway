@@ -74,14 +74,14 @@ namespace Railway.Linq
             this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, Either<TLeft, TRightOutput>> selector)
         {
-            throw new NotImplementedException();
+            return source.SelectAsync(item => item.SelectSafe(selector));
         }
 
         public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectSafeAsync<TLeft, TRightInput, TRightOutput>(
             this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, Task<Either<TLeft, TRightOutput>>> selector)
         {
-            throw new NotImplementedException();
+            return source.SelectAsync(item => item.SelectSafeAsync(selector));
         }
 
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightOutput>(
@@ -182,7 +182,12 @@ namespace Railway.Linq
         public static Task<IEnumerable<Either<TLeftOutput, TRightOutput>>> UseAsync<TInput, TLeftOutput, TRightOutput>(TInput disposable,
             Func<TInput, Task<IEnumerable<Either<TLeftOutput, TRightOutput>>>> selector) where TInput : IDisposable
         {
-            throw new NotImplementedException();
+            return selector(disposable)
+                .SelectAsync(item =>
+                {
+                    disposable.Dispose();
+                    return item;
+                });
         }
     }
 }

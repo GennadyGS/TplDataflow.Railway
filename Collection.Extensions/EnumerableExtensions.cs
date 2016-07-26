@@ -13,6 +13,18 @@ namespace Collection.Extensions
             return await Task.WhenAll(source.Select(selector));
         }
 
+        public static async Task<IEnumerable<TResult>> SelectAsync<TSource, TResult>(this Task<IEnumerable<TSource>> source,
+            Func<TSource, TResult> selector)
+        {
+            return (await source).Select(selector);
+        }
+
+        public static async Task<IEnumerable<TResult>> SelectAsync<TSource, TResult>(this Task<IEnumerable<TSource>> source,
+            Func<TSource, Task<TResult>> selector)
+        {
+            return await Task.WhenAll((await source).Select(selector));
+        }
+
         public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
             Func<TSource, Task<IEnumerable<TResult>>> selector)
         {

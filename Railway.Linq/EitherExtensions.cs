@@ -42,6 +42,14 @@ namespace Railway.Linq
                         .Map(rightMedium => resultSelector(rightInput, rightMedium)));
         }
 
+        public static Task<Either<TLeft, TRightOutput>> SelectSafeAsync<TLeft, TRightInput, TRightOutput>(
+            this Either<TLeft, TRightInput> source, Func<TRightInput, Task<Either<TLeft, TRightOutput>>> selector)
+        {
+            return source.Match(
+                async right => await selector(right), 
+                left => Left<TLeft, TRightOutput>(left).AsTask());
+        }
+
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectMany<TLeft, TRightInput, TRightOutput>(
             this Either<TLeft, TRightInput> source, Func<TRightInput, IEnumerable<TRightOutput>> selector)
         {
