@@ -49,7 +49,7 @@ namespace Railway.Linq
                 left => List(Left<TLeft, TRightOutput>(left)));
         }
 
-        public static IEnumerable<Task<Either<TLeft, TRightOutput>>> SelectMany<TLeft, TRightInput, TRightOutput>(
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectMany<TLeft, TRightInput, TRightOutput>(
             this Task<Either<TLeft, TRightInput>> source, Func<TRightInput, IEnumerable<TRightOutput>> selector)
         {
             throw new NotImplementedException();

@@ -1200,7 +1200,7 @@ namespace EventProcessing.Implementation
                             .Select(item => CreateEventSet(item.EventSetId, item.EventGroup)));
             }
 
-            private IEnumerable<Task<Either<UnsuccessResult, SuccessResult>>> CreateEventSetsForEventGroupBatchAsync(IList<EventGroup> eventGroups)
+            private Task<IEnumerable<Either<UnsuccessResult, SuccessResult>>> CreateEventSetsForEventGroupBatchAsync(IList<EventGroup> eventGroups)
             {
                 var events = eventGroups
                     .SelectMany(group => group.Events)
@@ -1298,12 +1298,13 @@ namespace EventProcessing.Implementation
                     .Select(Right<UnsuccessResult, SuccessResult>);
             }
 
-            private IEnumerable<Task<Either<UnsuccessResult, SuccessResult>>> UpdateEventSetsForEventGroupBatchAsync(IList<EventGroup> eventGroups,
+            private Task<IEnumerable<Either<UnsuccessResult, SuccessResult>>> UpdateEventSetsForEventGroupBatchAsync(IList<EventGroup> eventGroups,
                 IList<EventSet> lastEventSets)
             {
                 return eventGroups
                     .Select(eventGroup => UpdateEventSet(eventGroup, lastEventSets))
-                    .Select(result => Task.FromResult(Right<UnsuccessResult, SuccessResult>(result)));
+                    .Select(Right<UnsuccessResult, SuccessResult>)
+                    .AsTask();
             }
 
             private Either<UnsuccessResult, SuccessResult> UpdateEventSetForEventGroup(EventGroup eventGroup,

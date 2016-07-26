@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using LanguageExt.Trans;
 
 namespace Collection.Extensions
 {
@@ -10,20 +9,6 @@ namespace Collection.Extensions
     {
         public static Task<IEnumerable<TResult>> SelectAsync<TSource, TResult>(this IEnumerable<TSource> source,
             Func<TSource, Task<TResult>> selector)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static IEnumerable<Task<TResult>> SelectMany<TSource, TResult>(this IEnumerable<Task<TSource>> source,
-            Func<TSource, IEnumerable<TResult>> selector)
-        {
-            return source
-                .MapT(selector)
-                .SelectMany(item => item.ToEnumerableOfTasks());
-        }
-
-        public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
-            Func<TSource, IEnumerable<Task<TResult>>> selector)
         {
             throw new NotImplementedException();
         }
@@ -60,11 +45,6 @@ namespace Collection.Extensions
                 .Select((value, index) => new {value, index})
                 .GroupBy(item => item.index/count)
                 .Select(group => group.Select(item => item.value).ToList());
-        }
-
-        private static IEnumerable<Task<T>> ToEnumerableOfTasks<T>(this Task<IEnumerable<T>> source)
-        {
-            throw new NotImplementedException();
         }
     }
 }
