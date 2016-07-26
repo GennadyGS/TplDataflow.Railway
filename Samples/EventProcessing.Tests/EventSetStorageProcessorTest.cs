@@ -8,6 +8,7 @@ using Moq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace EventProcessing.Tests
@@ -60,9 +61,9 @@ namespace EventProcessing.Tests
             SetupConfigurationMock();
 
             _storageProcessor = storageProcessorFactory.CreateStorageProcessor(
-                () => _repositoryMock.Object,
-                _identityManagementServiceMock.Object,
-                _processTypeManagerMock.Object,
+                () => new EventSetRepositoryAsyncProxy(_repositoryMock.Object),
+                new IdentityManagementServiceAsyncProxy(_identityManagementServiceMock.Object),
+                new ProcessTypManagerAsyncProxy(_processTypeManagerMock.Object),
                 _configurationMock.Object,
                 () => _currentTime);
         }
@@ -75,13 +76,13 @@ namespace EventProcessing.Tests
             result.Should().BeEmpty();
 
             _processTypeManagerMock.Verify(obj => 
-                obj.GetProcessType(It.IsAny<int>(), It.IsAny<EventTypeCategory>()),
+                obj.GetProcessTypeAsync(It.IsAny<int>(), It.IsAny<EventTypeCategory>()),
                 Times.Never);
             _identityManagementServiceMock.Verify(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), It.IsAny<int>()),
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), It.IsAny<int>()),
                 Times.Never);
             _repositoryMock.Verify(obj => 
-                obj.ApplyChanges(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()),
+                obj.ApplyChangesAsync(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()),
                 Times.Never);
 
             VerifyMocks();
@@ -91,8 +92,8 @@ namespace EventProcessing.Tests
         public void WhenEventSetProcessTypeWasNotFound_EventShouldBeFailed()
         {
             _processTypeManagerMock.Setup(obj => 
-                obj.GetProcessType(It.IsAny<int>(), It.IsAny<EventTypeCategory>()))
-                .Returns((EventSetProcessType) null)
+                obj.GetProcessTypeAsync(It.IsAny<int>(), It.IsAny<EventTypeCategory>()))
+                .Returns(Task.FromResult((EventSetProcessType) null))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] {_informationalEvent});
@@ -101,10 +102,10 @@ namespace EventProcessing.Tests
             result.First().VerifyEventFailed(_informationalEvent);
 
             _identityManagementServiceMock.Verify(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), It.IsAny<int>()),
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), It.IsAny<int>()),
                 Times.Never);
             _repositoryMock.Verify(obj => 
-                obj.ApplyChanges(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()),
+                obj.ApplyChangesAsync(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()),
                 Times.Never);
 
             VerifyMocks();
@@ -114,7 +115,7 @@ namespace EventProcessing.Tests
         public void WhenEventSetProcessTypeThrowsException_EventShouldBeFailed()
         {
             _processTypeManagerMock.Setup(obj => 
-                obj.GetProcessType(It.IsAny<int>(), It.IsAny<EventTypeCategory>()))
+                obj.GetProcessTypeAsync(It.IsAny<int>(), It.IsAny<EventTypeCategory>()))
                 .Throws<Exception>()
                 .Verifiable();
 
@@ -131,13 +132,13 @@ namespace EventProcessing.Tests
         {
             var processType = new EventSetProcessType {Level = (byte) EventLevel.Critical};
             _processTypeManagerMock.Setup(obj => 
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] {GetCriticalEventsetTypeCode()}))))
                 .Throws<Exception>()
@@ -149,10 +150,10 @@ namespace EventProcessing.Tests
             result.First().VerifyEventFailed(_criticalEvent);
 
             _identityManagementServiceMock.Verify(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), It.IsAny<int>()), 
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), It.IsAny<int>()), 
                 Times.Never);
             _repositoryMock.Verify(obj => 
-                obj.ApplyChanges(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()), 
+                obj.ApplyChangesAsync(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()), 
                 Times.Never);
 
             VerifyMocks();
@@ -163,19 +164,19 @@ namespace EventProcessing.Tests
         {
             var processType = new EventSetProcessType {Level = (byte) EventLevel.Critical};
             _processTypeManagerMock.Setup(obj => 
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] {GetCriticalEventsetTypeCode()}))))
-                .Returns(new List<EventSet>())
+                .Returns(Task.FromResult<IList<EventSet>>(new EventSet[] {}))
                 .Verifiable();
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), It.IsAny<int>()))
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), It.IsAny<int>()))
                 .Throws<Exception>()
                 .Verifiable();
 
@@ -185,7 +186,7 @@ namespace EventProcessing.Tests
             result.First().VerifyEventFailed(_criticalEvent);
 
             _repositoryMock.Verify(obj => 
-                obj.ApplyChanges(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()), 
+                obj.ApplyChangesAsync(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()), 
                 Times.Never);
 
             VerifyMocks();
@@ -196,28 +197,28 @@ namespace EventProcessing.Tests
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical };
             _processTypeManagerMock.Setup(obj => 
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i ==_criticalEvent.EventTypeId), 
                     It.Is<EventTypeCategory>(i => i ==_criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new List<EventSet>())
+                .Returns(Task.FromResult<IList<EventSet>>(new EventSet[] {} ))
                 .Verifiable();
 
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()))
+                obj.ApplyChangesAsync(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()))
                 .Throws<Exception>()
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }.ToList()))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -234,10 +235,10 @@ namespace EventProcessing.Tests
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Information };
 
             _processTypeManagerMock.Setup(obj => 
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _informationalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i ==_informationalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _informationalEvent });
@@ -246,10 +247,10 @@ namespace EventProcessing.Tests
             result.First().VerifyEventSkipped(_informationalEvent);
 
             _identityManagementServiceMock.Verify(obj =>
-                obj.GetNextLongIds(It.IsAny<string>(), It.IsAny<int>()),
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), It.IsAny<int>()),
                 Times.Never);
             _repositoryMock.Verify(obj =>
-                obj.ApplyChanges(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()),
+                obj.ApplyChangesAsync(It.IsAny<IList<EventSet>>(), It.IsAny<IList<EventSet>>()),
                 Times.Never);
 
             VerifyMocks();
@@ -260,29 +261,30 @@ namespace EventProcessing.Tests
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical };
             _processTypeManagerMock.Setup(obj => 
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i ==_criticalEvent.EventTypeId), 
                     It.Is<EventTypeCategory>(i => i== _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new List<EventSet>())
+                .Returns(Task.FromResult<IList<EventSet>>(new EventSet[] { }))
                 .Verifiable();
 
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.Is<IList<EventSet>>(sets => sets.Count == 1),
                     It.Is<IList<EventSet>>(sets => sets.Count == 0)))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -298,10 +300,10 @@ namespace EventProcessing.Tests
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical, Threshold = TimeSpan.FromHours(1) };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -312,16 +314,17 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
 
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.Is<IList<EventSet>>(sets => sets.Count == 0),
                     It.Is<IList<EventSet>>(sets => sets.Count == 1)))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -330,7 +333,7 @@ namespace EventProcessing.Tests
             result.First().VerifyEventSetUpdated(_criticalEvent, 1, _currentTime);
 
             _identityManagementServiceMock.Verify(obj =>
-                obj.GetNextLongIds(It.IsAny<string>(), It.IsAny<int>()),
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), It.IsAny<int>()),
                 Times.Never);
 
             VerifyMocks();
@@ -341,10 +344,10 @@ namespace EventProcessing.Tests
         {
             var processType = new EventSetProcessType { Level = (byte)EventLevel.Critical };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -354,21 +357,22 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.Is<IList<EventSet>>(sets => sets.Count == 1),
                     It.Is<IList<EventSet>>(sets => sets.Count == 0)))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -388,10 +392,10 @@ namespace EventProcessing.Tests
                 Threshold = TimeSpan.FromMinutes(10)
             };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -401,21 +405,22 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.Is<IList<EventSet>>(sets => sets.Count == 1),
                     It.Is<IList<EventSet>>(sets => sets.Count == 0)))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -435,10 +440,10 @@ namespace EventProcessing.Tests
                 Threshold = TimeSpan.FromMinutes(10)
             };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -449,21 +454,22 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.Is<IList<EventSet>>(sets => sets.Count == 1),
                     It.Is<IList<EventSet>>(sets => sets.Count == 0)))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -485,10 +491,10 @@ namespace EventProcessing.Tests
                 AutoCompleteTimeout = TimeSpan.FromSeconds(9)
             };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -500,22 +506,23 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.Is<IList<EventSet>>(sets => sets.Count == 1),
                     It.Is<IList<EventSet>>(sets => sets.Count == 0)))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -537,10 +544,10 @@ namespace EventProcessing.Tests
                 AutoCompleteTimeout = TimeSpan.FromSeconds(9)
             };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -552,22 +559,23 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.Is<IList<EventSet>>(sets => sets.Count == 1),
                     It.Is<IList<EventSet>>(sets => sets.Count == 0)))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -589,10 +597,10 @@ namespace EventProcessing.Tests
                 AutoCompleteTimeout = TimeSpan.FromSeconds(9)
             };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -604,22 +612,23 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.Is<IList<EventSet>>(sets => sets.Count == 1),
                     It.Is<IList<EventSet>>(sets => sets.Count == 0)))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(new[] { _criticalEvent });
@@ -639,10 +648,10 @@ namespace EventProcessing.Tests
                 Threshold = TimeSpan.FromMinutes(5)
             };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -660,21 +669,23 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
             _repositoryMock.Setup(obj =>
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.IsAny<IList<EventSet>>(),
-                    It.IsAny<IList<EventSet>>()));
+                    It.IsAny<IList<EventSet>>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
 
             // TODO: Refactoring
             var eventSetIds = new long[] { 15345, 15346 };
             int currentEventSetIdIndex = 0;
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(
+                obj.GetNextLongIdsAsync(
                     It.IsAny<string>(), 
                     It.Is<int>(i => i > 0 && i <= eventSetIds.Length)))
                 .Returns((string sequenceName, int amount) =>
@@ -683,7 +694,7 @@ namespace EventProcessing.Tests
                         .Skip(Interlocked.Add(ref currentEventSetIdIndex, amount) - amount)
                         .Take(amount)
                         .ToList();
-                    return res;
+                    return Task.FromResult<IList<long>>(res);
                 });
 
             var result = _storageProcessor.InvokeSync(events);
@@ -703,10 +714,10 @@ namespace EventProcessing.Tests
                 Threshold = TimeSpan.FromMinutes(5)
             };
             _processTypeManagerMock.Setup(obj =>
-                obj.GetProcessType(
+                obj.GetProcessTypeAsync(
                     It.Is<int>(i => i == _criticalEvent.EventTypeId),
                     It.Is<EventTypeCategory>(i => i == _criticalEvent.Category)))
-                .Returns(processType)
+                .Returns(Task.FromResult(processType))
                 .Verifiable();
 
             var eventSet = new EventSet
@@ -723,22 +734,23 @@ namespace EventProcessing.Tests
             };
 
             _repositoryMock.Setup(obj => 
-                obj.FindLastEventSetsByTypeCodes(
+                obj.FindLastEventSetsByTypeCodesAsync(
                     It.Is<IList<long>>(typeCodes => 
                         typeCodes.SequenceEqual(new[] { GetCriticalEventsetTypeCode() }))))
-                .Returns(new[] { eventSet }.ToList())
+                .Returns(Task.FromResult<IList<EventSet>>(new[] { eventSet }))
                 .Verifiable();
             _repositoryMock.Setup(obj => 
-                obj.ApplyChanges(
+                obj.ApplyChangesAsync(
                     It.IsAny<IList<EventSet>>(),
                     It.IsAny<IList<EventSet>>()))
+                .Returns(Task.CompletedTask)
                 .Verifiable();
 
             long newEventSetId = 15345;
 
             _identityManagementServiceMock.Setup(obj => 
-                obj.GetNextLongIds(It.IsAny<string>(), 1))
-                .Returns(new[] { newEventSetId }.ToList())
+                obj.GetNextLongIdsAsync(It.IsAny<string>(), 1))
+                .Returns(Task.FromResult<IList<long>>(new[] { newEventSetId }))
                 .Verifiable();
 
             var result = _storageProcessor.InvokeSync(events);
