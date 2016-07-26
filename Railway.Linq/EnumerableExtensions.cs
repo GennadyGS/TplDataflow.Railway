@@ -17,11 +17,11 @@ namespace Railway.Linq
             return source.MapT(selector);
         }
 
-        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectAsync<TLeft, TRightInput, TRightOutput>(
+        public static async Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectAsync<TLeft, TRightInput, TRightOutput>(
             this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, TRightOutput> selector)
         {
-            throw new NotImplementedException();
+            return (await source).MapT(selector);
         }
 
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectMany<TLeft, TRightInput, TRightOutput>(
@@ -39,19 +39,19 @@ namespace Railway.Linq
             return source.SelectMany(item => item.SelectMany(mediumSelector, resultSelector));
         }
 
+        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManyAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
+            Func<TRightInput, IEnumerable<TRightOutput>> selector)
+        {
+            return source.SelectManyAsync(item => item.SelectMany(selector));
+        }
+
         public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManyAsync<TLeft, TRightInput, TRightMedium, TRightOutput>(
             this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, IEnumerable<TRightMedium>> mediumSelector,
             Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
         {
             return source.SelectManyAsync(item => item.SelectMany(mediumSelector, resultSelector));
-        }
-
-        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManyAsync<TLeft, TRightInput, TRightOutput>(
-            this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
-            Func<TRightInput, IEnumerable<TRightOutput>> selector)
-        {
-            throw new NotImplementedException();
         }
 
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectSafe<TLeft, TRightInput, TRightOutput>(

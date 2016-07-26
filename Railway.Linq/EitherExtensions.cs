@@ -19,10 +19,11 @@ namespace Railway.Linq
             return input.IfRight(() => failwith<TLeft>("Not in left state"));
         }
 
-        public static Task<Either<TLeft, TRightOutput>> Select<TLeft, TRightInput, TRightOutput>(this Task<Either<TLeft, TRightInput>> source, 
+        public static async Task<Either<TLeft, TRightOutput>> SelectAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<Either<TLeft, TRightInput>> source, 
             Func<TRightInput, TRightOutput> selector)
         {
-            throw new NotImplementedException();
+            return (await source).Select(selector);
         }
 
         public static Either<TLeft, TRightOutput> SelectSafe<TLeft, TRightInput, TRightOutput>(

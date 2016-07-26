@@ -871,7 +871,7 @@ namespace EventProcessing.Implementation
                     .SelectAsync(
                         eventGroup =>
                             GetProcessTypeSafeAsync(eventGroup.Key.EventTypeId, eventGroup.Key.EventCategory, eventGroup.ToList())
-                                .Select((EventSetProcessType processType) => new
+                                .SelectAsync((EventSetProcessType processType) => new
                                 {
                                     EventSetProcessType = processType,
                                     Events = eventGroup
@@ -951,7 +951,7 @@ namespace EventProcessing.Implementation
                     eventGroups
                         .SelectAsync(group => 
                             FindLastEventSetsSafeAsync(repository, new[] { group })
-                                .Select((IList <EventSet> lastEventSets) => new { group, lastEventSets }))
+                                .SelectAsync((IList <EventSet> lastEventSets) => new { group, lastEventSets }))
                         .SelectSafeAsync(item => InternalProcessEventGroupSafeAsync(item.group, item.lastEventSets))
                         .SelectSafeAsync(result => ApplyChangesSafeAsync(repository, new[] { result }))
                         .SelectManyAsync(result => result));
@@ -1222,7 +1222,7 @@ namespace EventProcessing.Implementation
             private Task<Either<UnsuccessResult, SuccessResult>> CreateEventSetForEventGroupAsync(EventGroup eventGroup)
             {
                 return GenerateEventSetIdsSafeAsync(1, eventGroup.Events)
-                    .Select(eventSetIds => CreateEventSet(eventSetIds.Single(), eventGroup));
+                    .SelectAsync(eventSetIds => CreateEventSet(eventSetIds.Single(), eventGroup));
             }
 
             private Either<UnsuccessResult, IList<long>> GenerateEventSetIdsSafe(int amount, List<EventDetails> events)

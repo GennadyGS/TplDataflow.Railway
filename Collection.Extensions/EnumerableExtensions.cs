@@ -7,10 +7,10 @@ namespace Collection.Extensions
 {
     public static class EnumerableExtensions
     {
-        public static Task<IEnumerable<TResult>> SelectAsync<TSource, TResult>(this IEnumerable<TSource> source,
+        public static async Task<IEnumerable<TResult>> SelectAsync<TSource, TResult>(this IEnumerable<TSource> source,
             Func<TSource, Task<TResult>> selector)
         {
-            throw new NotImplementedException();
+            return await Task.WhenAll(source.Select(selector));
         }
 
         public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
@@ -19,17 +19,17 @@ namespace Collection.Extensions
             throw new NotImplementedException();
         }
 
-        public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this Task<IEnumerable<TSource>> source,
+        public static async Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this Task<IEnumerable<TSource>> source,
             Func<TSource, IEnumerable<TResult>> selector)
         {
-            throw new NotImplementedException();
+            return (await source).SelectMany(selector);
         }
 
-        public static Task<IEnumerable<IGrouping<TKey, TSource>>> GroupByAsync<TSource, TKey>(
+        public static async Task<IEnumerable<IGrouping<TKey, TSource>>> GroupByAsync<TSource, TKey>(
             this Task<IEnumerable<TSource>> source,
             Func<TSource, TKey> keySelector)
         {
-            throw new NotImplementedException();
+            return (await source).GroupBy(keySelector);
         }
 
         public static IEnumerable<IList<T>> ToListEnumerable<T>(this IEnumerable<T> source)
