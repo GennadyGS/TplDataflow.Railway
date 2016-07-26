@@ -1206,7 +1206,7 @@ namespace EventProcessing.Implementation
                     .SelectMany(group => group.Events)
                     .ToList();
                 return GenerateEventSetIdsSafeAsync(eventGroups.Count, events)
-                    .SelectMany(eventSetIds =>
+                    .SelectManyAsync(eventSetIds =>
                         eventGroups
                             .Zip(eventSetIds, (eventGroup, eventSetId) =>
                                 new { EventGroup = eventGroup, EventSetId = eventSetId })

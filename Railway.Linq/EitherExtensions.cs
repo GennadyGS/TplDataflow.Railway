@@ -58,12 +58,6 @@ namespace Railway.Linq
                 left => List(Left<TLeft, TRightOutput>(left)));
         }
 
-        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectMany<TLeft, TRightInput, TRightOutput>(
-            this Task<Either<TLeft, TRightInput>> source, Func<TRightInput, IEnumerable<TRightOutput>> selector)
-        {
-            throw new NotImplementedException();
-        }
-
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectMany<TLeft, TRightInput, TRightMedium, TRightOutput>(
             this Either<TLeft, TRightInput> source,
             Func<TRightInput, IEnumerable<TRightMedium>> mediumSelector,
@@ -76,18 +70,28 @@ namespace Railway.Linq
                 left => List(Left<TLeft, TRightOutput>(left)));
         }
 
+        public static async Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManyAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<Either<TLeft, TRightInput>> source, Func<TRightInput, IEnumerable<TRightOutput>> selector)
+        {
+            return (await source).SelectMany(selector);
+        }
+
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightOutput>(
-            this Either<TLeft, TRightInput> source, Func<TRightInput, IEnumerable<Either<TLeft, TRightOutput>>> selector)
+            this Either<TLeft, TRightInput> source, 
+            Func<TRightInput, IEnumerable<Either<TLeft, TRightOutput>>> selector)
         {
             return source.Match(
                 selector,
                 left => List(Left<TLeft, TRightOutput>(left)));
         }
 
-        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
-            this Task<Either<TLeft, TRightInput>> source, Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
+        public static async Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<Either<TLeft, TRightInput>> source, 
+            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
-            throw new NotImplementedException();
+            return await (await source).Match(
+                selector,
+                left => Task.FromResult(List(Left<TLeft, TRightOutput>(left)).AsEnumerable()));
         }
 
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightMedium, TRightOutput>(

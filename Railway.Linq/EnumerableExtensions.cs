@@ -162,10 +162,10 @@ namespace Railway.Linq
                             .Select(Prelude.Left<TLeft, IList<TRight>>)));
         }
 
-        public static Task<IEnumerable<Either<TLeft, IList<TRight>>>> BufferSafeAsync<TLeft, TRight>(
+        public static async Task<IEnumerable<Either<TLeft, IList<TRight>>>> BufferSafeAsync<TLeft, TRight>(
             this Task<IEnumerable<Either<TLeft, TRight>>> source, TimeSpan batchTimeout, int count)
         {
-            throw new NotImplementedException();
+            return (await source).BufferSafe(batchTimeout, count);
         }
 
         public static IEnumerable<Either<TLeftOutput, TRightOutput>> Use<TInput, TLeftOutput, TRightOutput>(TInput disposable,

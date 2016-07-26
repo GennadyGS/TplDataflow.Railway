@@ -28,7 +28,9 @@ namespace Collection.Extensions
         public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
             Func<TSource, Task<IEnumerable<TResult>>> selector)
         {
-            throw new NotImplementedException();
+            return source
+                .SelectAsync(selector)
+                .SelectManyAsync(item => item);
         }
 
         public static async Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this Task<IEnumerable<TSource>> source,
