@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using static LanguageExt.Prelude;
 
 namespace Railway.Linq
 {
@@ -35,7 +36,9 @@ namespace Railway.Linq
         public static IObservable<TResult> SelectManyAsync<TSource, TResult>(this IObservable<TSource> source,
             Func<TSource, Task<IEnumerable<TResult>>> selector)
         {
-            throw new NotImplementedException();
+            return source
+                .SelectMany(selector)
+                .SelectMany(items => items);
         }
 
         public static IObservable<Either<TLeft, TRightOutput>> SelectSafe<TLeft, TRightInput, TRightOutput>(
@@ -84,7 +87,12 @@ namespace Railway.Linq
             this IObservable<Either<TLeft, TRightInput>> source,
             Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
-            throw new NotImplementedException();
+            return source.SelectManyAsync(item =>
+                item.Match(
+                    right => selector(right), 
+                    left => List(Left<TLeft, TRightOutput>(left))
+                        .AsEnumerable()
+                        .AsTask()));
         }
 
         public static IObservable<Either<TLeft, IGroupedObservable<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
@@ -97,10 +105,10 @@ namespace Railway.Linq
                         ? group
                             .SelectMany(item => item.RightAsEnumerable())
                             .GroupBy(keySelector)
-                            .Select(Prelude.Right<TLeft, IGroupedObservable<TKey, TRight>>)
+                            .Select(Right<TLeft, IGroupedObservable<TKey, TRight>>)
                         : group
                             .SelectMany(item => item.LeftAsEnumerable())
-                            .Select(Prelude.Left<TLeft, IGroupedObservable<TKey, TRight>>));
+                            .Select(Left<TLeft, IGroupedObservable<TKey, TRight>>));
         }
 
         public static IObservable<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(
@@ -111,12 +119,12 @@ namespace Railway.Linq
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsRight)
                     .SelectMany(group => group.Key
-                        ? Prelude.List(
-                            Prelude.Right<TLeft, IList<TRight>>(
+                        ? List(
+                            Right<TLeft, IList<TRight>>(
                                 group.Rights().ToList()))
                         : group
                             .Lefts()
-                            .Select(Prelude.Left<TLeft, IList<TRight>>)));
+                            .Select(Left<TLeft, IList<TRight>>)));
         }
 
         public static IObservable<Either<TLeft, IList<TRight>>> BufferSafe<TLeft, TRight>(
@@ -127,12 +135,12 @@ namespace Railway.Linq
                 .SelectMany(batch => batch
                     .GroupBy(item => item.IsRight)
                     .SelectMany(group => group.Key
-                        ? Prelude.List(
-                            Prelude.Right<TLeft, IList<TRight>>(
+                        ? List(
+                            Right<TLeft, IList<TRight>>(
                                 group.Rights().ToList()))
                         : group
                             .Lefts()
-                            .Select(Prelude.Left<TLeft, IList<TRight>>)));
+                            .Select(Left<TLeft, IList<TRight>>)));
         }
 
         public static IObservable<Either<TLeftOutput, TRightOutput>> Use<TInput, TLeftOutput, TRightOutput>(TInput disposable,
