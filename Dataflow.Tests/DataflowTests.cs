@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Collection.Extensions;
 using Dataflow.Core;
 using Xunit;
@@ -46,6 +47,18 @@ namespace Dataflow.Tests
             TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
                 dataflowFactory.Return(i)
                     .Select(item => item * 2));
+        }
+
+        [Fact]
+        public void BindSelectAsyncDataflow_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            var expectedOutput = input.Select(i => i * 2);
+
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
+                    .SelectAsync(item => Task.FromResult(item * 2)));
         }
 
         [Fact]

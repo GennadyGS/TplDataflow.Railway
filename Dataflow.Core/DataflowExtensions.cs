@@ -13,6 +13,12 @@ namespace Dataflow.Core
             return source.Bind(item => source.Factory.Return(selector(item)));
         }
 
+        public static IDataflow<TOutput> SelectAsync<TInput, TOutput>(this IDataflow<TInput> source,
+            Func<TInput, Task<TOutput>> selector)
+        {
+            throw new NotImplementedException();
+        }
+
         public static IDataflow<TOutput> SelectMany<TInput, TOutput>(this IDataflow<TInput> source,
             Func<TInput, IEnumerable<TOutput>> selector)
         {
