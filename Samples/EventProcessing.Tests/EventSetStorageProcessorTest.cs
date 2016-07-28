@@ -798,8 +798,7 @@ namespace EventProcessing.Tests
             }
         }
 
-        // TODO: Fix test hunging
-        private class EnumerableAsyncImpl : EventSetStorageProcessorTest
+        public class EnumerableAsyncImpl : EventSetStorageProcessorTest
         {
             public EnumerableAsyncImpl() : base(new EventSetStorageProcessor.EnumerableAsyncFactory())
             {
@@ -813,8 +812,7 @@ namespace EventProcessing.Tests
             }
         }
 
-        // TODO: Fix test hunging
-        private class EnumerableOneByOneAsyncImpl : EventSetStorageProcessorTest
+        public class EnumerableOneByOneAsyncImpl : EventSetStorageProcessorTest
         {
             public EnumerableOneByOneAsyncImpl() : base(new EventSetStorageProcessor.EnumerableOneByOneAsyncFactory())
             {

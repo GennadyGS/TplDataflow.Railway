@@ -25,7 +25,8 @@ namespace Collection.Extensions
             return await Task.WhenAll((await source).Select(selector));
         }
 
-        public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this IEnumerable<TSource> source,
+        public static Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(
+            this IEnumerable<TSource> source,
             Func<TSource, Task<IEnumerable<TResult>>> selector)
         {
             return source
@@ -33,10 +34,18 @@ namespace Collection.Extensions
                 .SelectManyAsync(item => item);
         }
 
-        public static async Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(this Task<IEnumerable<TSource>> source,
+        public static async Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(
+            this Task<IEnumerable<TSource>> source,
             Func<TSource, IEnumerable<TResult>> selector)
         {
             return (await source).SelectMany(selector);
+        }
+
+        public static async Task<IEnumerable<TResult>> SelectManyAsync<TSource, TResult>(
+            this Task<IEnumerable<TSource>> source,
+            Func<TSource, Task<IEnumerable<TResult>>> selector)
+        {
+            return await (await source).SelectManyAsync(selector);
         }
 
         public static async Task<IEnumerable<IGrouping<TKey, TSource>>> GroupByAsync<TSource, TKey>(

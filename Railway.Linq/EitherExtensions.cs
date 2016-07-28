@@ -85,15 +85,6 @@ namespace Railway.Linq
                 left => List(Left<TLeft, TRightOutput>(left)));
         }
 
-        public static async Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
-            this Task<Either<TLeft, TRightInput>> source, 
-            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
-        {
-            return await (await source).Match(
-                selector,
-                left => Task.FromResult(List(Left<TLeft, TRightOutput>(left)).AsEnumerable()));
-        }
-
         public static IEnumerable<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightMedium, TRightOutput>(
             this Either<TLeft, TRightInput> source,
             Func<TRightInput, IEnumerable<Either<TLeft, TRightMedium>>> mediumSelector,
@@ -102,6 +93,22 @@ namespace Railway.Linq
             return source.Match(
                 right => mediumSelector(right).Select(medium => resultSelector(right, medium)),
                 left => List(Left<TLeft, TRightOutput>(left)));
+        }
+
+        public static async Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
+            this Either<TLeft, TRightInput> source,
+            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
+        {
+            return await source.Match(
+                selector,
+                left => Task.FromResult(List(Left<TLeft, TRightOutput>(left)).AsEnumerable()));
+        }
+
+        public static async Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
+            this Task<Either<TLeft, TRightInput>> source, 
+            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
+        {
+            return await (await source).SelectManySafeAsync(selector);
         }
     }
 }

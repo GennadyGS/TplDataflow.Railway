@@ -91,8 +91,7 @@ namespace Railway.Linq
             return source.SelectMany(item => item.SelectManySafe(selector));
         }
 
-        public static IEnumerable<Either<TLeft, TRightOutput>> SelectManySafe
-            <TLeft, TRightInput, TRightMedium, TRightOutput>(
+        public static IEnumerable<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightMedium, TRightOutput>(
             this IEnumerable<Either<TLeft, TRightInput>> source,
             Func<TRightInput, IEnumerable<Either<TLeft, TRightMedium>>> mediumSelector,
             Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
@@ -101,17 +100,10 @@ namespace Railway.Linq
         }
 
         public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
-            this IEnumerable<Either<TLeft, TRightInput>> source,
-            Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static Task<IEnumerable<Either<TLeft, TRightOutput>>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
             this Task<IEnumerable<Either<TLeft, TRightInput>>> source,
             Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
-            throw new NotImplementedException();
+            return source.SelectManyAsync(item => item.SelectManySafeAsync(selector));
         }
 
         public static IEnumerable<Either<TLeft, IGrouping<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
