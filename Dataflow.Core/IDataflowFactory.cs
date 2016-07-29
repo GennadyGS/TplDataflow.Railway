@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Dataflow.Core
 {
@@ -9,6 +10,8 @@ namespace Dataflow.Core
             Func<TInput, IDataflow<TOutput>> continuation) where TDataflowOperator : DataflowOperator<TInput, TDataflowOperator>;
 
         IDataflow<T> Return<T>(T value);
+
+        IDataflow<T> ReturnAsync<T>(Task<T> task);
 
         IDataflow<T> ReturnMany<T>(IEnumerable<T> value);
 

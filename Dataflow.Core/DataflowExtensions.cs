@@ -16,7 +16,7 @@ namespace Dataflow.Core
         public static IDataflow<TOutput> SelectAsync<TInput, TOutput>(this IDataflow<TInput> source,
             Func<TInput, Task<TOutput>> selector)
         {
-            throw new NotImplementedException();
+            return source.Bind(item => source.Factory.ReturnAsync(selector(item)));
         }
 
         public static IDataflow<TOutput> SelectMany<TInput, TOutput>(this IDataflow<TInput> source,

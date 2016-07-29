@@ -8,6 +8,8 @@ namespace Dataflow.Core
 
         IDataflowType<T> CreateReturnType<T>();
 
+        IDataflowType<T> CreateReturnAsyncType<T>();
+
         IDataflowType<T> CreateReturnManyType<T>();
 
         IDataflowType<IList<T>> CreateBufferType<T>();

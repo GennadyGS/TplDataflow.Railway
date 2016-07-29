@@ -81,6 +81,11 @@ namespace Dataflow.Core
                 return new ReturnType<T>();
             }
 
+            IDataflowType<T> IDataflowTypeFactory.CreateReturnAsyncType<T>()
+            {
+                throw new NotImplementedException();
+            }
+
             IDataflowType<T> IDataflowTypeFactory.CreateReturnManyType<T>()
             {
                 return new ReturnManyType<T>();

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Dataflow.Core
 {
@@ -26,6 +27,13 @@ namespace Dataflow.Core
             var type = GetOrCreateType(typeof(Return<T>),
                 () => _typeFactory.CreateReturnType<T>());
             return new Return<T>(this, type, value);
+        }
+
+        IDataflow<T> IDataflowFactory.ReturnAsync<T>(Task<T> task)
+        {
+            var type = GetOrCreateType(typeof(ReturnAsync<T>),
+                () => _typeFactory.CreateReturnAsyncType<T>());
+            return new ReturnAsync<T>(this, type, task);
         }
 
         IDataflow<T> IDataflowFactory.ReturnMany<T>(IEnumerable<T> value)
