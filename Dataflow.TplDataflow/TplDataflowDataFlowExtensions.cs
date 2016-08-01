@@ -85,7 +85,7 @@ namespace Dataflow.TplDataflow
 
             IDataflowType<T> IDataflowTypeFactory.CreateReturnAsyncType<T>()
             {
-                throw new NotImplementedException();
+                return new ReturnAsyncType<T>();
             }
 
             IDataflowType<T> IDataflowTypeFactory.CreateReturnManyType<T>()
@@ -151,6 +151,21 @@ namespace Dataflow.TplDataflow
             {
                 return calculationDataflows.Select(dataflow =>
                     dataflow.Continuation(dataflow.Operator.Result));
+            }
+        }
+
+        private class ReturnAsyncType<T> : DataflowOperatorType<T, ReturnAsync<T>>
+        {
+            public override ISourceBlock<T> TransformDataFlows(ISourceBlock<ReturnAsync<T>> dataflows)
+            {
+                return dataflows.SelectAsync(dataflow => dataflow.Result);
+            }
+
+            public override ISourceBlock<IDataflow<TOutput>> PerformOperator<TOutput>(
+                ISourceBlock<DataflowCalculation<T, TOutput, ReturnAsync<T>>> calculationDataflows)
+            {
+                return calculationDataflows.SelectAsync(async dataflow =>
+                    dataflow.Continuation(await dataflow.Operator.Result));
             }
         }
 

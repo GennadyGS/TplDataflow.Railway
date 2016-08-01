@@ -5,6 +5,7 @@ using System.Reflection;
 using Dataflow.Core;
 using System.Reactive.Linq;
 using System.Linq;
+using Rx.Extensions;
 
 namespace Dataflow.Rx
 {
@@ -84,7 +85,7 @@ namespace Dataflow.Rx
 
             IDataflowType<T> IDataflowTypeFactory.CreateReturnAsyncType<T>()
             {
-                throw new NotImplementedException();
+                return new ReturnAsyncType<T>();
             }
 
             IDataflowType<T> IDataflowTypeFactory.CreateReturnManyType<T>()
@@ -150,6 +151,21 @@ namespace Dataflow.Rx
             {
                 return calculationDataflows.Select(dataflow =>
                     dataflow.Continuation(dataflow.Operator.Result));
+            }
+        }
+
+        private class ReturnAsyncType<T> : DataflowOperatorType<T, ReturnAsync<T>>
+        {
+            public override IObservable<T> TransformDataFlows(IObservable<ReturnAsync<T>> dataflows)
+            {
+                return dataflows.SelectAsync(dataflow => dataflow.Result);
+            }
+
+            public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(
+                IObservable<DataflowCalculation<T, TOutput, ReturnAsync<T>>> calculationDataflows)
+            {
+                return calculationDataflows.SelectAsync(async dataflow =>
+                    dataflow.Continuation(await dataflow.Operator.Result));
             }
         }
 

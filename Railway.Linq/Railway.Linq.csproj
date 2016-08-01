@@ -48,6 +48,10 @@
       <Project>{F1028071-1661-426E-937B-209A3CDEF603}</Project>
       <Name>Collection.Extensions</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Rx.Extensions\Rx.Extensions.csproj">
+      <Project>{2F8C3D67-0D3A-4F98-9A63-EB1744B49A56}</Project>
+      <Name>Rx.Extensions</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

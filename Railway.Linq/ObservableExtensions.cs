@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Rx.Extensions;
 using static LanguageExt.Prelude;
 
 namespace Railway.Linq
@@ -31,14 +32,6 @@ namespace Railway.Linq
             Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
         {
             return source.SelectMany(item => item.SelectMany(mediumSelector, resultSelector));
-        }
-
-        public static IObservable<TResult> SelectManyAsync<TSource, TResult>(this IObservable<TSource> source,
-            Func<TSource, Task<IEnumerable<TResult>>> selector)
-        {
-            return source
-                .SelectMany(selector)
-                .SelectMany(items => items);
         }
 
         public static IObservable<Either<TLeft, TRightOutput>> SelectSafe<TLeft, TRightInput, TRightOutput>(

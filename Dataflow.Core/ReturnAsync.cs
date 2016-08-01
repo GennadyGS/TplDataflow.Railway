@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace Dataflow.Core
 {
-    internal class ReturnAsync<T> : DataflowOperator<T, ReturnAsync<T>>
+    public class ReturnAsync<T> : DataflowOperator<T, ReturnAsync<T>>
     {
         public Task<T> Result { get; }
 

@@ -22,7 +22,13 @@ namespace TplDataflow.Linq
             return source.LinkWith(new TransformBlock<TInput, TOutput>(selector));
         }
 
-        public static ISourceBlock<TOutput> SelectMany<TInput, TOutput>(
+		public static ISourceBlock<TOutput> SelectAsync<TInput, TOutput>(
+			this ISourceBlock<TInput> source, Func<TInput, Task<TOutput>> selector)
+		{
+			return source.LinkWith(new TransformBlock<TInput, TOutput>(selector));
+		}
+
+		public static ISourceBlock<TOutput> SelectMany<TInput, TOutput>(
             this ISourceBlock<TInput> source, Func<TInput, IEnumerable<TOutput>> selector)
         {
             return source.LinkWith(new TransformManyBlock<TInput, TOutput>(selector));

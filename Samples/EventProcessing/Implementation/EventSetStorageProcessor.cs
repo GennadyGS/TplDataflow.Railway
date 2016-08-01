@@ -18,6 +18,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using LanguageExt;
+using Rx.Extensions;
 using TplDataflow.Linq;
 using TplDataflow.Railway;
 using static LanguageExt.Prelude;
