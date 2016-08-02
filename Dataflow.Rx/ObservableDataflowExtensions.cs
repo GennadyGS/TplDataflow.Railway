@@ -93,6 +93,11 @@ namespace Dataflow.Rx
                 return new ReturnManyType<T>();
             }
 
+            public IDataflowType<T> CreateReturnManyAsyncType<T>()
+            {
+                throw new NotImplementedException();
+            }
+
             public IDataflowType<IList<T>> CreateBufferType<T>()
             {
                 return new BufferType<T>();

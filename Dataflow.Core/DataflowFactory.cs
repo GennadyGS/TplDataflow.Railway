@@ -43,6 +43,13 @@ namespace Dataflow.Core
             return new ReturnMany<T>(this, type, value);
         }
 
+        IDataflow<T> IDataflowFactory.ReturnManyAsync<T>(Task<IEnumerable<T>> task)
+        {
+            var type = GetOrCreateType(typeof(ReturnManyAsync<T>),
+                () => _typeFactory.CreateReturnManyAsyncType<T>());
+            return new ReturnManyAsync<T>(this, type, task);
+        }
+
         IDataflow<IList<T>> IDataflowFactory.Buffer<T>(T item, TimeSpan batchTimeout, int batchMaxSize)
         {
             var type = GetOrCreateType(typeof(Buffer<T>),

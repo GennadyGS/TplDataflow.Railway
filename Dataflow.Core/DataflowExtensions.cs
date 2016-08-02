@@ -52,7 +52,7 @@ namespace Dataflow.Core
         public static IDataflow<TOutput> SelectManyAsync<TInput, TOutput>(this IDataflow<TInput> source,
             Func<TInput, Task<IEnumerable<TOutput>>> selector)
         {
-            throw new NotImplementedException();
+            return source.Bind(item => source.Factory.ReturnManyAsync(selector(item)));
         }
 
         public static IDataflow<IList<T>> Buffer<T>(this IDataflow<T> source,

@@ -15,6 +15,8 @@ namespace Dataflow.Core
 
         IDataflow<T> ReturnMany<T>(IEnumerable<T> value);
 
+        IDataflow<T> ReturnManyAsync<T>(Task<IEnumerable<T>> selector);
+
         IDataflow<IList<T>> Buffer<T>(T item, TimeSpan batchTimeout, int batchMaxSize);
 
         IDataflow<IGroupedDataflow<TKey, TElement>> GroupBy<TKey, TElement>(TElement item, Func<TElement, TKey> keySelector);

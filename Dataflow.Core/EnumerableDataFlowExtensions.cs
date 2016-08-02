@@ -91,6 +91,11 @@ namespace Dataflow.Core
                 return new ReturnManyType<T>();
             }
 
+            public IDataflowType<T> CreateReturnManyAsyncType<T>()
+            {
+                return new ReturnManyAsyncType<T>();
+            }
+
             public IDataflowType<IList<T>> CreateBufferType<T>()
             {
                 return new BufferType<T>();
@@ -179,6 +184,20 @@ namespace Dataflow.Core
             {
                 return calculationDataflows.SelectMany(dataflow =>
                     dataflow.Operator.Result.Select(dataflow.Continuation));
+            }
+        }
+
+        private class ReturnManyAsyncType<T> : DataflowOperatorType<T, ReturnManyAsync<T>>
+        {
+            public override IEnumerable<T> TransformDataFlows(IEnumerable<ReturnManyAsync<T>> dataflows)
+            {
+                return dataflows.SelectMany(dataflow => dataflow.Result.Result);
+            }
+
+            public override IEnumerable<IDataflow<TOutput>> PerformOperator<TOutput>(IEnumerable<DataflowCalculation<T, TOutput, ReturnManyAsync<T>>> calculationDataflows)
+            {
+                return calculationDataflows.SelectMany(dataflow =>
+                    dataflow.Operator.Result.Result.Select(dataflow.Continuation));
             }
         }
 
