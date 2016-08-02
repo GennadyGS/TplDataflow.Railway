@@ -95,7 +95,7 @@ namespace Dataflow.Rx
 
             public IDataflowType<T> CreateReturnManyAsyncType<T>()
             {
-                throw new NotImplementedException();
+                return new ReturnManyAsyncType<T>();
             }
 
             public IDataflowType<IList<T>> CreateBufferType<T>()
@@ -186,6 +186,19 @@ namespace Dataflow.Rx
             {
                 return calculationDataflows.SelectMany(dataflow =>
                     dataflow.Operator.Result.Select(dataflow.Continuation));
+            }
+        }
+
+        private class ReturnManyAsyncType<T> : DataflowOperatorType<T, ReturnManyAsync<T>>
+        {
+            public override IObservable<T> TransformDataFlows(IObservable<ReturnManyAsync<T>> dataflows)
+            {
+                return dataflows.SelectManyAsync(dataflow => dataflow.Result);
+            }
+
+            public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(IObservable<DataflowCalculation<T, TOutput, ReturnManyAsync<T>>> calculationDataflows)
+            {
+                throw new NotImplementedException();
             }
         }
 
