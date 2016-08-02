@@ -34,7 +34,19 @@ namespace Dataflow.Tests
 
             var expectedOutput = input.Select(i => i * 2);
 
-            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => dataflowFactory.Return(i * 2));
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => 
+                dataflowFactory.Return(i * 2));
+        }
+
+        [Fact]
+        public void BindReturnAsyncDataflow_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            var expectedOutput = input.Select(i => i * 2);
+
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) => 
+                dataflowFactory.ReturnAsync(Task.FromResult(i * 2)));
         }
 
         [Fact]
@@ -73,6 +85,20 @@ namespace Dataflow.Tests
                     .Select(item => item * 2)
                     .Select(item => item + 1)
                     .Select(item => item * 2));
+        }
+
+        [Fact]
+        public void BindMultipleSelectAsyncDataflow_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            var expectedOutput = input.Select(i => (i * 2 + 1) * 2);
+
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
+                    .SelectAsync(item => Task.FromResult(item * 2))
+                    .SelectAsync(item => Task.FromResult(item + 1))
+                    .SelectAsync(item => Task.FromResult(item * 2)));
         }
 
         [Fact]
