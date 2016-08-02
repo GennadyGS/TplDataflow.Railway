@@ -144,6 +144,20 @@ namespace Dataflow.Tests
         }
 
         [Fact]
+        public void BindSelectManyAsyncDataflow_ShouldReturnTheProjectedList()
+        {
+            int[] input = { 1, 2, 3 };
+
+            var expectedOutput = input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2));
+
+            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
+                dataflowFactory.Return(i)
+                    .SelectManyAsync(item => Task.FromResult(Enumerable.Repeat(item * 2, 2)))
+                    .SelectAsync(item => Task.FromResult(item + 1)));
+
+        }
+
+        [Fact]
         public void BinNestedSelectManyDataflow_ShouldReturnTheProjectedList()
         {
             int[] input = { 1, 2, 3 };
