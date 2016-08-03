@@ -6,6 +6,7 @@ using Dataflow.Core;
 using System.Reactive.Linq;
 using System.Linq;
 using Rx.Extensions;
+using Collection.Extensions;
 
 namespace Dataflow.Rx
 {
@@ -198,7 +199,8 @@ namespace Dataflow.Rx
 
             public override IObservable<IDataflow<TOutput>> PerformOperator<TOutput>(IObservable<DataflowCalculation<T, TOutput, ReturnManyAsync<T>>> calculationDataflows)
             {
-                throw new NotImplementedException();
+                return calculationDataflows.SelectManyAsync(dataflow =>
+                    dataflow.Operator.Result.SelectAsync(dataflow.Continuation));
             }
         }
 

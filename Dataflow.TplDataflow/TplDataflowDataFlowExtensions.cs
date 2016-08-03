@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks.Dataflow;
+using Collection.Extensions;
 using Dataflow.Core;
 using TplDataflow.Linq;
 
@@ -198,7 +199,8 @@ namespace Dataflow.TplDataflow
 
             public override ISourceBlock<IDataflow<TOutput>> PerformOperator<TOutput>(ISourceBlock<DataflowCalculation<T, TOutput, ReturnManyAsync<T>>> calculationDataflows)
             {
-                throw new NotImplementedException();
+                return calculationDataflows.SelectManyAsync(dataflow =>
+                    dataflow.Operator.Result.SelectAsync(dataflow.Continuation));
             }
         }
 

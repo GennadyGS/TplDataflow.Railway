@@ -42,6 +42,10 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Collection.Extensions\Collection.Extensions.csproj">
+      <Project>{F1028071-1661-426E-937B-209A3CDEF603}</Project>
+      <Name>Collection.Extensions</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Dataflow.Core\Dataflow.Core.csproj">
       <Project>{79C5A0F9-E9EC-4B45-8F84-6859C6E07522}</Project>
       <Name>Dataflow.Core</Name>
