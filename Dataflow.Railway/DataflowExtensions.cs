@@ -89,16 +89,16 @@ namespace Dataflow.Railway
 
         public static IDataflow<Either<TLeft, TRightOutput>> SelectManySafe<TLeft, TRightInput, TRightOutput>(
             this IDataflow<Either<TLeft, TRightInput>> source,
-            Func<TRightInput, IDataflow<Either<TLeft, TRightOutput>>> bindFunc)
+            Func<TRightInput, IDataflow<Either<TLeft, TRightOutput>>> selector)
         {
-            return source.BindSafe(bindFunc);
+            return source.BindSafe(selector);
         }
 
         public static IDataflow<Either<TLeft, TRightOutput>> SelectManySafeAsync<TLeft, TRightInput, TRightOutput>(
             this IDataflow<Either<TLeft, TRightInput>> source,
             Func<TRightInput, Task<IEnumerable<Either<TLeft, TRightOutput>>>> selector)
         {
-            throw new NotImplementedException();
+            return source.SelectManyAsync(item => item.SelectManySafeAsync(selector));
         }
 
         public static IDataflow<Either<TLeft, IGroupedDataflow<TKey, TRight>>> GroupBySafe<TLeft, TRight, TKey>(
