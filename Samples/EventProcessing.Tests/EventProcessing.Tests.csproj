@@ -41,10 +41,7 @@
     <Compile Include="EventSetProcessingResultExtensions.cs" />
     <Compile Include="EventSetProcessorTest.cs" />
     <Compile Include="EventSetStorageProcessorTest.cs" />
-    <Compile Include="IdentityManagementServiceAsyncProxy.cs" />
-    <Compile Include="ProcessTypManagerAsyncProxy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="EventSetRepositoryAsyncProxy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

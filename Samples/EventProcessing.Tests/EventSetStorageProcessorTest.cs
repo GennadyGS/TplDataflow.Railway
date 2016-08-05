@@ -61,9 +61,9 @@ namespace EventProcessing.Tests
             SetupConfigurationMock();
 
             _storageProcessor = storageProcessorFactory.CreateStorageProcessor(
-                () => new EventSetRepositoryAsyncProxy(_repositoryMock.Object),
-                new IdentityManagementServiceAsyncProxy(_identityManagementServiceMock.Object),
-                new ProcessTypManagerAsyncProxy(_processTypeManagerMock.Object),
+                () => _repositoryMock.Object,
+                _identityManagementServiceMock.Object,
+                _processTypeManagerMock.Object,
                 _configurationMock.Object,
                 () => _currentTime);
         }

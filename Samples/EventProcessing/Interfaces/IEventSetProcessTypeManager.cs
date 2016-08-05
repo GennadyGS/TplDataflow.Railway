@@ -14,14 +14,6 @@ namespace EventProcessing.Interfaces
         /// <param name="eventTypeId">The event type identifier.</param>
         /// <param name="category">The category.</param>
         /// <returns>Suitable process type.</returns>
-        EventSetProcessType GetProcessType(int eventTypeId, EventTypeCategory category);
-
-        /// <summary>
-        /// Gets the type of the processing.
-        /// </summary>
-        /// <param name="eventTypeId">The event type identifier.</param>
-        /// <param name="category">The category.</param>
-        /// <returns>Suitable process type.</returns>
         Task<EventSetProcessType> GetProcessTypeAsync(int eventTypeId, EventTypeCategory category);
     }
 }
