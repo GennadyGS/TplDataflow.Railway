@@ -438,7 +438,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableOneByOneSyncFactory : IFactory
+        public class EnumerableIndividualSyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -472,7 +472,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableOneByOneAsyncFactory : IFactory
+        public class EnumerableIndividualAsyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -506,7 +506,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class ObservableOneByOneSyncFactory : IFactory
+        public class ObservableIndividualSyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -540,7 +540,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class ObservableOneByOneAsyncFactory : IFactory
+        public class ObservableIndividualAsyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -574,7 +574,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowOneByOneSyncFactory : IFactory
+        public class TplDataflowIndividualSyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -608,7 +608,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowOneByOneAsyncFactory : IFactory
+        public class TplDataflowIndividualAsyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -642,7 +642,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public abstract class BaseDataflowOneByOneSyncFactory : IFactory
+        public abstract class BaseDataflowIndividualSyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -678,7 +678,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public abstract class BaseDataflowOneByOneAsyncFactory : IFactory
+        public abstract class BaseDataflowIndividualAsyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -714,7 +714,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class DataflowOneByOneSyncFactory : BaseDataflowOneByOneSyncFactory
+        public class DataflowIndividualSyncFactory : BaseDataflowIndividualSyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -722,7 +722,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class DataflowOneByOneAsyncFactory : BaseDataflowOneByOneAsyncFactory
+        public class DataflowIndividualAsyncFactory : BaseDataflowIndividualAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -730,7 +730,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowDataflowOneByOneSyncFactory : BaseDataflowOneByOneSyncFactory
+        public class TplDataflowDataflowIndividualSyncFactory : BaseDataflowIndividualSyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -738,7 +738,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowDataflowOneByOneAsyncFactory : BaseDataflowOneByOneAsyncFactory
+        public class TplDataflowDataflowIndividualAsyncFactory : BaseDataflowIndividualAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
