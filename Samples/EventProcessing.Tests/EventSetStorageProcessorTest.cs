@@ -791,16 +791,72 @@ namespace EventProcessing.Tests
             _configurationMock.Verify();
         }
 
-        public class EnumerableSyncImpl : EventSetStorageProcessorTest
+        public class EnumerableBatchSyncImpl : EventSetStorageProcessorTest
         {
-            public EnumerableSyncImpl() : base(new EventSetStorageProcessor.EnumerableSyncFactory())
+            public EnumerableBatchSyncImpl() : base(new EventSetStorageProcessor.EnumerableBatchSyncFactory())
             {
             }
         }
 
-        public class EnumerableAsyncImpl : EventSetStorageProcessorTest
+        public class EnumerableBatchAsyncImpl : EventSetStorageProcessorTest
         {
-            public EnumerableAsyncImpl() : base(new EventSetStorageProcessor.EnumerableAsyncFactory())
+            public EnumerableBatchAsyncImpl() : base(new EventSetStorageProcessor.EnumerableBatchAsyncFactory())
+            {
+            }
+        }
+
+        public class ObservableBatchSyncImpl : EventSetStorageProcessorTest
+        {
+            public ObservableBatchSyncImpl() : base(new EventSetStorageProcessor.ObservableBatchSyncFactory())
+            {
+            }
+        }
+
+        public class ObservableBatchAsyncImpl : EventSetStorageProcessorTest
+        {
+            public ObservableBatchAsyncImpl() : base(new EventSetStorageProcessor.ObservableBatchAsyncFactory())
+            {
+            }
+        }
+
+        public class TplDataflowBatchSyncImpl : EventSetStorageProcessorTest
+        {
+            public TplDataflowBatchSyncImpl() : base(new EventSetStorageProcessor.TplDataflowBatchSyncFactory())
+            {
+            }
+        }
+
+        public class TplDataflowBatchAsyncImpl : EventSetStorageProcessorTest
+        {
+            public TplDataflowBatchAsyncImpl() : base(new EventSetStorageProcessor.TplDataflowBatchAsyncFactory())
+            {
+            }
+        }
+
+        public class DataflowBatchSyncImpl : EventSetStorageProcessorTest
+        {
+            public DataflowBatchSyncImpl() : base(new EventSetStorageProcessor.DataflowBatchSyncFactory())
+            {
+            }
+        }
+
+        public class DataflowBatchAsyncImpl : EventSetStorageProcessorTest
+        {
+            public DataflowBatchAsyncImpl() : base(new EventSetStorageProcessor.DataflowBatchAsyncFactory())
+            {
+            }
+        }
+
+        public class TplDataflowDataflowBatchSyncImpl : EventSetStorageProcessorTest
+        {
+            public TplDataflowDataflowBatchSyncImpl() : base(new EventSetStorageProcessor.TplDataflowDataflowBatchSyncFactory())
+            {
+            }
+        }
+
+        public class TplDataflowDataflowBatchAsyncImpl : EventSetStorageProcessorTest
+        {
+            public TplDataflowDataflowBatchAsyncImpl() : base(new EventSetStorageProcessor.TplDataflowDataflowBatchAsyncFactory())
             {
             }
         }
@@ -819,20 +875,6 @@ namespace EventProcessing.Tests
             }
         }
 
-        public class ObservableSyncImpl : EventSetStorageProcessorTest
-        {
-            public ObservableSyncImpl() : base(new EventSetStorageProcessor.ObservableSyncFactory())
-            {
-            }
-        }
-
-        public class ObservableAsyncImpl : EventSetStorageProcessorTest
-        {
-            public ObservableAsyncImpl() : base(new EventSetStorageProcessor.ObservableAsyncFactory())
-            {
-            }
-        }
-
         public class ObservableOneByOneSyncImpl : EventSetStorageProcessorTest
         {
             public ObservableOneByOneSyncImpl() : base(new EventSetStorageProcessor.ObservableOneByOneSyncFactory())
@@ -843,20 +885,6 @@ namespace EventProcessing.Tests
         public class ObservableOneByOneAsyncImpl : EventSetStorageProcessorTest
         {
             public ObservableOneByOneAsyncImpl() : base(new EventSetStorageProcessor.ObservableOneByOneAsyncFactory())
-            {
-            }
-        }
-
-        public class TplDataflowSyncImpl : EventSetStorageProcessorTest
-        {
-            public TplDataflowSyncImpl() : base(new EventSetStorageProcessor.TplDataflowSyncFactory())
-            {
-            }
-        }
-
-        public class TplDataflowAsyncImpl : EventSetStorageProcessorTest
-        {
-            public TplDataflowAsyncImpl() : base(new EventSetStorageProcessor.TplDataflowAsyncFactory())
             {
             }
         }
@@ -875,20 +903,6 @@ namespace EventProcessing.Tests
             }
         }
 
-        public class DataflowSyncImpl : EventSetStorageProcessorTest
-        {
-            public DataflowSyncImpl() : base(new EventSetStorageProcessor.DataflowSyncFactory())
-            {
-            }
-        }
-
-        public class DataflowAsyncImpl : EventSetStorageProcessorTest
-        {
-            public DataflowAsyncImpl() : base(new EventSetStorageProcessor.DataflowAsyncFactory())
-            {
-            }
-        }
-
         public class DataflowOneByOneSyncImpl : EventSetStorageProcessorTest
         {
             public DataflowOneByOneSyncImpl() : base(new EventSetStorageProcessor.DataflowOneByOneSyncFactory())
@@ -899,20 +913,6 @@ namespace EventProcessing.Tests
         public class DataflowOneByOneAsyncImpl : EventSetStorageProcessorTest
         {
             public DataflowOneByOneAsyncImpl() : base(new EventSetStorageProcessor.DataflowOneByOneAsyncFactory())
-            {
-            }
-        }
-
-        public class TplDataflowDataflowSyncImpl : EventSetStorageProcessorTest
-        {
-            public TplDataflowDataflowSyncImpl() : base(new EventSetStorageProcessor.TplDataflowSyncDataflowSyncFactory())
-            {
-            }
-        }
-
-        public class TplDataflowDataflowAsyncImpl : EventSetStorageProcessorTest
-        {
-            public TplDataflowDataflowAsyncImpl() : base(new EventSetStorageProcessor.TplDataflowDataflowAsyncFactory())
             {
             }
         }

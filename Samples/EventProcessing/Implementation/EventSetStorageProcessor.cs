@@ -156,131 +156,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowSyncFactory : IFactory
-        {
-            private Logic _logic;
-            private IEventSetConfiguration _configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
-            {
-                _logic = new Logic(repositoryResolver,
-                    identityService, processTypeManager, currentTimeProvider);
-                _configuration = configuration;
-
-                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
-            }
-
-            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> input)
-            {
-                return input
-                    .Select(_logic.LogEvent)
-                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        Logic.TransformResult(res));
-            }
-        }
-
-        public class TplDataflowAsyncFactory : IFactory
-        {
-            private Logic _logic;
-            private IEventSetConfiguration _configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
-            {
-                _logic = new Logic(repositoryResolver,
-                    identityService, processTypeManager, currentTimeProvider);
-                _configuration = configuration;
-
-                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
-            }
-
-            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> input)
-            {
-                return input
-                    .Select(_logic.LogEvent)
-                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
-                    .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManySafeAsync(_logic.ProcessEventGroupsBatchSafeAsync)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        Logic.TransformResult(res));
-            }
-        }
-
-        public class ObservableSyncFactory : IFactory
-        {
-            private Logic _logic;
-            private IEventSetConfiguration _configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
-            {
-                _logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                _configuration = configuration;
-
-                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
-            }
-
-            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
-            {
-                return input
-                    .Select(_logic.LogEvent)
-                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
-                    .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        Logic.TransformResult(res));
-            }
-        }
-
-        public class ObservableAsyncFactory : IFactory
-        {
-            private Logic _logic;
-            private IEventSetConfiguration _configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
-            {
-                _logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                _configuration = configuration;
-
-                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
-            }
-
-            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
-            {
-                return input
-                    .Select(_logic.LogEvent)
-                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
-                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
-                    .SelectSafe(_logic.FilterSkippedEventGroup)
-                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
-                    .SelectManySafeAsync(_logic.ProcessEventGroupsBatchSafeAsync)
-                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
-                        Logic.TransformResult(res));
-            }
-        }
-
-        public class EnumerableSyncFactory : IFactory
+        public class EnumerableBatchSyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -310,7 +186,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableAsyncFactory : IFactory
+        public class EnumerableBatchAsyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -340,7 +216,131 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public abstract class BaseDataflowSyncFactory : IFactory
+        public class ObservableBatchSyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
+            {
+                return input
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
+        public class ObservableBatchAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver, identityService,
+                    processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
+            {
+                return input
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafeAsync(_logic.ProcessEventGroupsBatchSafeAsync)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
+        public class TplDataflowBatchSyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver,
+                    identityService, processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> input)
+            {
+                return input
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectMany(_logic.SplitEventsIntoGroupsSafe)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafe(_logic.ProcessEventGroupsBatchSafe)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
+        public class TplDataflowBatchAsyncFactory : IFactory
+        {
+            private Logic _logic;
+            private IEventSetConfiguration _configuration;
+
+            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
+                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
+                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
+                Func<DateTime> currentTimeProvider)
+            {
+                _logic = new Logic(repositoryResolver,
+                    identityService, processTypeManager, currentTimeProvider);
+                _configuration = configuration;
+
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+            }
+
+            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> input)
+            {
+                return input
+                    .Select(_logic.LogEvent)
+                    .Buffer(_configuration.EventBatchTimeout, _configuration.EventBatchSize)
+                    .SelectManyAsync(_logic.SplitEventsIntoGroupsSafeAsync)
+                    .SelectSafe(_logic.FilterSkippedEventGroup)
+                    .BufferSafe(_configuration.EventGroupBatchTimeout, _configuration.EventGroupBatchSize)
+                    .SelectManySafeAsync(_logic.ProcessEventGroupsBatchSafeAsync)
+                    .SelectMany((Either<UnsuccessResult, SuccessResult> res) =>
+                        Logic.TransformResult(res));
+            }
+        }
+
+        public abstract class BaseDataflowBatchSyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -373,7 +373,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public abstract class BaseDataflowAsyncFactory : IFactory
+        public abstract class BaseDataflowBatchAsyncFactory : IFactory
         {
             private Logic _logic;
             private IEventSetConfiguration _configuration;
@@ -406,7 +406,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class DataflowSyncFactory : BaseDataflowSyncFactory
+        public class DataflowBatchSyncFactory : BaseDataflowBatchSyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -414,7 +414,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class DataflowAsyncFactory : BaseDataflowAsyncFactory
+        public class DataflowBatchAsyncFactory : BaseDataflowBatchAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -422,7 +422,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowSyncDataflowSyncFactory : BaseDataflowSyncFactory
+        public class TplDataflowDataflowBatchSyncFactory : BaseDataflowBatchSyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -430,7 +430,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowDataflowAsyncFactory : BaseDataflowAsyncFactory
+        public class TplDataflowDataflowBatchAsyncFactory : BaseDataflowBatchAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
