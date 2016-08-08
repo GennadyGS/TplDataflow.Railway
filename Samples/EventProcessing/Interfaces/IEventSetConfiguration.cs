@@ -2,9 +2,6 @@
 
 namespace EventProcessing.Interfaces
 {
-    /// <summary>
-    /// Interface for configuring EventSets.
-    /// </summary>
     public interface IEventSetConfiguration
     {
         TimeSpan EventBatchTimeout { get; }

@@ -9,18 +9,12 @@ using System.Reactive.Linq;
 
 namespace EventProcessing.Implementation
 {
-    /// <summary>
-    ///     Processes <see cref="EventSet" /> based on new upcoming events.
-    /// </summary>
     internal sealed class EventSetProcessor : IAsyncProcessor<EventDetails, Tuple<bool, EventDetails>>
     {
         private readonly IEventSetNotificationService _notificationService;
         private readonly IObservable<Tuple<bool, EventDetails>> _output;
         private readonly IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> _storageProcessor;
 
-        /// <summary> Initializes a new instance of the <see cref="EventSetProcessor" /> class. </summary>
-        /// <param name="notificationService"> The notification service. </param>
-        /// <param name="storageProcessor"> The storage processor </param>
         public EventSetProcessor(
             IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> storageProcessor,
             IEventSetNotificationService notificationService)
