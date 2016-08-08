@@ -12,7 +12,7 @@ namespace Dataflow.TplDataflow
 {
     public static class SourceBlockDataFlowExtensions
     {
-        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods
+        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> TransformDataflowHelperMethods
             = new ConcurrentDictionary<Tuple<Type, Type>, MethodInfo>();
 
         public static ISourceBlock<TOutput> BindDataflow<TInput, TOutput>(this ISourceBlock<TInput> input,
@@ -31,7 +31,7 @@ namespace Dataflow.TplDataflow
 
         private static ISourceBlock<TOutput> TransformDataflowsByType<TOutput>(IDataflowType<TOutput> dataflowType, ISourceBlock<IDataflow<TOutput>> dataflows)
         {
-            var transformDataflowHelperMethod = _transformDataflowHelperMethods.GetOrAdd(
+            var transformDataflowHelperMethod = TransformDataflowHelperMethods.GetOrAdd(
                 new Tuple<Type, Type>(typeof(TOutput), dataflowType.TypeOfDataflow),
                 types => GetTransformDataflowHelperMethodInfo(types.Item1, types.Item2));
             return (ISourceBlock<TOutput>)transformDataflowHelperMethod.Invoke(null, new object[] { dataflowType, dataflows });

@@ -7,15 +7,15 @@ namespace AsyncProcessing.TplDataflow
 {
     public class TplDataflowAsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
     {
-        private readonly BufferBlock<TInput> _inputBlock = new BufferBlock<TInput>();
-        private readonly BufferBlock<TOutput> _outputBlock = new BufferBlock<TOutput>();
+        private readonly BufferBlock<TInput> inputBlock = new BufferBlock<TInput>();
+        private readonly BufferBlock<TOutput> outputBlock = new BufferBlock<TOutput>();
 
         public TplDataflowAsyncProcessor(Func<ISourceBlock<TInput>, ISourceBlock<TOutput>> dataflow)
         {
-            dataflow(_inputBlock).LinkWith(_outputBlock);
+            dataflow(inputBlock).LinkWith(outputBlock);
         }
 
-        private IObserver<TInput> InputObserver => _inputBlock.AsObserver();
+        private IObserver<TInput> InputObserver => inputBlock.AsObserver();
 
         void IObserver<TInput>.OnNext(TInput value)
         {
@@ -34,7 +34,7 @@ namespace AsyncProcessing.TplDataflow
 
         IDisposable IObservable<TOutput>.Subscribe(IObserver<TOutput> observer)
         {
-            return _outputBlock.AsObservable().Subscribe(observer);
+            return outputBlock.AsObservable().Subscribe(observer);
         }
     }
 }

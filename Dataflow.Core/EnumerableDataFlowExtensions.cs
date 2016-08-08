@@ -9,7 +9,7 @@ namespace Dataflow.Core
 {
     public static class EnumerableDataFlowExtensions
     {
-        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods
+        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> TransformDataflowHelperMethods
             = new ConcurrentDictionary<Tuple<Type, Type>, MethodInfo>();
 
         public static IEnumerable<TOutput> BindDataflow<TInput, TOutput>(this IEnumerable<TInput> input,
@@ -28,7 +28,7 @@ namespace Dataflow.Core
 
         private static IEnumerable<TOutput> TransformDataflowsByType<TOutput>(IDataflowType<TOutput> dataflowType, IEnumerable<IDataflow<TOutput>> dataflows)
         {
-            var transformDataflowHelperMethod = _transformDataflowHelperMethods.GetOrAdd(
+            var transformDataflowHelperMethod = TransformDataflowHelperMethods.GetOrAdd(
                 new Tuple<Type, Type>(typeof(TOutput), dataflowType.TypeOfDataflow),
                 types => GetTransformDataflowHelperMethodInfo(types.Item1, types.Item2));
             return (IEnumerable<TOutput>)transformDataflowHelperMethod.Invoke(null, new object[] { dataflowType, dataflows });

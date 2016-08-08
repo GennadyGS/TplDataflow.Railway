@@ -12,7 +12,7 @@ namespace Dataflow.Rx
 {
     public static class ObservableDataFlowExtensions
     {
-        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> _transformDataflowHelperMethods
+        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MethodInfo> TransformDataflowHelperMethods
             = new ConcurrentDictionary<Tuple<Type, Type>, MethodInfo>();
 
         public static IObservable<TOutput> BindDataflow<TInput, TOutput>(this IObservable<TInput> input,
@@ -31,7 +31,7 @@ namespace Dataflow.Rx
 
         private static IObservable<TOutput> TransformDataflowsByType<TOutput>(IDataflowType<TOutput> dataflowType, IObservable<IDataflow<TOutput>> dataflows)
         {
-            var transformDataflowHelperMethod = _transformDataflowHelperMethods.GetOrAdd(
+            var transformDataflowHelperMethod = TransformDataflowHelperMethods.GetOrAdd(
                 new Tuple<Type, Type>(typeof(TOutput), dataflowType.TypeOfDataflow),
                 types => GetTransformDataflowHelperMethodInfo(types.Item1, types.Item2));
             return (IObservable<TOutput>)transformDataflowHelperMethod.Invoke(null, new object[] { dataflowType, dataflows });

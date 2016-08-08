@@ -10,11 +10,11 @@ namespace Dataflow.Tests
 {
     public abstract class DataflowTests
     {
-        private readonly IDataflowTestEngine _testEngine;
+        private readonly IDataflowTestEngine testEngine;
 
         public DataflowTests(IDataflowTestEngine testEngine)
         {
-            _testEngine = testEngine;
+            this.testEngine = testEngine;
         }
 
         [Fact]
@@ -307,7 +307,7 @@ namespace Dataflow.Tests
         {
             var inputList = input.ToList();
             var expectedOutputList = expectedOutput.ToList();
-            _testEngine.TestBindDataflow(expectedOutputList, inputList, dataflowBindFunc);
+            testEngine.TestBindDataflow(expectedOutputList, inputList, dataflowBindFunc);
         }
     }
 

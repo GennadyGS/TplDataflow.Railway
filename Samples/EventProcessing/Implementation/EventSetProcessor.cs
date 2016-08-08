@@ -11,38 +11,38 @@ namespace EventProcessing.Implementation
 {
     internal sealed class EventSetProcessor : IAsyncProcessor<EventDetails, Tuple<bool, EventDetails>>
     {
-        private readonly IEventSetNotificationService _notificationService;
-        private readonly IObservable<Tuple<bool, EventDetails>> _output;
-        private readonly IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> _storageProcessor;
+        private readonly IEventSetNotificationService notificationService;
+        private readonly IObservable<Tuple<bool, EventDetails>> output;
+        private readonly IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> storageProcessor;
 
         public EventSetProcessor(
             IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> storageProcessor,
             IEventSetNotificationService notificationService)
         {
-            _storageProcessor = storageProcessor;
-            _notificationService = notificationService;
+            this.storageProcessor = storageProcessor;
+            this.notificationService = notificationService;
 
-            _output = _storageProcessor.SelectMany(SendNotifications);
+            output = this.storageProcessor.SelectMany(SendNotifications);
         }
 
         void IObserver<EventDetails>.OnNext(EventDetails value)
         {
-            _storageProcessor.OnNext(value);
+            storageProcessor.OnNext(value);
         }
 
         void IObserver<EventDetails>.OnError(Exception error)
         {
-            _storageProcessor.OnError(error);
+            storageProcessor.OnError(error);
         }
 
         void IObserver<EventDetails>.OnCompleted()
         {
-            _storageProcessor.OnCompleted();
+            storageProcessor.OnCompleted();
         }
 
         IDisposable IObservable<Tuple<bool, EventDetails>>.Subscribe(IObserver<Tuple<bool, EventDetails>> observer)
         {
-            return _output.Subscribe(observer);
+            return output.Subscribe(observer);
         }
 
         private IEnumerable<Tuple<bool, EventDetails>> SendNotifications(EventSetStorageProcessor.Result result)
@@ -86,7 +86,7 @@ namespace EventProcessing.Implementation
                 ResourceId = eventSet.ResourceId
             };
 
-            _notificationService.NotifyEventSetCreated(notification);
+            notificationService.NotifyEventSetCreated(notification);
         }
 
         private void NotifyEventArrived(long eventSetId, EventDetails @event)
@@ -110,7 +110,7 @@ namespace EventProcessing.Implementation
                 StringValue = @event.StringValue,
                 AssociatedParameterStringValue = @event.AssociatedParameterStringValue
             };
-            _notificationService.NotifyEventArrived(notification);
+            notificationService.NotifyEventArrived(notification);
         }
 
         private void NotifyEventSetUpdated(EventSet eventSet, IList<EventDetails> events)
@@ -135,7 +135,7 @@ namespace EventProcessing.Implementation
                 AssociatedParameterValue = lastEvent.AssociatedParameterValue,
                 FailureMode = eventSet.FailureMode
             };
-            _notificationService.NotifyEventSetUpdated(notification);
+            notificationService.NotifyEventSetUpdated(notification);
             events.ToList().ForEach(@event => NotifyEventArrived(eventSet.Id, @event));
         }
     }

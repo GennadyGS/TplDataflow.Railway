@@ -8,47 +8,47 @@ namespace AsyncProcessing.Core
 {
     public class AsyncProcessor<TInput, TOutput> : IAsyncProcessor<TInput, TOutput>
     {
-        private readonly Subject<TInput> _input = new Subject<TInput>();
-        private readonly Subject<TOutput> _output = new Subject<TOutput>();
+        private readonly Subject<TInput> input = new Subject<TInput>();
+        private readonly Subject<TOutput> output = new Subject<TOutput>();
 
         internal AsyncProcessor(Func<IObservable<TInput>, IObservable<TOutput>> dataflowFunc)
         {
-            dataflowFunc(_input)
-                .Subscribe(_output);
+            dataflowFunc(input)
+                .Subscribe(output);
         }
 
         internal AsyncProcessor(Func<IEnumerable<TInput>, IEnumerable<TOutput>> dataflowFunc)
         {
-            _input.ToListAsync()
+            input.ToListAsync()
                 .ContinueWith(task =>
-                    dataflowFunc(task.Result).Subscribe(_output));
+                    dataflowFunc(task.Result).Subscribe(output));
         }
 
         internal AsyncProcessor(Func<IEnumerable<TInput>, Task<IEnumerable<TOutput>>> dataflowFunc)
         {
-            _input.ToListAsync()
+            input.ToListAsync()
                 .ContinueWith(async task =>
-                    (await dataflowFunc(task.Result)).Subscribe(_output));
+                    (await dataflowFunc(task.Result)).Subscribe(output));
         }
 
         void IObserver<TInput>.OnNext(TInput value)
         {
-            _input.OnNext(value);
+            input.OnNext(value);
         }
 
         void IObserver<TInput>.OnError(Exception error)
         {
-            _input.OnError(error);
+            input.OnError(error);
         }
 
         void IObserver<TInput>.OnCompleted()
         {
-            _input.OnCompleted();
+            input.OnCompleted();
         }
 
         IDisposable IObservable<TOutput>.Subscribe(IObserver<TOutput> observer)
         {
-            return _output.Subscribe(observer);
+            return output.Subscribe(observer);
         }
     }
 
