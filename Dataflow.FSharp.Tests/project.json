@@ -1,0 +1,13 @@
+﻿{
+  "dependencies": {
+    "Unquote": "3.1.2",
+    "xunit": "2.1.0"
+  },
+  "frameworks": {
+    "net461": {}
+  },
+  "runtimes": {
+    "win": {}
+  },
+  "supports": {}
+}
