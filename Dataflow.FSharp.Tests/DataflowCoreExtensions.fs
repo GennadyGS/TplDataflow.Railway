@@ -1,11 +1,11 @@
 ﻿namespace Dataflow.FSharp.Tests
 
 
-module EnumerableDataflowBinder =
+module DataflowCoreExtensions =
     open Dataflow.Core
 
     let enumerableDataflowBinder 
-        (dataflowBindFunc: IDataflowFactory -> 'input -> IDataflow<'output>) 
-        (input: seq<'input>) 
+        (dataflowBindFunc: IDataflowFactory -> 'input -> 'output IDataflow) 
+        (input: 'input seq) 
         : seq<'output> =
             input.BindDataflow(System.Func<_,_,_>(dataflowBindFunc))

@@ -52,8 +52,9 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="EnumerableDataflowBinder.fs" />
-    <Compile Include="TestBindDataflow.fs" />
+    <Compile Include="DataflowCoreExtensions.fs" />
+    <Compile Include="RxDataflowExtensions.fs" />
+    <Compile Include="TplDataflowDataflowExtensions.fs" />
     <Compile Include="DataflowTests.fs" />
     <None Include="Script.fsx" />
     <None Include="project.json" />
@@ -71,6 +72,16 @@
     <ProjectReference Include="..\Dataflow.Core\Dataflow.Core.csproj">
       <Name>Dataflow.Core</Name>
       <Project>{79c5a0f9-e9ec-4b45-8f84-6859c6e07522}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Dataflow.Rx\Dataflow.Rx.csproj">
+      <Name>Dataflow.Rx</Name>
+      <Project>{bef64716-b623-4617-a9ac-763c921ce02b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Dataflow.TplDataflow\Dataflow.TplDataflow.csproj">
+      <Name>Dataflow.TplDataflow</Name>
+      <Project>{32d18f4a-5ff9-4e18-b3a1-3fcea6b5f716}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
