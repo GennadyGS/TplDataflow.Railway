@@ -52,9 +52,10 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="DataflowCoreExtensions.fs" />
-    <Compile Include="RxDataflowExtensions.fs" />
-    <Compile Include="TplDataflowDataflowExtensions.fs" />
+    <Compile Include="IDataflowSequenceTransformer.fs" />
+    <Compile Include="EnumerableDataflowSequenceTransformer.fs" />
+    <Compile Include="ObservableDataflowSequenceTransformer.fs" />
+    <Compile Include="TplDataflowDataflowSequenceTransformer.fs" />
     <Compile Include="DataflowTests.fs" />
     <None Include="Script.fsx" />
     <None Include="project.json" />
