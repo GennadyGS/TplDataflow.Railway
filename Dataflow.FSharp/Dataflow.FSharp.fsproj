@@ -47,6 +47,14 @@
     <Compile Include="AssemblyInfo.fs" />
     <None Include="Script.fsx" />
     <None Include="project.json" />
+    <Compile Include="DataflowBuilder.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dataflow.Core\Dataflow.Core.csproj">
+      <Name>Dataflow.Core</Name>
+      <Project>{79c5a0f9-e9ec-4b45-8f84-6859c6e07522}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

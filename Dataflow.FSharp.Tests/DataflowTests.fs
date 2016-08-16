@@ -3,6 +3,8 @@
 open Xunit
 open Swensen.Unquote
 open Dataflow.Core
+open System
+open Dataflow.FSharp
 
 [<AbstractClass>]
 type DataflowTests(transformer : IDataflowSequenceTransformer) = 
@@ -16,13 +18,15 @@ type DataflowTests(transformer : IDataflowSequenceTransformer) =
     let ``Bind Return Dataflow Should Return The Same List``() = 
         let input = [ 1..3 ]
         let expectedOutput = input
-        testBindDataflow input expectedOutput (fun dataflowFactory i -> dataflowFactory.Return i)
+        testBindDataflow input expectedOutput (fun dataflowFactory i -> 
+            DataflowBuilder(dataflowFactory) { return i })
     
     [<Fact>]
     let ``Bind Return Dataflow Should Return The Same List Of Strings``() = 
         let input = [ "1"; "2"; "3" ]
         let expectedOutput = input
-        testBindDataflow input expectedOutput (fun dataflowFactory i -> dataflowFactory.Return i)
+        testBindDataflow input expectedOutput (fun dataflowFactory i -> 
+            DataflowBuilder(dataflowFactory) { return i })
 
 type EnumerableDataflowTests() = 
     inherit DataflowTests(EnumerableDataflowSequenceTransformer())
@@ -32,3 +36,4 @@ type ObservableDataflowTests() =
 
 type TplDataflowDataflowTests() = 
     inherit DataflowTests(TplDataflowDataflowSequenceTransformer())
+

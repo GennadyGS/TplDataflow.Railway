@@ -75,6 +75,11 @@
       <Project>{79c5a0f9-e9ec-4b45-8f84-6859c6e07522}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Dataflow.FSharp\Dataflow.FSharp.fsproj">
+      <Name>Dataflow.FSharp</Name>
+      <Project>{32a0432f-7038-4153-8c90-0e5f7dbcca67}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Dataflow.Rx\Dataflow.Rx.csproj">
       <Name>Dataflow.Rx</Name>
       <Project>{bef64716-b623-4617-a9ac-763c921ce02b}</Project>
