@@ -28,6 +28,13 @@ type DataflowTests(transformer : IDataflowSequenceTransformer) =
         testBindDataflow input expectedOutput (fun dataflowFactory i -> 
             DataflowBuilder(dataflowFactory) { return i })
 
+    [<Fact>]
+    let ``Bind Return Dataflow Should Return The Projected List``() =
+        let input = [ 1.. 3]
+        let expectedOutput = input |> List.map (fun i -> i * 2) 
+        testBindDataflow input expectedOutput (fun dataflowFactory i -> 
+            DataflowBuilder(dataflowFactory) { return 2 * i })
+
 type EnumerableDataflowTests() = 
     inherit DataflowTests(EnumerableDataflowSequenceTransformer())
 
