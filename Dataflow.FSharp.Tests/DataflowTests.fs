@@ -29,6 +29,13 @@ type DataflowTests(transformer : IDataflowSequenceTransformer) =
             DataflowBuilder(dataflowFactory) { return i })
 
     [<Fact>]
+    let ``Bind Return! Dataflow Should Return The Same List Of Strings``() = 
+        let input = [ "1"; "2"; "3" ]
+        let expectedOutput = input
+        testBindDataflow input expectedOutput (fun dataflowFactory i -> 
+            DataflowBuilder(dataflowFactory) { return! dataflowFactory.Return i })
+
+    [<Fact>]
     let ``Bind Return Dataflow Should Return The Projected List``() =
         let input = [ 1.. 3]
         let expectedOutput = input |> List.map (fun i -> i * 2) 
