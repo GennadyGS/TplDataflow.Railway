@@ -12,7 +12,9 @@ type DataflowTests(transformer : IDataflowSequenceTransformer) =
     let testBindDataflow (input : 'input seq) (expectedOutput : 'output seq) 
         (dataflowBindFunc : IDataflowFactory -> 'input -> 'output IDataflow) = 
         let output = input |> transformer.TransformSequence dataflowBindFunc
-        test <@ (expectedOutput |> Seq.toList) = (output |> Seq.toList) @>
+        let expectedOutputList = expectedOutput |> Seq.toList
+        let outputList = output |> Seq.toList
+        test <@ expectedOutputList = outputList @>
     
     [<Fact>]
     let ``Bind Return Dataflow Should Return The Same List``() = 
@@ -60,4 +62,3 @@ type ObservableDataflowTests() =
 
 type TplDataflowDataflowTests() = 
     inherit DataflowTests(TplDataflowDataflowSequenceTransformer())
-
