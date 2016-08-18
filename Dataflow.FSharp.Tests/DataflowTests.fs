@@ -6,6 +6,7 @@ open Dataflow.Core
 open System
 open Dataflow.FSharp
 open System.Threading.Tasks
+open System.Linq
 
 [<AbstractClass>]
 type DataflowTests(transformer : IDataflowSequenceTransformer) = 
@@ -62,8 +63,6 @@ type DataflowTests(transformer : IDataflowSequenceTransformer) =
                 return 2 * i' 
             })
 
-    [<Fact>]
-    let ``Bind Multiple Let! and Return Dataflow Should Return The Projected List``() =
         let input = [ 1.. 3]
         let expectedOutput = 
             input 
@@ -77,6 +76,35 @@ type DataflowTests(transformer : IDataflowSequenceTransformer) =
                 let! c = dataflowFactory.Return (b * 2)
                 return c
             })
+
+    [<Fact>]
+    let ``Bind ReturnMany Dataflow Should Return The Projected List``() =
+        let input = [ 1.. 3]
+        let expectedOutput = seq { 
+            for i in input do
+            for j in 1..2 do
+            yield i * 2 + 1
+        }
+        testBindDataflow input expectedOutput (fun dataflowFactory i -> 
+            DataflowBuilder(dataflowFactory) { 
+                return! dataflowFactory.ReturnMany (Enumerable.Repeat (i * 2 + 1, 2))
+            })
+
+    [<Fact>]
+    let ``Bind Let! and ReturnMany Dataflow Should Return The Projected List``() =
+        let input = [ 1.. 3]
+        let expectedOutput = seq { 
+            for i in input do
+            for j in 1..2 do
+            yield i * 2 + 1
+        }
+        testBindDataflow input expectedOutput (fun dataflowFactory i -> 
+            DataflowBuilder(dataflowFactory) { 
+                let! a = dataflowFactory.ReturnMany (Enumerable.Repeat (i * 2, 2)) 
+                let! b = dataflowFactory.Return (a + 1) 
+                return b 
+            })
+
 
 type EnumerableDataflowTests() = 
     inherit DataflowTests(EnumerableDataflowSequenceTransformer())

@@ -129,19 +129,6 @@ namespace Dataflow.Tests
                                 dataflowFactory.Return(item2.ToString("O")))));
         }
 
-        [Fact]
-        public void BindSelectManyDataflow_ShouldReturnTheProjectedList()
-        {
-            int[] input = { 1, 2, 3 };
-
-            var expectedOutput = input.SelectMany(item => Enumerable.Repeat(item * 2 + 1, 2));
-
-            TestBindDataflow(expectedOutput, input, (dataflowFactory, i) =>
-                dataflowFactory.Return(i)
-                    .SelectMany(item => Enumerable.Repeat(item * 2, 2))
-                    .Select(item => item + 1));
-
-        }
 
         [Fact]
         public void BindSelectManyAsyncDataflow_ShouldReturnTheProjectedList()
