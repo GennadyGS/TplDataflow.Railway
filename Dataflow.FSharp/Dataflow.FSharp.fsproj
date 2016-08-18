@@ -45,7 +45,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <None Include="Script.fsx" />
     <None Include="project.json" />
     <Compile Include="DataflowBuilder.fs" />
   </ItemGroup>

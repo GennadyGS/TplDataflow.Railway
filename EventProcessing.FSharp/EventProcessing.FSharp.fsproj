@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>c4e3a63a-e4ef-4ebe-8cb0-19cc557d787c</ProjectGuid>
+    <ProjectGuid>bce2d5e5-628a-402a-a101-a305a32b18cb</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Dataflow.FSharp.Tests</RootNamespace>
-    <AssemblyName>Dataflow.FSharp.Tests</AssemblyName>
+    <RootNamespace>EventProcessing.FSharp</RootNamespace>
+    <AssemblyName>EventProcessing.FSharp</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>Dataflow.FSharp.Tests</Name>
+    <Name>EventProcessing.FSharp</Name>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -23,7 +23,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\Dataflow.FSharp.Tests.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\EventProcessing.FSharp.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,7 +32,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\Dataflow.FSharp.Tests.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\EventProcessing.FSharp.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -52,11 +52,6 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="IDataflowSequenceTransformer.fs" />
-    <Compile Include="EnumerableDataflowSequenceTransformer.fs" />
-    <Compile Include="ObservableDataflowSequenceTransformer.fs" />
-    <Compile Include="TplDataflowDataflowSequenceTransformer.fs" />
-    <Compile Include="DataflowTests.fs" />
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
@@ -69,24 +64,9 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Dataflow.Core\Dataflow.Core.csproj">
-      <Name>Dataflow.Core</Name>
-      <Project>{79c5a0f9-e9ec-4b45-8f84-6859c6e07522}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Dataflow.FSharp\Dataflow.FSharp.fsproj">
-      <Name>Dataflow.FSharp</Name>
-      <Project>{32a0432f-7038-4153-8c90-0e5f7dbcca67}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Dataflow.Rx\Dataflow.Rx.csproj">
-      <Name>Dataflow.Rx</Name>
-      <Project>{bef64716-b623-4617-a9ac-763c921ce02b}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Dataflow.TplDataflow\Dataflow.TplDataflow.csproj">
-      <Name>Dataflow.TplDataflow</Name>
-      <Project>{32d18f4a-5ff9-4e18-b3a1-3fcea6b5f716}</Project>
+    <ProjectReference Include="..\Samples\EventProcessing\EventProcessing.csproj">
+      <Name>EventProcessing</Name>
+      <Project>{2a6c3b20-c6b1-4aec-b14a-ea163e70abc3}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

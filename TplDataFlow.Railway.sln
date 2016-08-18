@@ -45,6 +45,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dataflow.FSharp.Tests", "Da
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dataflow.FSharp", "Dataflow.FSharp\Dataflow.FSharp.fsproj", "{32A0432F-7038-4153-8C90-0E5F7DBCCA67}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EventProcessing.FSharp", "EventProcessing.FSharp\EventProcessing.FSharp.fsproj", "{BCE2D5E5-628A-402A-A101-A305A32B18CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -131,6 +133,10 @@ Global
 		{32A0432F-7038-4153-8C90-0E5F7DBCCA67}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32A0432F-7038-4153-8C90-0E5F7DBCCA67}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32A0432F-7038-4153-8C90-0E5F7DBCCA67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCE2D5E5-628A-402A-A101-A305A32B18CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCE2D5E5-628A-402A-A101-A305A32B18CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCE2D5E5-628A-402A-A101-A305A32B18CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCE2D5E5-628A-402A-A101-A305A32B18CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -138,5 +144,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{2A6C3B20-C6B1-4AEC-B14A-EA163E70ABC3} = {540D61D2-1DAD-476B-A505-43E434D36F0E}
 		{B6F3AE23-5A35-406D-AA0C-FC91785E69CC} = {540D61D2-1DAD-476B-A505-43E434D36F0E}
+		{BCE2D5E5-628A-402A-A101-A305A32B18CB} = {540D61D2-1DAD-476B-A505-43E434D36F0E}
 	EndGlobalSection
 EndGlobal

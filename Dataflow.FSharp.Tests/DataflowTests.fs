@@ -9,7 +9,6 @@ open Xunit
 
 [<AbstractClass>]
 type DataflowTests(transformer : IDataflowSequenceTransformer) = 
-    
     let testBindDataflow (input : 'input seq) (expectedOutput : 'output seq) 
         (dataflowBindFunc : IDataflowFactory -> 'input -> 'output IDataflow) = 
         let output = input |> transformer.TransformSequence dataflowBindFunc
