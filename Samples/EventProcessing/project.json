@@ -1,9 +1,9 @@
 ﻿{
   "dependencies": {
-    "LanguageExt.Core": "1.7.38",
+    "LanguageExt.Core": "1.9.3",
     "log4net": "2.0.5",
     "Microsoft.Tpl.Dataflow": "4.5.24",
-    "Rx-Linq": "2.2.5"
+    "System.Reactive.Linq": "3.0.0"
   },
   "frameworks": {
     "net461": {}

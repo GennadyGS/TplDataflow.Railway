@@ -1,10 +1,10 @@
 ﻿{
   "dependencies": {
-    "FluentAssertions": "4.8.0",
-    "LanguageExt.Core": "1.7.38",
+    "FluentAssertions": "4.15.0",
+    "LanguageExt.Core": "1.9.3",
     "Microsoft.Tpl.Dataflow": "4.5.24",
-    "Moq": "4.5.8",
-    "Rx-Linq": "2.2.5",
+    "Moq": "4.5.23",
+    "System.Reactive.Linq": "3.0.0",
     "xunit": "2.1.0"
   },
   "frameworks": {

@@ -46,15 +46,6 @@ namespace Dataflow.Railway
             return source.SelectMany(item => item.SelectMany(selector));
         }
 
-        public static IDataflow<Either<TLeft, TRightOutput>> SelectMany
-            <TLeft, TRightInput, TRightMedium, TRightOutput>(
-            this IDataflow<Either<TLeft, TRightInput>> source,
-            Func<TRightInput, IEnumerable<TRightMedium>> mediumSelector,
-            Func<TRightInput, TRightMedium, TRightOutput> resultSelector)
-        {
-            return source.SelectMany(item => EitherExtensions.SelectMany(item, mediumSelector, resultSelector));
-        }
-
         public static IDataflow<Either<TLeft, TRightOutput>> SelectSafe<TLeft, TRightInput, TRightOutput>(
             this IDataflow<Either<TLeft, TRightInput>> source,
             Func<TRightInput, Either<TLeft, TRightOutput>> selector)

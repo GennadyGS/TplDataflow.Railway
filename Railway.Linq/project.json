@@ -1,7 +1,7 @@
 ﻿{
   "dependencies": {
-    "LanguageExt.Core": "1.7.38",
-    "Rx-Linq": "2.2.5"
+    "LanguageExt.Core": "1.9.3",
+    "System.Reactive.Linq": "3.0.0"
   },
   "frameworks": {
     "net461": {}

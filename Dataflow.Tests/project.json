@@ -1,6 +1,6 @@
 ﻿{
   "dependencies": {
-    "FluentAssertions": "4.8.0",
+    "FluentAssertions": "4.15.0",
     "Microsoft.Tpl.Dataflow": "4.5.24",
     "xunit": "2.1.0"
   },
