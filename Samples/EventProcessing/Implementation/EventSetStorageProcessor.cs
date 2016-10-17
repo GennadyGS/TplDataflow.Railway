@@ -156,24 +156,31 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableBatchSyncFactory : IFactory
+        internal abstract class FactoryBase : IFactory
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            IAsyncProcessor<EventDetails, Result> IFactory.CreateStorageProcessor(Func<IEventSetRepository> repositoryResolver,
+                IIdentityManagementService identityService, IEventSetProcessTypeManager processTypeManager,
+                IEventSetConfiguration configuration, Func<DateTime> currentTimeProvider)
             {
-                logic = new Logic(repositoryResolver, identityService,
+                var logic = new Logic(repositoryResolver, identityService,
                     processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
 
-                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Result>>) ProcessEventDataflow);
+                return InternalCreateStorageProcessor(logic, configuration);
             }
 
-            private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> input)
+            protected abstract IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration);
+        }
+
+        internal class EnumerableBatchSyncFactory : FactoryBase
+        {
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
+            {
+                return AsyncProcessor.Create((IEnumerable<EventDetails> input) => 
+                    ProcessEventDataflow(logic, configuration, input));
+            }
+
+            private IEnumerable<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IEnumerable<EventDetails> input)
             {
                 return input
                     .Select(logic.LogEvent)
@@ -186,24 +193,16 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableBatchAsyncFactory : IFactory
+        internal class EnumerableBatchAsyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, Task<IEnumerable<Result>>>) ProcessEventDataflowAsync);
+                return AsyncProcessor.Create((IEnumerable<EventDetails> input) =>
+                    ProcessEventDataflowAsync(logic, configuration, input));
             }
 
-            private Task<IEnumerable<Result>> ProcessEventDataflowAsync(IEnumerable<EventDetails> input)
+            private Task<IEnumerable<Result>> ProcessEventDataflowAsync(Logic logic, IEventSetConfiguration configuration, 
+                IEnumerable<EventDetails> input)
             {
                 return input
                     .Select(logic.LogEvent)
@@ -216,24 +215,15 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class ObservableBatchSyncFactory : IFactory
+        internal class ObservableBatchSyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
+                return AsyncProcessor.Create<EventDetails, Result>(input => ProcessEventDataflow(logic, configuration, input));
             }
 
-            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
+            private IObservable<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IObservable<EventDetails> input)
             {
                 return input
                     .Select(logic.LogEvent)
@@ -247,7 +237,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class ObservableBatchAsyncFactory : IFactory
+        internal class ObservableBatchAsyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -278,7 +268,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowBatchSyncFactory : IFactory
+        internal class TplDataflowBatchSyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -309,7 +299,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowBatchAsyncFactory : IFactory
+        internal class TplDataflowBatchAsyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -340,7 +330,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public abstract class BaseDataflowBatchSyncFactory : IFactory
+        internal abstract class BaseDataflowBatchSyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -373,7 +363,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public abstract class BaseDataflowBatchAsyncFactory : IFactory
+        internal abstract class BaseDataflowBatchAsyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -406,7 +396,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class DataflowBatchSyncFactory : BaseDataflowBatchSyncFactory
+        internal class DataflowBatchSyncFactory : BaseDataflowBatchSyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -414,7 +404,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class DataflowBatchAsyncFactory : BaseDataflowBatchAsyncFactory
+        internal class DataflowBatchAsyncFactory : BaseDataflowBatchAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -422,7 +412,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowDataflowBatchSyncFactory : BaseDataflowBatchSyncFactory
+        internal class TplDataflowDataflowBatchSyncFactory : BaseDataflowBatchSyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -430,7 +420,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowDataflowBatchAsyncFactory : BaseDataflowBatchAsyncFactory
+        internal class TplDataflowDataflowBatchAsyncFactory : BaseDataflowBatchAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -438,7 +428,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableIndividualSyncFactory : IFactory
+        internal class EnumerableIndividualSyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -472,7 +462,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class EnumerableIndividualAsyncFactory : IFactory
+        internal class EnumerableIndividualAsyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -506,7 +496,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class ObservableIndividualSyncFactory : IFactory
+        internal class ObservableIndividualSyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -540,7 +530,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class ObservableIndividualAsyncFactory : IFactory
+        internal class ObservableIndividualAsyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -574,7 +564,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowIndividualSyncFactory : IFactory
+        internal class TplDataflowIndividualSyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -608,7 +598,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowIndividualAsyncFactory : IFactory
+        internal class TplDataflowIndividualAsyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -642,7 +632,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public abstract class BaseDataflowIndividualSyncFactory : IFactory
+        internal abstract class BaseDataflowIndividualSyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -678,7 +668,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public abstract class BaseDataflowIndividualAsyncFactory : IFactory
+        internal abstract class BaseDataflowIndividualAsyncFactory : IFactory
         {
             private Logic logic;
             private IEventSetConfiguration configuration;
@@ -714,7 +704,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class DataflowIndividualSyncFactory : BaseDataflowIndividualSyncFactory
+        internal class DataflowIndividualSyncFactory : BaseDataflowIndividualSyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -722,7 +712,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class DataflowIndividualAsyncFactory : BaseDataflowIndividualAsyncFactory
+        internal class DataflowIndividualAsyncFactory : BaseDataflowIndividualAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -730,7 +720,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowDataflowIndividualSyncFactory : BaseDataflowIndividualSyncFactory
+        internal class TplDataflowDataflowIndividualSyncFactory : BaseDataflowIndividualSyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -738,7 +728,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        public class TplDataflowDataflowIndividualAsyncFactory : BaseDataflowIndividualAsyncFactory
+        internal class TplDataflowDataflowIndividualAsyncFactory : BaseDataflowIndividualAsyncFactory
         {
             protected override IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc)
             {
@@ -746,7 +736,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        private class SuccessResult
+        internal class SuccessResult
         {
             public SuccessResult(bool isCreated, EventSet eventSet, IList<EventDetails> events)
             {
@@ -759,7 +749,7 @@ namespace EventProcessing.Implementation
             public EventSetWithEvents EventSetWithEvents { get; }
         }
 
-        private class UnsuccessResult
+        internal class UnsuccessResult
         {
             private UnsuccessResult(bool isSkipped, IList<EventDetails> events, int errorCode, string errorMessage)
             {
@@ -789,7 +779,7 @@ namespace EventProcessing.Implementation
             }
         }
 
-        private class EventGroup
+        internal class EventGroup
         {
             public EventSetType EventSetType { get; set; }
 
@@ -798,7 +788,7 @@ namespace EventProcessing.Implementation
             public List<EventDetails> Events { get; set; }
         }
 
-        private class Logic
+        internal class Logic
         {
             private const string EventSetSequenceName = "EventSet";
             private readonly Func<DateTime> currentTimeProvider;
