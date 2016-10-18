@@ -237,24 +237,15 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class ObservableBatchAsyncFactory : IFactory
+        internal class ObservableBatchAsyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
+                return AsyncProcessor.Create<EventDetails, Result>(input => ProcessEventDataflow(logic, configuration, input));
             }
 
-            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> input)
+            private IObservable<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IObservable<EventDetails> input)
             {
                 return input
                     .Select(logic.LogEvent)
@@ -268,24 +259,15 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class TplDataflowBatchSyncFactory : IFactory
+        internal class TplDataflowBatchSyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver,
-                    identityService, processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(input => ProcessEventDataflow(logic, configuration, input));
             }
 
-            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> input)
+            private ISourceBlock<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                ISourceBlock<EventDetails> input)
             {
                 return input
                     .Select(logic.LogEvent)
@@ -299,24 +281,15 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class TplDataflowBatchAsyncFactory : IFactory
+        internal class TplDataflowBatchAsyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver,
-                    identityService, processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(input => ProcessEventDataflow(logic, configuration, input));
             }
 
-            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> input)
+            private ISourceBlock<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                ISourceBlock<EventDetails> input)
             {
                 return input
                     .Select(logic.LogEvent)
@@ -330,26 +303,18 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal abstract class BaseDataflowBatchSyncFactory : IFactory
+        internal abstract class BaseDataflowBatchSyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return CreateDataflowAsyncProcessor(ProcessEventDataflow);
+                return CreateDataflowAsyncProcessor((dataflowFactory, @event) => 
+                    ProcessEventDataflow(logic, configuration, dataflowFactory, @event));
             }
 
             protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc);
 
-            private IDataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            private IDataflow<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IDataflowFactory dataflowFactory, EventDetails @event)
             {
                 return dataflowFactory.Return(@event)
                     .Select(logic.LogEvent)
@@ -363,26 +328,18 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal abstract class BaseDataflowBatchAsyncFactory : IFactory
+        internal abstract class BaseDataflowBatchAsyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return CreateDataflowAsyncProcessor(ProcessEventDataflow);
+                return CreateDataflowAsyncProcessor((dataflowFactory, @event) =>
+                    ProcessEventDataflow(logic, configuration, dataflowFactory, @event));
             }
 
             protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc);
 
-            private IDataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            private IDataflow<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IDataflowFactory dataflowFactory, EventDetails @event)
             {
                 return dataflowFactory.Return(@event)
                     .Select(logic.LogEvent)
