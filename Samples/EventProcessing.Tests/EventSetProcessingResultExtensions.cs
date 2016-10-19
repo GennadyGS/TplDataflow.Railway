@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace EventProcessing.Tests
 {
-    public static class EventSetProcessingResultExtensions
+    internal static class EventSetProcessingResultExtensions
     {
         public static void VerifyEventSkipped(this EventSetStorageProcessor.Result result,
             EventDetails @event)

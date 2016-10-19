@@ -13,7 +13,7 @@ using Xunit;
 
 namespace EventProcessing.Tests
 {
-    public abstract class EventSetStorageProcessorTest
+    internal abstract class EventSetStorageProcessorTest
     {
         private const int EventBatchSize = 1000;
         private const string EventBatchTimeout = "00:00:05";

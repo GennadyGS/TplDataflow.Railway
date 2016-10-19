@@ -175,14 +175,14 @@ namespace EventProcessing.Implementation
         {
             protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                return AsyncProcessor.Create((IEnumerable<EventDetails> input) => 
-                    ProcessEventDataflow(logic, configuration, input));
+                return AsyncProcessor.Create((IEnumerable<EventDetails> events) => 
+                    ProcessEventDataflow(logic, configuration, events));
             }
 
             private IEnumerable<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
-                IEnumerable<EventDetails> input)
+                IEnumerable<EventDetails> events)
             {
-                return input
+                return events
                     .Select(logic.LogEvent)
                     .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
                     .SelectMany(logic.SplitEventsIntoGroupsSafe)
@@ -197,14 +197,14 @@ namespace EventProcessing.Implementation
         {
             protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                return AsyncProcessor.Create((IEnumerable<EventDetails> input) =>
-                    ProcessEventDataflowAsync(logic, configuration, input));
+                return AsyncProcessor.Create((IEnumerable<EventDetails> events) =>
+                    ProcessEventDataflowAsync(logic, configuration, events));
             }
 
             private Task<IEnumerable<Result>> ProcessEventDataflowAsync(Logic logic, IEventSetConfiguration configuration, 
-                IEnumerable<EventDetails> input)
+                IEnumerable<EventDetails> events)
             {
-                return input
+                return events
                     .Select(logic.LogEvent)
                     .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
                     .SelectManyAsync(logic.SplitEventsIntoGroupsSafeAsync)
@@ -385,24 +385,16 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class EnumerableIndividualSyncFactory : IFactory
+        internal class EnumerableIndividualSyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, IEnumerable<Result>>) ProcessEventDataflow);
+                return AsyncProcessor.Create((IEnumerable<EventDetails> events) => 
+                    ProcessEventDataflow(logic, configuration, events));
             }
 
-            private IEnumerable<Result> ProcessEventDataflow(IEnumerable<EventDetails> events)
+            private IEnumerable<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IEnumerable<EventDetails> events)
             {
                 return events
                     .Select(logic.LogEvent)
@@ -419,24 +411,16 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class EnumerableIndividualAsyncFactory : IFactory
+        internal class EnumerableIndividualAsyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return AsyncProcessor.Create((Func<IEnumerable<EventDetails>, Task<IEnumerable<Result>>>) ProcessEventDataflowAsync);
+                return AsyncProcessor.Create((IEnumerable<EventDetails> events) => 
+                    ProcessEventDataflowAsync(logic, configuration, events));
             }
 
-            private Task<IEnumerable<Result>> ProcessEventDataflowAsync(IEnumerable<EventDetails> events)
+            private Task<IEnumerable<Result>> ProcessEventDataflowAsync(Logic logic, IEventSetConfiguration configuration, 
+                IEnumerable<EventDetails> events)
             {
                 return events
                     .Select(logic.LogEvent)
@@ -453,24 +437,16 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class ObservableIndividualSyncFactory : IFactory
+        internal class ObservableIndividualSyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
+                return AsyncProcessor.Create<EventDetails, Result>(events => 
+                    ProcessEventDataflow(logic, configuration, events));
             }
 
-            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> events)
+            private IObservable<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IObservable<EventDetails> events)
             {
                 return events
                     .Select(logic.LogEvent)
@@ -487,24 +463,16 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class ObservableIndividualAsyncFactory : IFactory
+        internal class ObservableIndividualAsyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return AsyncProcessor.Create<EventDetails, Result>(ProcessEventDataflow);
+                return AsyncProcessor.Create<EventDetails, Result>(events => 
+                    ProcessEventDataflow(logic, configuration, events));
             }
 
-            private IObservable<Result> ProcessEventDataflow(IObservable<EventDetails> events)
+            private IObservable<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IObservable<EventDetails> events)
             {
                 return events
                     .Select(logic.LogEvent)
@@ -521,24 +489,16 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class TplDataflowIndividualSyncFactory : IFactory
+        internal class TplDataflowIndividualSyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(events => 
+                    ProcessEventDataflow(logic, configuration, events));
             }
 
-            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> events)
+            private ISourceBlock<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                ISourceBlock<EventDetails> events)
             {
                 return events
                     .Select(logic.LogEvent)
@@ -555,24 +515,15 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal class TplDataflowIndividualAsyncFactory : IFactory
+        internal class TplDataflowIndividualAsyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return new TplDataflowAsyncProcessor<EventDetails, Result>(ProcessEventDataflow);
+                return new TplDataflowAsyncProcessor<EventDetails, Result>(events => ProcessEventDataflow(logic, configuration, events));
             }
 
-            private ISourceBlock<Result> ProcessEventDataflow(ISourceBlock<EventDetails> events)
+            private ISourceBlock<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                ISourceBlock<EventDetails> events)
             {
                 return events
                     .Select(logic.LogEvent)
@@ -589,26 +540,18 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal abstract class BaseDataflowIndividualSyncFactory : IFactory
+        internal abstract class BaseDataflowIndividualSyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return CreateDataflowAsyncProcessor(ProcessEventDataflow);
+                return CreateDataflowAsyncProcessor((dataflowFactory, @event) => 
+                    ProcessEventDataflow(logic, configuration, dataflowFactory, @event));
             }
 
             protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc);
 
-            private IDataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            private IDataflow<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IDataflowFactory dataflowFactory, EventDetails @event)
             {
                 return dataflowFactory.Return(@event)
                     .Select(logic.LogEvent)
@@ -625,26 +568,18 @@ namespace EventProcessing.Implementation
             }
         }
 
-        internal abstract class BaseDataflowIndividualAsyncFactory : IFactory
+        internal abstract class BaseDataflowIndividualAsyncFactory : FactoryBase
         {
-            private Logic logic;
-            private IEventSetConfiguration configuration;
-
-            public IAsyncProcessor<EventDetails, Result> CreateStorageProcessor(
-                Func<IEventSetRepository> repositoryResolver, IIdentityManagementService identityService,
-                IEventSetProcessTypeManager processTypeManager, IEventSetConfiguration configuration,
-                Func<DateTime> currentTimeProvider)
+            protected override IAsyncProcessor<EventDetails, Result> InternalCreateStorageProcessor(Logic logic, IEventSetConfiguration configuration)
             {
-                logic = new Logic(repositoryResolver, identityService,
-                    processTypeManager, currentTimeProvider);
-                this.configuration = configuration;
-
-                return CreateDataflowAsyncProcessor(ProcessEventDataflow);
+                return CreateDataflowAsyncProcessor((dataflowFactory, @event) => 
+                    ProcessEventDataflow(logic, configuration, dataflowFactory, @event));
             }
 
             protected abstract IAsyncProcessor<EventDetails, Result> CreateDataflowAsyncProcessor(Func<IDataflowFactory, EventDetails, IDataflow<Result>> bindFunc);
 
-            private IDataflow<Result> ProcessEventDataflow(IDataflowFactory dataflowFactory, EventDetails @event)
+            private IDataflow<Result> ProcessEventDataflow(Logic logic, IEventSetConfiguration configuration, 
+                IDataflowFactory dataflowFactory, EventDetails @event)
             {
                 return dataflowFactory.Return(@event)
                     .Select(logic.LogEvent)
