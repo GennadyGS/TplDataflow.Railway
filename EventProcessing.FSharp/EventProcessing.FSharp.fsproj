@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <None Include="project.json" />
+    <Compile Include="Types.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -64,6 +65,11 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\AsyncProcessing.Core\AsyncProcessing.Core.csproj">
+      <Name>AsyncProcessing.Core</Name>
+      <Project>{7145b448-a3eb-4f44-9560-dd0e3cc147ab}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Samples\EventProcessing\EventProcessing.csproj">
       <Name>EventProcessing</Name>
       <Project>{2a6c3b20-c6b1-4aec-b14a-ea163e70abc3}</Project>

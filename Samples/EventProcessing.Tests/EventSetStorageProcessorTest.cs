@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EventProcessing.FSharp;
 using Xunit;
 
 namespace EventProcessing.Tests
@@ -927,6 +928,20 @@ namespace EventProcessing.Tests
         public class TplDataflowDataflowIndividualAsyncImpl : EventSetStorageProcessorTest
         {
             public TplDataflowDataflowIndividualAsyncImpl() : base(new EventSetStorageProcessor.TplDataflowDataflowIndividualAsyncFactory())
+            {
+            }
+        }
+
+        public class FSharpObservableDataflowIndividualAsyncImpl : EventSetStorageProcessorTest
+        {
+            public FSharpObservableDataflowIndividualAsyncImpl() : base(new FSharp.ObservableDataflowIndividualAsyncFactory())
+            {
+            }
+        }
+
+        public class FSharpTplDataflowDataflowIndividualAsyncImpl : EventSetStorageProcessorTest
+        {
+            public FSharpTplDataflowDataflowIndividualAsyncImpl() : base(new FSharp.TplDataflowDataflowIndividualAsyncFactory())
             {
             }
         }
