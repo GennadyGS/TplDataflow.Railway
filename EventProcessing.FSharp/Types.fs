@@ -4,13 +4,13 @@ open System
 open EventProcessing.Implementation
 
 [<AbstractClass>]
-type BaseDataflowIndividualAsyncFactory() = 
+type internal BaseDataflowIndividualAsyncFactory() = 
     inherit EventSetStorageProcessor.FactoryBase()
     override this.InternalCreateStorageProcessor(logic, configuration) = 
         raise (NotImplementedException())
 
-type ObservableDataflowIndividualAsyncFactory() = 
+type internal ObservableDataflowIndividualAsyncFactory() = 
     inherit BaseDataflowIndividualAsyncFactory()
 
-type TplDataflowDataflowIndividualAsyncFactory() = 
+type internal TplDataflowDataflowIndividualAsyncFactory() = 
     inherit BaseDataflowIndividualAsyncFactory()
