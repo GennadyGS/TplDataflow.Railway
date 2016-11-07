@@ -70,6 +70,26 @@
       <Project>{7145b448-a3eb-4f44-9560-dd0e3cc147ab}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\AsyncProcessing.Dataflow.TplDataflow\AsyncProcessing.Dataflow.TplDataflow.csproj">
+      <Name>AsyncProcessing.Dataflow.TplDataflow</Name>
+      <Project>{dc295899-3e74-46f7-820e-e17e8564aad6}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\AsyncProcessing.Dataflow\AsyncProcessing.Dataflow.csproj">
+      <Name>AsyncProcessing.Dataflow</Name>
+      <Project>{eb5b2262-b1a7-4b36-9248-1a8d608bc6e7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Dataflow.Core\Dataflow.Core.csproj">
+      <Name>Dataflow.Core</Name>
+      <Project>{79c5a0f9-e9ec-4b45-8f84-6859c6e07522}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Dataflow.Railway\Dataflow.Railway.csproj">
+      <Name>Dataflow.Railway</Name>
+      <Project>{1bcfcf79-6205-49a2-a213-62a97a1d10ff}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Samples\EventProcessing\EventProcessing.csproj">
       <Name>EventProcessing</Name>
       <Project>{2a6c3b20-c6b1-4aec-b14a-ea163e70abc3}</Project>
