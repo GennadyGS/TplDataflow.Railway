@@ -21,11 +21,10 @@ type internal BaseDataflowIndividualAsyncFactory() =
     abstract member CreateDataflowAsyncProcessor : 
         Func<IDataflowFactory, EventDetails, IDataflow<EventSetStorageProcessor.Result>> -> 
         IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result>
-    member private this.ProcessEventDataflow(
-            logic: EventSetStorageProcessor.Logic, 
-            configuration: IEventSetConfiguration,
-            dataflowFactory: IDataflowFactory, 
-            event: EventDetails): IDataflow<EventSetStorageProcessor.Result> = 
+    member private this.ProcessEventDataflow
+        (logic: EventSetStorageProcessor.Logic, configuration: IEventSetConfiguration,
+         dataflowFactory: IDataflowFactory, event: EventDetails)
+        : IDataflow<EventSetStorageProcessor.Result> = 
         dataflowFactory.Return(event)
             .Select(logic.LogEvent)
             .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
@@ -41,14 +40,15 @@ type internal BaseDataflowIndividualAsyncFactory() =
 
 type internal ObservableDataflowIndividualAsyncFactory() = 
     inherit BaseDataflowIndividualAsyncFactory()
-    override this.CreateDataflowAsyncProcessor(
-        bindFunc : Func<IDataflowFactory, EventDetails, IDataflow<EventSetStorageProcessor.Result>>) 
+    override this.CreateDataflowAsyncProcessor
+        (bindFunc : Func<IDataflowFactory, EventDetails, IDataflow<EventSetStorageProcessor.Result>>)
         : IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> =
-            DataflowAsyncProcessor<EventDetails, EventSetStorageProcessor.Result>(bindFunc) :> IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result>
+            DataflowAsyncProcessor<EventDetails, EventSetStorageProcessor.Result>(bindFunc) 
+                :> IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result>
 
 type internal TplDataflowDataflowIndividualAsyncFactory() = 
     inherit BaseDataflowIndividualAsyncFactory()
-    override this.CreateDataflowAsyncProcessor(
-        bindFunc : Func<IDataflowFactory, EventDetails, IDataflow<EventSetStorageProcessor.Result>>) 
+    override this.CreateDataflowAsyncProcessor
+        (bindFunc : Func<IDataflowFactory, EventDetails, IDataflow<EventSetStorageProcessor.Result>>) 
         : IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result> =
             TplDataflowDataflowAsyncProcessor<EventDetails, EventSetStorageProcessor.Result>(bindFunc) :> IAsyncProcessor<EventDetails, EventSetStorageProcessor.Result>
