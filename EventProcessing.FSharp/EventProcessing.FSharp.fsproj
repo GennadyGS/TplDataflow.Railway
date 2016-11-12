@@ -85,9 +85,19 @@
       <Project>{79c5a0f9-e9ec-4b45-8f84-6859c6e07522}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Dataflow.FSharp\Dataflow.FSharp.fsproj">
+      <Name>Dataflow.FSharp</Name>
+      <Project>{32a0432f-7038-4153-8c90-0e5f7dbcca67}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Dataflow.Railway\Dataflow.Railway.csproj">
       <Name>Dataflow.Railway</Name>
       <Project>{1bcfcf79-6205-49a2-a213-62a97a1d10ff}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Railway.Linq\Railway.Linq.csproj">
+      <Name>Railway.Linq</Name>
+      <Project>{a90afa32-26f3-4e80-b8e8-cea8c6b61d9c}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\Samples\EventProcessing\EventProcessing.csproj">

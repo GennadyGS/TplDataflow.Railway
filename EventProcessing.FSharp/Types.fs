@@ -3,6 +3,7 @@
 open System
 open LanguageExt
 open AsyncProcessing.Core
+open Railway.Linq
 open Dataflow.Core
 open Dataflow.Railway
 open EventProcessing.BusinessObjects
@@ -10,6 +11,7 @@ open EventProcessing.Interfaces
 open EventProcessing.Implementation
 open AsyncProcessing.Dataflow
 open AsyncProcessing.Dataflow.TplDataflow
+open Dataflow.FSharp
 
 [<AbstractClass>]
 type internal BaseDataflowIndividualAsyncFactory() = 
@@ -27,18 +29,30 @@ type internal BaseDataflowIndividualAsyncFactory() =
     member private this.ProcessEventDataflow
         (logic : EventSetStorageProcessor.Logic) (configuration : IEventSetConfiguration)
         (dataflowFactory : IDataflowFactory) (event : EventDetails) = 
-            dataflowFactory.Return(event)
-                .Select(logic.LogEvent)
-                .Buffer(configuration.EventBatchTimeout, configuration.EventBatchSize)
-                .SelectManyAsync(fun item -> logic.SplitEventsIntoGroupsSafeAsync(item))
-                .SelectSafe(fun item -> logic.FilterSkippedEventGroup(item))
-                .GroupBySafe(fun group -> group.EventSetType.GetCode())
-                .SelectManySafe(fun innerGroup ->
-                    innerGroup
-                        .ToList()
-                        .SelectManyAsync(fun item -> logic.ProcessEventGroupsSafeAsync(item)))
-                .SelectMany(fun (res : Either<EventSetStorageProcessor.UnsuccessResult, EventSetStorageProcessor.SuccessResult>) ->
-                    EventSetStorageProcessor.Logic.TransformResult(res))
+            DataflowBuilder(dataflowFactory) {
+                let! event' = dataflowFactory.Return (logic.LogEvent event)
+                let! eventBuffer = 
+                    dataflowFactory.Buffer (event', configuration.EventBatchTimeout, configuration.EventBatchSize)
+                let! eventGroup = 
+                    dataflowFactory.ReturnManyAsync (logic.SplitEventsIntoGroupsSafeAsync(eventBuffer))
+                // TODO: Simplify
+                let! eventGroup' = 
+                    dataflowFactory.Return (eventGroup.SelectSafe(fun item -> 
+                        logic.FilterSkippedEventGroup(item)))
+                // TODO: Simplify
+                let! eventGroupGroup = 
+                    dataflowFactory
+                        .Return(eventGroup')
+                        .GroupBySafe(fun group -> group.EventSetType.GetCode())
+                // TODO: Simplify
+                let! result = 
+                    dataflowFactory.Return(eventGroupGroup)
+                        .SelectManySafe(fun innerGroup ->
+                            innerGroup
+                                .ToList()
+                                .SelectManyAsync(fun item -> logic.ProcessEventGroupsSafeAsync(item)))
+                return! dataflowFactory.ReturnMany(EventSetStorageProcessor.Logic.TransformResult(result))
+            }
 
 type internal ObservableDataflowIndividualAsyncFactory() = 
     inherit BaseDataflowIndividualAsyncFactory()
