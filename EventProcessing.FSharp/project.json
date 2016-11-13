@@ -1,5 +1,6 @@
 ﻿{
   "dependencies": {
+    "LanguageExt.Core": "1.9.3"
   },
   "frameworks": {
     "net461": {}
